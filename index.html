@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <!-- App Information -->
+    <title>Storyboard AI - AI-Powered Film Storyboarding</title>
+    <meta name="description" content="Create professional film storyboards with AI assistance. Secure, client-side, privacy-focused storyboarding tool for filmmakers and creators." />
+    <meta name="keywords" content="storyboard, AI, filmmaking, video production, screenplay, OpenAI, client-side, privacy" />
+    <meta name="author" content="Storyboard AI" />
+    
+    <!-- Security Headers -->
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <meta http-equiv="X-Frame-Options" content="DENY" />
+    <meta http-equiv="X-XSS-Protection" content="1; mode=block" />
+    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
+    <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=(), payment=()" />
+    
+    <!-- Content Security Policy -->
+    <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self';
+      script-src 'self' 'unsafe-inline';
+      style-src 'self' 'unsafe-inline';
+      img-src 'self' data: blob:;
+      font-src 'self';
+      connect-src 'self' https://api.openai.com;
+      worker-src 'self';
+      object-src 'none';
+      base-uri 'self';
+      form-action 'self';
+      frame-ancestors 'none';
+    " />
+    
+    <!-- Privacy and Data -->
+    <meta name="robots" content="index, follow" />
+    <meta name="googlebot" content="index, follow" />
+    <meta name="privacy-policy" content="No data collection - all processing is client-side" />
+    
+    <!-- Open Graph / Social Media -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Storyboard AI - AI-Powered Film Storyboarding" />
+    <meta property="og:description" content="Create professional film storyboards with AI assistance. Secure, client-side, privacy-focused." />
+    <meta property="og:url" content="https://YOUR_USERNAME.github.io/storyboard-ai" />
+    <meta property="og:site_name" content="Storyboard AI" />
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Storyboard AI - AI-Powered Film Storyboarding" />
+    <meta name="twitter:description" content="Create professional film storyboards with AI assistance. Secure, client-side, privacy-focused." />
+    
+    <!-- Performance -->
+    <link rel="preconnect" href="https://api.openai.com" crossorigin="anonymous" />
+    <link rel="dns-prefetch" href="https://api.openai.com" />
+    
+    <!-- Theme -->
+    <meta name="theme-color" content="#3B82F6" />
+    <meta name="color-scheme" content="light dark" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html> 
