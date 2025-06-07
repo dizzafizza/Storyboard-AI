@@ -640,7 +640,7 @@ Generate ONLY the video prompt text, no explanations or formatting.`
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center space-x-3">
                         <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold ${
-                          hasPrompt ? 'bg-gradient-to-r from-green-500 to-blue-500' : 'bg-gradient-to-r from-gray-400 to-gray-500'
+                          hasPrompt ? 'bg-gradient-to-r from-green-500 to-blue-500' : 'bg-gradient-to-r from-secondary-400 to-secondary-500'
                         }`}>
                           {panel.order + 1}
                         </div>
@@ -732,7 +732,7 @@ Generate ONLY the video prompt text, no explanations or formatting.`
                       </div>
                     ) : (
                       <div className="flex flex-col items-center justify-center py-8 text-center">
-                        <div className="w-16 h-16 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center mb-4 animate-pulse">
+                        <div className="w-16 h-16 bg-gradient-to-br from-secondary-200 to-secondary-300 rounded-full flex items-center justify-center mb-4 animate-pulse">
                           <Wand2 
                   className="w-8 h-8"
                   style={{

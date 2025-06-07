@@ -107,7 +107,7 @@ export default function MobileDrawer({ isOpen, onClose, onNavigate, currentSecti
         }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gradient-to-r from-purple-600 to-pink-600 text-white">
+        <div className="flex items-center justify-between p-4 border-b border-secondary-200 bg-gradient-to-r from-purple-600 to-pink-600 text-white">
           <div className="flex items-center space-x-3">
             <div 
               className="w-10 h-10 rounded-lg flex items-center justify-center"
@@ -143,20 +143,20 @@ export default function MobileDrawer({ isOpen, onClose, onNavigate, currentSecti
                 className={`w-full flex items-center space-x-4 p-4 rounded-xl transition-all duration-200 transform hover:scale-105 animate-slideIn ${
                   currentSection === item.id
                     ? 'bg-gradient-to-r from-purple-100 to-pink-100 border-2 border-purple-300 shadow-lg'
-                    : 'bg-gray-50 hover:bg-gray-100 border-2 border-transparent'
+                    : 'bg-secondary-50 hover:bg-secondary-100 border-2 border-transparent'
                 }`}
                 style={{ animationDelay: `${index * 50}ms` }}
               >
                 <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
                   currentSection === item.id
                     ? 'bg-gradient-to-br from-purple-500 to-pink-500 text-white shadow-lg'
-                    : 'bg-white shadow-sm text-gray-600'
+                    : 'bg-white shadow-sm text-secondary-600'
                 }`}>
                   {item.icon}
                 </div>
                 <div className="flex-1 text-left">
                   <h3 className={`font-semibold ${
-                    currentSection === item.id ? 'text-purple-700' : 'text-gray-800'
+                    currentSection === item.id ? 'text-purple-700' : 'text-secondary-800'
                   }`}>
                     {item.label}
                   </h3>

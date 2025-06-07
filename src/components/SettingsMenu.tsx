@@ -177,7 +177,7 @@ export default function SettingsMenu({ isOpen, onClose }: SettingsMenuProps) {
         {/* Enhanced Header */}
         <div className="flex items-center justify-between p-6 border-b border-primary/20 bg-secondary/30 backdrop-blur-sm">
           <div className="flex items-center space-x-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-gray-600 to-gray-800 rounded-xl flex items-center justify-center shadow-lg animate-float">
+            <div className="w-12 h-12 bg-gradient-to-br from-secondary-600 to-secondary-800 rounded-xl flex items-center justify-center shadow-lg animate-float">
               <SettingsIcon className="w-6 h-6 text-white" />
             </div>
             <div>
@@ -300,7 +300,7 @@ export default function SettingsMenu({ isOpen, onClose }: SettingsMenuProps) {
                         <button
                           onClick={() => setSettings(prev => ({ ...prev, autoSave: !prev.autoSave }))}
                           className={`relative w-12 h-6 rounded-full transition-all duration-300 ${
-                            settings.autoSave ? 'bg-green-500' : 'bg-gray-400'
+                            settings.autoSave ? 'bg-green-500' : 'bg-secondary-400'
                           }`}
                         >
                           <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-lg transition-transform duration-300 ${
@@ -320,7 +320,7 @@ export default function SettingsMenu({ isOpen, onClose }: SettingsMenuProps) {
                         <button
                           onClick={() => setSettings(prev => ({ ...prev, notifications: !prev.notifications }))}
                           className={`relative w-12 h-6 rounded-full transition-all duration-300 ${
-                            settings.notifications ? 'bg-blue-500' : 'bg-gray-400'
+                            settings.notifications ? 'bg-blue-500' : 'bg-secondary-400'
                           }`}
                         >
                           <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-lg transition-transform duration-300 ${

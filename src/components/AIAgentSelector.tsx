@@ -280,7 +280,7 @@ export default function AIAgentSelector({
                     <Star className={`w-5 h-5 transition-all duration-300 ${
                       isFavorite 
                         ? 'fill-yellow-400 text-yellow-400 animate-pulse' 
-                        : 'text-gray-400 hover:text-yellow-400'
+                        : 'text-secondary-theme hover:text-yellow-400'
                     }`} />
                   </button>
                 </div>
@@ -372,7 +372,7 @@ export default function AIAgentSelector({
                       className="flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-bold shadow-lg animate-pulse"
                       style={{
                         background: `linear-gradient(135deg, ${themeState.theme.colors.primary[500]}, ${themeState.theme.colors.primary[600]})`,
-                        color: 'white',
+                        color: 'rgba(255, 255, 255, 0.95)',
                         backdropFilter: 'blur(8px)'
                       }}
                     >
@@ -410,7 +410,7 @@ export default function AIAgentSelector({
                   className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
                   style={{
                     background: `linear-gradient(135deg, ${themeState.theme.colors.primary[500]}, ${themeState.theme.colors.primary[600]})`,
-                    color: 'white'
+                    color: 'rgba(255, 255, 255, 0.95)'
                   }}
                 >
                   {currentAgent.avatar}

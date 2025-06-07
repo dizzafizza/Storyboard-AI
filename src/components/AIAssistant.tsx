@@ -1871,7 +1871,7 @@ Focus on storytelling effectiveness and cinematic quality.`
             onClick={() => setShowAgentSelector(true)}
             title={`Click to change agent - Currently: ${currentAgent.name}`}
           >
-            <span className="text-sm font-medium text-white drop-shadow-sm">{currentAgent.avatar}</span>
+            <span className="text-sm font-medium text-primary-theme drop-shadow-sm">{currentAgent.avatar}</span>
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center space-x-1">
@@ -1993,7 +1993,7 @@ Focus on storytelling effectiveness and cinematic quality.`
             <button
               key={index}
               onClick={action.action}
-              className={`flex flex-col items-center space-y-1 p-2 rounded-lg transition-all duration-300 text-primary hover:text-white border border-primary/20 hover:border-white/40 bg-gradient-to-br ${action.gradient} bg-opacity-10 hover:bg-opacity-100 ${action.className || ''}`}
+              className={`flex flex-col items-center space-y-1 p-2 rounded-lg transition-all duration-300 text-primary hover:text-primary-theme border border-primary/20 hover:border-primary-400 bg-gradient-to-br ${action.gradient} bg-opacity-10 hover:bg-opacity-100 ${action.className || ''}`}
               style={{
                 animationDelay: `${index * 100}ms`,
                 transform: 'translateZ(0)'
@@ -2023,7 +2023,7 @@ Focus on storytelling effectiveness and cinematic quality.`
             <div
               className={`max-w-[85%] p-3 rounded-xl shadow-lg transition-all duration-300 backdrop-blur-sm ${
                 message.type === 'user'
-                  ? 'bg-gradient-to-br from-primary-600 to-primary-700 text-white border border-primary-400/50 shadow-primary-500/25'
+                  ? 'bg-gradient-to-br from-primary-600 to-primary-700 text-primary-theme border border-primary-400/50 shadow-primary-500/25'
                   : message.type === 'system'
                   ? 'bg-gradient-to-br from-tertiary to-secondary text-primary border border-primary/30 shadow-lg'
                   : 'bg-gradient-to-br from-secondary to-tertiary text-primary border border-primary/20 shadow-lg hover:shadow-xl'

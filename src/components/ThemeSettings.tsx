@@ -207,8 +207,8 @@ export default function ThemeSettings({ isOpen, onClose }: ThemeSettingsProps) {
 
                     {/* Theme Features */}
                     <div className="mt-3 flex flex-wrap gap-1">
-                      {theme.id === 'dark' && <span className="px-2 py-1 text-xs rounded-full bg-gray-800 text-gray-200">Dark Mode</span>}
-                      {theme.id === 'light' && <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800">Light Mode</span>}
+                      {theme.id === 'dark' && <span className="px-2 py-1 text-xs rounded-full bg-secondary-800 text-secondary-200">Dark Mode</span>}
+                      {theme.id === 'light' && <span className="px-2 py-1 text-xs rounded-full bg-secondary-100 text-secondary-800">Light Mode</span>}
                       {!['light', 'dark'].includes(theme.id) && <span className="px-2 py-1 text-xs rounded-full" style={{ backgroundColor: theme.colors.primary[100], color: theme.colors.primary[800] }}>Colorful</span>}
                       <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">High Contrast</span>
                     </div>

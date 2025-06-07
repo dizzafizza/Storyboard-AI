@@ -276,7 +276,7 @@ export default function StoryboardPanel({
           className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 transform hover:scale-110 shadow-lg ${
             isLiked 
               ? 'bg-gradient-to-r from-red-500 to-pink-500 text-white' 
-              : 'text-gray-600 hover:text-red-500'
+              : 'text-secondary-theme hover:text-red-500'
           }`}
           style={{
             backgroundColor: isLiked ? undefined : `${themeState.theme.colors.background.primary}90`,

@@ -268,8 +268,8 @@ export default function ProjectManager({ isOpen, onClose }: ProjectManagerProps)
       case 'completed': return 'bg-green-500'
       case 'review': return 'bg-blue-500'
       case 'in-progress': return 'bg-yellow-500'
-      case 'draft': return 'bg-gray-500'
-      default: return 'bg-gray-500'
+      case 'draft': return 'bg-secondary-500'
+      default: return 'bg-secondary-500'
     }
   }
 
@@ -603,7 +603,7 @@ export default function ProjectManager({ isOpen, onClose }: ProjectManagerProps)
               <>
                 {filteredProjects.length === 0 ? (
                   <div className="text-center py-20 animate-fade-in">
-                    <div className="w-20 h-20 bg-gradient-to-br from-gray-400 to-gray-600 rounded-xl mx-auto mb-6 flex items-center justify-center">
+                    <div className="w-20 h-20 bg-gradient-to-br from-secondary-400 to-secondary-600 rounded-xl mx-auto mb-6 flex items-center justify-center">
                       <FolderOpen className="w-10 h-10 text-white" />
                     </div>
                     <h3 className="text-xl font-semibold text-primary mb-2">No Projects Found</h3>
