@@ -246,25 +246,25 @@ export default function Sidebar({
               
               {/* Enhanced Project Stats Grid */}
               <div className="grid grid-cols-2 gap-3">
-                <div className="project-stat-item">
-                  <div className="project-stat-number">{state.panels.length}</div>
-                  <div className="project-stat-label">Total Panels</div>
+                <div className="bg-primary/50 rounded-lg p-3 text-center">
+                  <div className="text-lg font-bold text-primary">{state.panels.length}</div>
+                  <div className="text-xs text-secondary">Total Panels</div>
                 </div>
-                <div className="project-stat-item">
-                  <div className="project-stat-number">{state.panels.filter(panel => panel.imageUrl).length}</div>
-                  <div className="project-stat-label">With Images</div>
+                <div className="bg-primary/50 rounded-lg p-3 text-center">
+                  <div className="text-lg font-bold text-primary">{state.panels.filter(panel => panel.imageUrl).length}</div>
+                  <div className="text-xs text-secondary">With Images</div>
                 </div>
-                <div className="project-stat-item">
-                  <div className="project-stat-number">
-                    {Math.round(state.panels.reduce((total, panel) => total + (panel.description?.length || 0), 0) / 100)}
+                <div className="bg-primary/50 rounded-lg p-3 text-center">
+                  <div className="text-lg font-bold text-primary">
+                    {Math.round(state.panels.reduce((total, panel) => total + (panel.description?.split(' ').length || 0), 0))}
                   </div>
-                  <div className="project-stat-label">Word Count</div>
+                  <div className="text-xs text-secondary">Word Count</div>
                 </div>
-                <div className="project-stat-item">
-                  <div className="project-stat-number">
-                    {new Set(state.panels.map(panel => panel.shotType)).size}
+                <div className="bg-primary/50 rounded-lg p-3 text-center">
+                  <div className="text-lg font-bold text-primary">
+                    {Math.round(state.panels.reduce((total, panel) => total + (panel.duration || 0), 0))}s
                   </div>
-                  <div className="project-stat-label">Shot Types</div>
+                  <div className="text-xs text-secondary">Duration</div>
                 </div>
               </div>
               

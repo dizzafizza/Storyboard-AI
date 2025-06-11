@@ -116,7 +116,7 @@ export default function TimelineView() {
         notes: panel.notes,
         hasVideo: !!panel.videoUrl,
         hasImage: !!panel.imageUrl,
-        videoPrompt: panel.videoPrompt
+        videoPrompt: panel.videoPrompt || panel.aiGeneratedPrompt
       }))
     }
     
@@ -270,10 +270,26 @@ export default function TimelineView() {
             )}
             
             {/* Panel Info Overlay */}
-            <div className="absolute top-4 left-4 bg-black bg-opacity-75 rounded-lg p-3">
+            <div 
+              className="absolute top-4 left-4 rounded-lg p-3"
+              style={{
+                backgroundColor: `${themeState.theme.colors.background.primary}E6`,
+                backdropFilter: 'blur(8px)'
+              }}
+            >
               <div className="text-sm">
-                <div className="font-medium text-white">Panel {currentPanel + 1} of {state.panels.length}</div>
-                <div className="text-white opacity-80">
+                <div 
+                  className="font-medium"
+                  style={{ color: themeState.theme.colors.text.primary }}
+                >
+                  Panel {currentPanel + 1} of {state.panels.length}
+                </div>
+                <div 
+                  style={{ 
+                    color: themeState.theme.colors.text.secondary,
+                    opacity: 0.8 
+                  }}
+                >
                   {currentTime.toFixed(1)}s / {state.panels[currentPanel].duration}s
                 </div>
                 {state.panels[currentPanel].videoUrl && (
@@ -287,8 +303,20 @@ export default function TimelineView() {
 
             {/* Progress Bar for Current Panel */}
             <div className="absolute bottom-4 left-4 right-4">
-              <div className="bg-black bg-opacity-50 rounded-lg p-2">
-                <div className="flex items-center justify-between text-xs mb-1 text-white opacity-90">
+              <div 
+                className="rounded-lg p-2"
+                style={{
+                  backgroundColor: `${themeState.theme.colors.background.primary}CC`,
+                  backdropFilter: 'blur(8px)'
+                }}
+              >
+                <div 
+                  className="flex items-center justify-between text-xs mb-1"
+                  style={{ 
+                    color: themeState.theme.colors.text.primary,
+                    opacity: 0.9 
+                  }}
+                >
                   <span>{state.panels[currentPanel].title}</span>
                   <span>{playbackSpeed}x</span>
                 </div>
@@ -342,7 +370,7 @@ export default function TimelineView() {
             className="p-3 rounded-lg"
             style={{
               backgroundColor: themeState.theme.colors.primary[600],
-              color: 'white'
+              color: themeState.theme.colors.text.primary
             }}
             onMouseOver={(e) => {
               e.currentTarget.style.backgroundColor = themeState.theme.colors.primary[700]
@@ -418,7 +446,7 @@ export default function TimelineView() {
                     ? themeState.theme.colors.primary[600]
                     : themeState.theme.colors.background.tertiary,
                   color: index === currentPanel
-                    ? 'white'
+                    ? themeState.theme.colors.text.primary
                     : themeState.theme.colors.text.secondary
                 }}
                 onMouseOver={(e) => {

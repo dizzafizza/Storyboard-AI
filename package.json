@@ -14,6 +14,8 @@
   "dependencies": {
     "clsx": "^2.0.0",
     "framer-motion": "^10.16.4",
+    "jspdf": "^3.0.1",
+    "jszip": "^3.10.1",
     "lucide-react": "^0.294.0",
     "openai": "^4.104.0",
     "react": "^18.2.0",
@@ -31,6 +33,7 @@
     "gh-pages": "^6.1.1",
     "postcss": "^8.4.31",
     "tailwindcss": "^3.3.5",
+    "terser": "^5.42.0",
     "typescript": "^5.2.2",
     "vite": "^6.3.5"
   },
@@ -43,12 +46,12 @@
   ],
   "author": "Open Source Contributors",
   "license": "MIT",
-  "homepage": "https://github.com/storyboard-ai/storyboard-ai",
+  "homepage": "https://dizzafizza.github.io/Storyboard-AI",
   "repository": {
     "type": "git",
-    "url": "https://github.com/storyboard-ai/storyboard-ai.git"
+    "url": "https://github.com/dizzafizza/Storyboard-AI.git"
   },
   "bugs": {
-    "url": "https://github.com/storyboard-ai/storyboard-ai/issues"
+    "url": "https://github.com/dizzafizza/Storyboard-AI/issues"
   }
 }

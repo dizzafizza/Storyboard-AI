@@ -1,4 +1,5 @@
 import { createContext, useContext, useReducer, ReactNode, useEffect } from 'react'
+import { setThemeCustomProperties } from '../utils/themeColors'
 
 export type ThemeVariant = 'light' | 'dark' | 'purple' | 'blue' | 'green' | 'orange' | 'rose' | 'emerald' | 'teal' | 'amber' | 'violet' | 'slate'
 
@@ -671,6 +672,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   // Apply CSS custom properties whenever theme changes
   useEffect(() => {
     updateCSSVariables(state.theme)
+    setThemeCustomProperties(state.theme)
   }, [state.theme])
 
   const setTheme = (theme: ThemeVariant) => {

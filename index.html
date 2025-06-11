@@ -3,13 +3,18 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
     
     <!-- App Information -->
     <title>Storyboard AI - AI-Powered Film Storyboarding</title>
     <meta name="description" content="Create professional film storyboards with AI assistance. Secure, client-side, privacy-focused storyboarding tool for filmmakers and creators." />
     <meta name="keywords" content="storyboard, AI, filmmaking, video production, screenplay, OpenAI, client-side, privacy" />
     <meta name="author" content="Storyboard AI" />
+    
+    <!-- Safari Compatibility -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="format-detection" content="telephone=no" />
     
     <!-- Security Headers -->
     <meta http-equiv="X-Content-Type-Options" content="nosniff" />
@@ -18,15 +23,15 @@
     <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
     <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=(), payment=()" />
     
-    <!-- Content Security Policy -->
+    <!-- Content Security Policy - Relaxed for Safari compatibility -->
     <meta http-equiv="Content-Security-Policy" content="
       default-src 'self';
-      script-src 'self' 'unsafe-inline';
+      script-src 'self' 'unsafe-inline' 'unsafe-eval';
       style-src 'self' 'unsafe-inline';
-      img-src 'self' data: blob:;
-      font-src 'self';
+      img-src 'self' data: blob: https:;
+      font-src 'self' data:;
       connect-src 'self' https://api.openai.com;
-      worker-src 'self';
+      worker-src 'self' blob:;
       object-src 'none';
       base-uri 'self';
       form-action 'self';
@@ -42,7 +47,7 @@
     <meta property="og:type" content="website" />
     <meta property="og:title" content="Storyboard AI - AI-Powered Film Storyboarding" />
     <meta property="og:description" content="Create professional film storyboards with AI assistance. Secure, client-side, privacy-focused." />
-    <meta property="og:url" content="https://YOUR_USERNAME.github.io/storyboard-ai" />
+    <meta property="og:url" content="https://dizzafizza.github.io/Storyboard-AI" />
     <meta property="og:site_name" content="Storyboard AI" />
     
     <!-- Twitter Card -->
@@ -57,9 +62,146 @@
     <!-- Theme -->
     <meta name="theme-color" content="#3B82F6" />
     <meta name="color-scheme" content="light dark" />
+    
+    <!-- Web App Manifest -->
+    <link rel="manifest" href="/site.webmanifest" />
+    
+    <!-- Enhanced Safari Compatibility Script -->
+    <script>
+      // Enhanced Safari compatibility checks and polyfills
+      (function() {
+        'use strict';
+        
+        // Global polyfills for Safari
+        if (typeof globalThis === 'undefined') {
+          window.globalThis = window;
+        }
+        
+        // Safari detection
+        const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        const isWebKit = /WebKit/.test(navigator.userAgent);
+        
+        // Log Safari compatibility information
+        console.log('🌍 Safari Compatibility Loaded');
+        console.log('🍎 Safari:', isSafari);
+        console.log('📱 iOS:', isIOS);
+        console.log('🔧 WebKit:', isWebKit);
+        console.log('📱 User Agent:', navigator.userAgent);
+        console.log('🎯 Build Target: ES2019');
+        
+        // Safari-specific polyfills
+        if (isSafari || isIOS) {
+          // ResizeObserver polyfill for Safari < 13.1
+          if (!window.ResizeObserver) {
+            console.log('🔧 Loading ResizeObserver polyfill');
+            // Simple ResizeObserver polyfill
+            window.ResizeObserver = function(callback) {
+              const entries = [];
+              const observer = {
+                observe: function(element) {
+                  entries.push({ target: element });
+                  callback(entries, observer);
+                },
+                unobserve: function() {},
+                disconnect: function() {}
+              };
+              return observer;
+            };
+          }
+          
+          // IntersectionObserver polyfill for Safari < 12.1
+          if (!window.IntersectionObserver) {
+            console.log('🔧 Loading IntersectionObserver polyfill');
+            window.IntersectionObserver = function(callback) {
+              return {
+                observe: function() {},
+                unobserve: function() {},
+                disconnect: function() {}
+              };
+            };
+          }
+          
+          // Enhanced touch event handling for iOS
+          document.addEventListener('touchstart', function() {}, { passive: true });
+        }
+        
+        // Performance monitoring
+        if (window.performance && window.performance.mark) {
+          window.performance.mark('safari-compatibility-loaded');
+        }
+        
+        // Viewport height fix for iOS Safari
+        function setViewportHeight() {
+          const vh = window.innerHeight * 0.01;
+          document.documentElement.style.setProperty('--vh', vh + 'px');
+        }
+        
+        if (isIOS) {
+          setViewportHeight();
+          window.addEventListener('resize', setViewportHeight);
+          window.addEventListener('orientationchange', function() {
+            setTimeout(setViewportHeight, 100);
+          });
+        }
+        
+        // Error handling for Safari
+        window.addEventListener('error', function(e) {
+          console.error('🚨 Safari Error:', e.error);
+        });
+        
+        window.addEventListener('unhandledrejection', function(e) {
+          console.error('🚨 Safari Unhandled Promise Rejection:', e.reason);
+        });
+        
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    
+    <!-- Service Worker Registration for Safari -->
+    <script>
+      if ('serviceWorker' in navigator && window.location.protocol === 'https:') {
+        window.addEventListener('load', function() {
+          navigator.serviceWorker.register('/sw.js').then(function(registration) {
+            console.log('🔧 ServiceWorker registered: ', registration.scope);
+          }).catch(function(error) {
+            console.log('🚨 ServiceWorker registration failed: ', error);
+          });
+        });
+      }
+    </script>
+    
+    <!-- Enhanced Safari Error Fallback -->
+    <noscript>
+      <div style="
+        padding: 20px;
+        margin: 20px;
+        text-align: center;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+        background: #f8f9fa;
+        border: 2px solid #dee2e6;
+        border-radius: 12px;
+        color: #495057;
+        line-height: 1.6;
+      ">
+        <h1 style="margin: 0 0 16px 0; color: #343a40; font-size: 24px;">📱 JavaScript Required</h1>
+        <p style="margin: 0 0 16px 0; font-size: 18px;">This application requires JavaScript to function properly.</p>
+        <p style="margin: 0 0 16px 0; font-size: 16px; color: #6c757d;">
+          Please enable JavaScript in your Safari browser settings and refresh the page.
+        </p>
+        <details style="margin-top: 20px; text-align: left;">
+          <summary style="cursor: pointer; font-weight: bold; margin-bottom: 10px;">How to enable JavaScript in Safari</summary>
+          <ol style="padding-left: 20px; line-height: 1.8;">
+            <li>Open Safari preferences (Safari → Preferences)</li>
+            <li>Click on the "Security" tab</li>
+            <li>Check the "Enable JavaScript" checkbox</li>
+            <li>Close preferences and refresh this page</li>
+          </ol>
+        </details>
+      </div>
+    </noscript>
   </body>
 </html> 

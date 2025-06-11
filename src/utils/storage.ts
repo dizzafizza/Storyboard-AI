@@ -78,64 +78,55 @@ export class StoryboardStorage {
 
   // Image storage methods
   private async saveImageToDB(imageId: string, imageData: string): Promise<void> {
+    const request = indexedDB.open('StoryboardAI', 1)
+    
+    request.onupgradeneeded = () => {
+      const db = request.result
+      if (!db.objectStoreNames.contains('images')) {
+        db.createObjectStore('images', { keyPath: 'id' })
+      }
+    }
+    
     return new Promise((resolve, reject) => {
-      if (!this.db) {
-        // Fallback to localStorage if IndexedDB isn't available
-        try {
-          localStorage.setItem(`storyboard_image_${imageId}`, imageData)
-          resolve()
-        } catch (error) {
-          console.warn('Failed to save image to localStorage, image too large')
-          resolve() // Don't fail the entire save operation
-        }
-        return
-      }
-
-      const transaction = this.db.transaction([IMAGES_STORE], 'readwrite')
-      const store = transaction.objectStore(IMAGES_STORE)
-      
-      const imageRecord: ImageData = {
-        id: imageId,
-        data: imageData,
-        createdAt: new Date()
+      request.onsuccess = () => {
+        const db = request.result
+        const transaction = db.transaction(['images'], 'readwrite')
+        const store = transaction.objectStore('images')
+        store.put({ id: imageId, data: imageData })
+        
+        transaction.oncomplete = () => resolve()
+        transaction.onerror = () => reject(transaction.error)
       }
       
-      const request = store.put(imageRecord)
-      
-      request.onsuccess = () => resolve()
-      request.onerror = () => {
-        console.warn('Failed to save image to IndexedDB:', request.error)
-        resolve() // Don't fail the entire save operation
-      }
+      request.onerror = () => reject(request.error)
     })
   }
 
-  private async getImageFromDB(imageId: string): Promise<string | null> {
-    return new Promise((resolve) => {
-      if (!this.db) {
-        // Fallback to localStorage
-        try {
-          const imageData = localStorage.getItem(`storyboard_image_${imageId}`)
-          resolve(imageData)
-        } catch (error) {
-          resolve(null)
-        }
-        return
-      }
-
-      const transaction = this.db.transaction([IMAGES_STORE], 'readonly')
-      const store = transaction.objectStore(IMAGES_STORE)
-      const request = store.get(imageId)
-      
+  // Public method to retrieve images for export
+  async getImageFromDB(imageId: string): Promise<string | null> {
+    const request = indexedDB.open('StoryboardAI', 1)
+    
+    return new Promise((resolve, reject) => {
       request.onsuccess = () => {
-        const result = request.result
-        resolve(result ? result.data : null)
+        const db = request.result
+        if (!db.objectStoreNames.contains('images')) {
+          resolve(null)
+          return
+        }
+        
+        const transaction = db.transaction(['images'], 'readonly')
+        const store = transaction.objectStore('images')
+        const getRequest = store.get(imageId)
+        
+        getRequest.onsuccess = () => {
+          const result = getRequest.result
+          resolve(result ? result.data : null)
+        }
+        
+        getRequest.onerror = () => resolve(null)
       }
       
-      request.onerror = () => {
-        console.warn('Failed to get image from IndexedDB:', request.error)
-        resolve(null)
-      }
+      request.onerror = () => resolve(null)
     })
   }
 
@@ -425,27 +416,145 @@ export class StoryboardStorage {
     }
   }
 
-  async importData(jsonData: string): Promise<void> {
+  async importData(jsonData: string): Promise<{ projects: number; settings: boolean; conversations: boolean }> {
     try {
       const data = JSON.parse(jsonData)
+      let importedProjects = 0
+      let importedSettings = false
+      let importedConversations = false
       
-      if (data.projects) {
-        // Import projects with image separation
+      // Validate data structure
+      if (!data || typeof data !== 'object') {
+        throw new Error('Invalid import data structure')
+      }
+      
+      // Import projects with validation
+      if (data.projects && Array.isArray(data.projects)) {
+        console.log(`📦 Importing ${data.projects.length} projects...`)
+        
         for (const project of data.projects) {
-          await this.saveProject(project)
+          try {
+            // Validate project structure
+            if (!project.id || !project.title || !Array.isArray(project.panels)) {
+              console.warn('⚠️ Skipping invalid project:', project.title || 'Unnamed')
+              continue
+            }
+            
+            // Ensure required fields and fix any issues
+            const validatedProject = {
+              ...project,
+              id: project.id || `imported-${Date.now()}-${Math.random()}`,
+              title: project.title || 'Imported Project',
+              description: project.description || '',
+              createdAt: project.createdAt ? new Date(project.createdAt) : new Date(),
+              updatedAt: project.updatedAt ? new Date(project.updatedAt) : new Date(),
+              panels: project.panels.map((panel: any, index: number) => ({
+                id: panel.id || `imported-panel-${Date.now()}-${index}`,
+                title: panel.title || `Panel ${index + 1}`,
+                description: panel.description || '',
+                imageUrl: panel.imageUrl,
+                videoUrl: panel.videoUrl,
+                videoPrompt: panel.videoPrompt || panel.aiGeneratedPrompt,
+                aiGeneratedPrompt: panel.aiGeneratedPrompt || panel.videoPrompt,
+                shotType: panel.shotType || 'medium-shot',
+                cameraAngle: panel.cameraAngle || 'eye-level',
+                notes: panel.notes || '',
+                duration: typeof panel.duration === 'number' ? panel.duration : 3,
+                order: index,
+                createdAt: panel.createdAt ? new Date(panel.createdAt) : new Date(),
+                updatedAt: panel.updatedAt ? new Date(panel.updatedAt) : new Date()
+              }))
+            }
+            
+            await this.saveProject(validatedProject)
+            importedProjects++
+            console.log(`✅ Imported project: ${validatedProject.title}`)
+            
+          } catch (projectError) {
+            console.error(`❌ Failed to import project ${project.title || 'Unknown'}:`, projectError)
+            // Continue with other projects
+          }
         }
       }
       
-      if (data.settings) {
-        localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(data.settings))
+      // Import single project (direct project format)
+      else if (data.project) {
+        console.log('📦 Importing single project...')
+        try {
+          const project = data.project
+          if (project.id && project.title && Array.isArray(project.panels)) {
+            await this.saveProject(project)
+            importedProjects = 1
+            console.log(`✅ Imported project: ${project.title}`)
+          } else {
+            throw new Error('Invalid project structure in import data')
+          }
+        } catch (projectError) {
+          console.error('❌ Failed to import project:', projectError)
+        }
       }
       
-      if (data.conversations) {
-        localStorage.setItem(STORAGE_KEYS.AI_CONVERSATIONS, JSON.stringify(data.conversations))
+      // Import direct project format
+      else if (data.id && data.title && Array.isArray(data.panels)) {
+        console.log('📦 Importing direct project format...')
+        try {
+          await this.saveProject(data)
+          importedProjects = 1
+          console.log(`✅ Imported project: ${data.title}`)
+        } catch (projectError) {
+          console.error('❌ Failed to import project:', projectError)
+        }
       }
+      
+      // Import settings
+      if (data.settings && typeof data.settings === 'object') {
+        try {
+          // Validate and clean settings
+          const validatedSettings = {
+            ...data.settings,
+            lastUsed: new Date()
+          }
+          
+          // Remove sensitive data if present
+          delete validatedSettings.openaiApiKey
+          
+          localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(validatedSettings))
+          importedSettings = true
+          console.log('✅ Imported settings')
+        } catch (settingsError) {
+          console.error('❌ Failed to import settings:', settingsError)
+        }
+      }
+      
+      // Import conversations
+      if (data.conversations && typeof data.conversations === 'object') {
+        try {
+          localStorage.setItem(STORAGE_KEYS.AI_CONVERSATIONS, JSON.stringify(data.conversations))
+          importedConversations = true
+          console.log('✅ Imported AI conversations')
+        } catch (conversationsError) {
+          console.error('❌ Failed to import conversations:', conversationsError)
+        }
+      }
+      
+      console.log(`📈 Import summary: ${importedProjects} projects, settings: ${importedSettings}, conversations: ${importedConversations}`)
+      
+      return {
+        projects: importedProjects,
+        settings: importedSettings,
+        conversations: importedConversations
+      }
+      
     } catch (error) {
       console.error('Failed to import data:', error)
-      throw new Error('Failed to import data - invalid format')
+      
+      if (error instanceof SyntaxError) {
+        throw new Error('Invalid JSON format - please check your import file')
+      } else if (error instanceof Error) {
+        throw new Error(`Import failed: ${error.message}`)
+      } else {
+        throw new Error('Failed to import data - unknown error')
+      }
     }
   }
 

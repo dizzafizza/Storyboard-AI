@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useTheme } from '../context/ThemeContext'
+import WindowFrame from './WindowFrame'
 import { 
   BookOpen, 
   X, 
@@ -9,7 +10,6 @@ import {
   Paintbrush,
   Film,
   Settings,
-
   Folder,
   Lightbulb
 } from 'lucide-react'
@@ -171,23 +171,26 @@ const UserGuide: React.FC<UserGuideProps> = ({ isOpen, onClose }) => {
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div 
-        className="w-full max-w-4xl max-h-[90vh] rounded-xl shadow-2xl overflow-hidden"
-        style={{
-          backgroundColor: state.theme.colors.background.primary,
-          borderColor: state.theme.colors.border.primary,
-        }}
-      >
-        {/* Header */}
-        <div 
-          className="flex items-center justify-between p-6 border-b"
-          style={{
-            backgroundColor: state.theme.colors.background.secondary,
-            borderColor: state.theme.colors.border.primary,
-          }}
-        >
-          <div className="flex items-center space-x-3">
+    <WindowFrame
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Storyboard AI User Guide"
+      subtitle="Learn how to create amazing storyboards"
+      icon={<BookOpen className="w-5 h-5" />}
+              defaultWidth="min(92vw, 900px)"
+      defaultHeight="min(85vh, 700px)"
+      maxWidth="98vw"
+      maxHeight="95vh"
+      resizable={true}
+      minimizable={true}
+      maximizable={true}
+      windowId="user-guide"
+      zIndex={9100}
+    >
+      {/* Guide Content */}
+      <div className="h-full overflow-y-auto">
+        <div className="p-6">
+          <div className="flex items-center space-x-3 mb-6">
             <BookOpen 
               className="h-6 w-6"
               style={{ color: state.theme.colors.primary[600] }}
@@ -196,29 +199,12 @@ const UserGuide: React.FC<UserGuideProps> = ({ isOpen, onClose }) => {
               className="text-xl font-semibold"
               style={{ color: state.theme.colors.text.primary }}
             >
-              Storyboard AI User Guide
+              Welcome to Storyboard AI
             </h2>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-lg transition-colors"
-            style={{
-              color: state.theme.colors.text.secondary,
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.backgroundColor = state.theme.colors.background.tertiary
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.backgroundColor = 'transparent'
-            }}
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
 
-        {/* Content */}
-        <div className="overflow-y-auto max-h-[calc(90vh-88px)] scrollable">
-          <div className="p-6 space-y-4">
+          {/* Content */}
+          <div className="space-y-4 p-6">
             {guideSection.map((section) => {
               const Icon = section.icon
               const isExpanded = expandedSections.has(section.id)
@@ -325,7 +311,7 @@ const UserGuide: React.FC<UserGuideProps> = ({ isOpen, onClose }) => {
           </div>
         </div>
       </div>
-    </div>
+    </WindowFrame>
   )
 }
 

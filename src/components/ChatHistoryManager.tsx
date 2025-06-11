@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
-import { X, MessageSquare, Trash2, Edit3, Search, Clock, User, AlertTriangle } from 'lucide-react'
+import { MessageSquare, Trash2, Edit3, Search, Clock, User, AlertTriangle, History } from 'lucide-react'
 import { SavedChat, AIAgent } from '../types'
 import { chatManager } from '../services/chatManager'
 import { getAgentById } from '../services/aiAgents'
+import WindowFrame from './WindowFrame'
 
 interface ChatHistoryManagerProps {
   isOpen: boolean
@@ -137,37 +138,25 @@ export default function ChatHistoryManager({
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-primary rounded-2xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col overflow-hidden">
-        
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-primary bg-gradient-to-r from-indigo-600 to-purple-600 text-white">
-          <div className="flex items-center space-x-4">
-                            <div 
-                  className="w-12 h-12 rounded-full flex items-center justify-center"
-                  style={{
-                    backgroundColor: 'rgba(255, 255, 255, 0.15)'
-                  }}
-                >
-              <MessageSquare className="w-6 h-6" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold">Chat History</h2>
-              <p className="text-indigo-100">
-                {stats.totalChats} conversations • {stats.totalMessages} messages
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-                          className="p-2 rounded-lg transition-colors hover:bg-opacity-20"
-              style={{
-                backgroundColor: 'rgba(255, 255, 255, 0.1)'
-              }}
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+    <WindowFrame
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Chat History"
+      subtitle={`${stats.totalChats} conversations • ${stats.totalMessages} messages`}
+      icon={<History className="w-5 h-5" />}
+              defaultWidth="min(88vw, 900px)"
+      defaultHeight="700px"
+      minWidth={600}
+      minHeight={500}
+      maxWidth="98vw"
+      maxHeight="95vh"
+      resizable={true}
+      minimizable={true}
+      maximizable={true}
+      windowId="chat-history-manager"
+      zIndex={9500}
+    >
+      <div className="h-full flex flex-col overflow-hidden">
 
         {/* Filters and Search */}
         <div className="p-6 border-b border-primary bg-secondary">
@@ -379,10 +368,27 @@ export default function ChatHistoryManager({
         </div>
       </div>
 
-      {/* Delete Confirmation Modal */}
+      {/* Delete Confirmation Window */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[8000]">
-          <div className="bg-primary rounded-xl shadow-2xl p-6 max-w-md mx-4">
+        <WindowFrame
+          isOpen={!!showDeleteConfirm}
+          onClose={() => setShowDeleteConfirm(null)}
+          title={showDeleteConfirm === 'all' ? 'Clear All Chats' : 'Delete Chat'}
+          subtitle="Confirmation Required"
+          icon={<AlertTriangle className="w-4 h-4" />}
+          defaultWidth="400px"
+          defaultHeight="200px"
+          minWidth={350}
+          minHeight={180}
+          maxWidth="500px"
+          maxHeight="250px"
+          resizable={false}
+          minimizable={false}
+          maximizable={false}
+          windowId="delete-confirmation"
+          zIndex={9400}
+        >
+          <div className="p-6">
             <div className="flex items-center space-x-3 mb-4">
               <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
                 <AlertTriangle className="w-5 h-5 text-red-600" />
@@ -422,8 +428,8 @@ export default function ChatHistoryManager({
               </button>
             </div>
           </div>
-        </div>
+        </WindowFrame>
       )}
-    </div>
+    </WindowFrame>
   )
 } 

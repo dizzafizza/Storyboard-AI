@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { X, CheckCircle, AlertCircle, AlertTriangle, Info } from 'lucide-react'
 import { useTheme } from '../context/ThemeContext'
+import { getThemeColors } from '../utils/themeColors'
 
 export interface ToastProps {
   id: string
@@ -20,14 +21,15 @@ const Toast: React.FC<ToastProps> = ({
   onClose
 }) => {
   const { state: themeState } = useTheme()
+  const themeColors = getThemeColors(themeState.theme)
   const [isExiting, setIsExiting] = useState(false)
   const [progress, setProgress] = useState(100)
 
   const icons = {
-    success: <CheckCircle className="w-5 h-5 text-green-500" />,
-    error: <AlertCircle className="w-5 h-5 text-red-500" />,
-    warning: <AlertTriangle className="w-5 h-5 text-yellow-500" />,
-    info: <Info className="w-5 h-5" style={{ color: themeState.theme.colors.primary[500] }} />
+    success: <CheckCircle className="w-5 h-5" style={{ color: themeColors.status.success.background }} />,
+    error: <AlertCircle className="w-5 h-5" style={{ color: themeColors.status.error.background }} />,
+    warning: <AlertTriangle className="w-5 h-5" style={{ color: themeColors.status.warning.background }} />,
+    info: <Info className="w-5 h-5" style={{ color: themeColors.status.info.background }} />
   }
 
   useEffect(() => {
@@ -53,6 +55,16 @@ const Toast: React.FC<ToastProps> = ({
     setTimeout(() => {
       onClose(id)
     }, 300)
+  }
+
+  const getProgressBarColor = () => {
+    switch (type) {
+      case 'success': return themeColors.status.success.background
+      case 'error': return themeColors.status.error.background
+      case 'warning': return themeColors.status.warning.background
+      case 'info': return themeColors.status.info.background
+      default: return themeColors.status.info.background
+    }
   }
 
   return (
@@ -96,10 +108,7 @@ const Toast: React.FC<ToastProps> = ({
             style={{ 
               width: `${progress}%`,
               animationDuration: `${duration}ms`,
-              background: type === 'success' ? '#10b981' : 
-                         type === 'error' ? '#ef4444' :
-                         type === 'warning' ? '#f59e0b' :
-                         themeState.theme.colors.primary[500]
+              background: getProgressBarColor()
             }}
           />
         </div>

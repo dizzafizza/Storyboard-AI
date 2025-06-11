@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from 'react'
-import { Edit3, Trash2, Camera, Loader, Download, Upload, RotateCcw, Heart, ArrowUp, ArrowDown, Zap, Sparkles, Star, Award, Timer } from 'lucide-react'
+import { Edit3, Trash2, Camera, Loader, Download, Upload, RotateCcw, Heart, ArrowUp, ArrowDown, Zap, Sparkles, Star, Award, Timer, ChevronDown, ChevronUp } from 'lucide-react'
 import type { StoryboardPanel as StoryboardPanelType } from '../types'
 import { useStoryboard } from '../context/StoryboardContext'
 import { useTheme } from '../context/ThemeContext'
+import { getThemeColors } from '../utils/themeColors'
 import { aiService } from '../services/ai'
 
 interface StoryboardPanelProps {
@@ -15,6 +16,13 @@ interface StoryboardPanelProps {
   onMoveDown?: () => void
   canMoveUp?: boolean
   canMoveDown?: boolean
+
+  onDragStart?: (e: React.DragEvent, panelId: string) => void
+  onDragEnd?: () => void
+  onTouchStart?: (e: React.TouchEvent, panelId: string) => void
+  onTouchMove?: (e: React.TouchEvent) => void
+  onTouchEnd?: () => void
+  isMobile?: boolean
 }
 
 export default function StoryboardPanel({ 
@@ -26,10 +34,20 @@ export default function StoryboardPanel({
   onMoveUp, 
   onMoveDown, 
   canMoveUp, 
-  canMoveDown 
+  canMoveDown,
+
+  onDragStart,
+  onDragEnd,
+  onTouchStart,
+  onTouchMove,
+  onTouchEnd,
+  isMobile = false
 }: StoryboardPanelProps) {
+  
+
   const { dispatch } = useStoryboard()
   const { state: themeState } = useTheme()
+  const themeColors = getThemeColors(themeState.theme)
   const [isEditing, setIsEditing] = useState(false)
   const [editedTitle, setEditedTitle] = useState(panel.title)
   const [editedDescription, setEditedDescription] = useState(panel.description)
@@ -39,7 +57,10 @@ export default function StoryboardPanel({
   const [imageLoaded, setImageLoaded] = useState(false)
   const [downloadStatus, setDownloadStatus] = useState<string | null>(null)
   const [isLiked, setIsLiked] = useState(false)
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false)
+  const [isContentOverflowing, setIsContentOverflowing] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const descriptionRef = useRef<HTMLParagraphElement>(null)
 
   const isActive = isSelected || isHovered
 
@@ -52,8 +73,26 @@ export default function StoryboardPanel({
     }
   }, [panel.imageUrl])
 
+  // Check if description content overflows
+  useEffect(() => {
+    const checkOverflow = () => {
+      if (descriptionRef.current) {
+        const element = descriptionRef.current
+        const lineHeight = parseInt(window.getComputedStyle(element).lineHeight)
+        const maxLines = isMobile ? 3 : 4
+        const maxHeight = lineHeight * maxLines
+        setIsContentOverflowing(element.scrollHeight > maxHeight)
+      }
+    }
+
+    checkOverflow()
+    window.addEventListener('resize', checkOverflow)
+    return () => window.removeEventListener('resize', checkOverflow)
+  }, [panel.description, isMobile])
+
   const handleEdit = (e: React.MouseEvent) => {
     e.stopPropagation()
+    e.preventDefault()
     if (onEdit) {
       onEdit()
     } else {
@@ -63,6 +102,7 @@ export default function StoryboardPanel({
 
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation()
+    e.preventDefault()
     if (onDelete) {
       onDelete()
     }
@@ -88,7 +128,11 @@ export default function StoryboardPanel({
     setIsEditing(false)
   }
 
-  const handleGenerateImage = async () => {
+  const handleGenerateImage = async (e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation()
+      e.preventDefault()
+    }
     if (isGeneratingImage) return
     
     setIsGeneratingImage(true)
@@ -153,54 +197,85 @@ export default function StoryboardPanel({
     }
   }
 
+  const handlePanelClick = (e: React.MouseEvent) => {
+    onSelect()
+  }
+
+  const handleContainerClick = (e: React.MouseEvent) => {
+    // For normal clicks, only handle if not coming from interactive elements
+    const target = e.target as HTMLElement
+    if (!target.closest('button') && !target.closest('input') && !target.closest('textarea')) {
+      onSelect()
+    }
+  }
+
   return (
     <div
-      className={`group relative rounded-3xl transition-all duration-300 cursor-pointer overflow-hidden transform-gpu ${
+      className={`storyboard-panel group relative rounded-2xl transition-all duration-200 cursor-pointer overflow-hidden ${
         isSelected
-          ? 'ring-4 shadow-2xl scale-105 z-20'
+          ? 'selected ring-2 shadow-lg'
           : isHovered
-          ? 'ring-2 shadow-xl scale-105 z-10'
-          : 'shadow-lg hover:shadow-xl border'
-      } animate-fade-in`}
+          ? 'hovered ring-1 shadow-md'
+          : 'shadow-sm hover:shadow-md border'
+      }`}
       style={{
         backgroundColor: themeState.theme.colors.background.primary,
         borderColor: themeState.theme.colors.border.primary,
         ...(isSelected && { 
           ringColor: themeState.theme.colors.primary[500],
-          background: `linear-gradient(135deg, ${themeState.theme.colors.primary[50]}, ${themeState.theme.colors.background.primary}, ${themeState.theme.colors.primary[100]})`
+          borderColor: themeState.theme.colors.primary[300]
         }),
         ...(isHovered && !isSelected && { 
-          ringColor: themeState.theme.colors.primary[300],
-          background: `linear-gradient(135deg, ${themeState.theme.colors.secondary[50]}, ${themeState.theme.colors.background.primary}, ${themeState.theme.colors.primary[50]})`
+          ringColor: themeState.theme.colors.primary[200],
+          borderColor: themeState.theme.colors.primary[200]
         })
       }}
-      onClick={onSelect}
+      onClick={handleContainerClick}
       onMouseEnter={() => {
-        setIsHovered(true)
-        setShowActions(true)
+        if (!isMobile) {
+          setIsHovered(true)
+          setShowActions(true)
+        }
       }}
       onMouseLeave={() => {
-        setIsHovered(false)
-        setShowActions(false)
+        if (!isMobile) {
+          setIsHovered(false)
+          setShowActions(false)
+        }
       }}
+      draggable={!isMobile}
+      onDragStart={(e) => onDragStart?.(e, panel.id)}
+      onDragEnd={onDragEnd}
+      onTouchStart={(e) => onTouchStart?.(e, panel.id)}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
     >
-      {/* Enhanced Selection & Priority Indicators */}
-      <div className="absolute top-3 left-3 z-30 flex items-center space-x-2">
-        {isSelected && (
-          <div className="flex items-center space-x-2 px-3 py-1 rounded-full shadow-lg transition-all duration-300"
-            style={{
+      {/* Selection Checkbox - Only shown in selection mode */}
+      {/* This would need to be passed as a prop from StoryboardGrid */}
+      
+
+
+      {/* Selection Indicator - Shows when panel is selected */}
+      {isSelected && (
+        <div className="absolute top-1 right-1 z-40">
+          <div 
+            className="w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs shadow-lg"
+            style={{ 
               backgroundColor: themeState.theme.colors.primary[500],
-              color: 'white'
+              color: '#ffffff'
             }}
           >
-            <Star className="w-4 h-4 fill-current" />
-            <span className="text-xs font-bold">SELECTED</span>
+            ✓
           </div>
-        )}
+        </div>
+      )}
+
+      {/* Panel Number - Positioned in top-left corner */}
+      <div className="absolute top-3 left-3 z-30">
         <div 
           className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 ${
             isSelected 
-              ? 'shadow-lg ring-4' 
+              ? 'shadow-lg ring-2' 
               : 'shadow-md border-2'
           }`}
           style={{
@@ -213,24 +288,35 @@ export default function StoryboardPanel({
         </div>
       </div>
 
-      {/* Modern Action Buttons */}
-      <div className={`absolute top-3 right-3 z-30 flex flex-col space-y-2 transition-all duration-200 ${
+      {/* Modern Action Buttons - Fixed positioning to avoid being hidden */}
+      <div className={`absolute top-2 right-2 z-50 transition-all duration-200 ${
         showActions || isSelected ? 'opacity-100 transform translate-x-0 scale-100' : 'opacity-0 transform translate-x-6 scale-75'
       }`}>
         
         {/* Primary Action Row */}
-        <div className="flex space-x-2">
+        <div className="flex flex-wrap gap-1 mb-2 justify-end">
           {/* Move Up Button */}
           {canMoveUp && (
             <button
               onClick={(e) => {
                 e.stopPropagation()
+                e.preventDefault()
                 onMoveUp?.()
               }}
-              className="w-9 h-9 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-xl flex items-center justify-center transition-all duration-300 transform hover:scale-110 hover:-rotate-12 shadow-lg hover:shadow-xl"
+              className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition-all duration-150 hover:scale-105 shadow-sm hover:shadow-md touch-manipulation"
+              style={{
+                backgroundColor: themeColors.interactive.primary.background,
+                color: themeColors.interactive.primary.text
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = themeColors.interactive.primary.hover
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = themeColors.interactive.primary.background
+              }}
               title="Move Up"
             >
-              <ArrowUp className="w-5 h-5" />
+              <ArrowUp className="w-3 h-3 sm:w-4 sm:h-4" />
             </button>
           )}
 
@@ -239,120 +325,135 @@ export default function StoryboardPanel({
             <button
               onClick={(e) => {
                 e.stopPropagation()
+                e.preventDefault()
                 onMoveDown?.()
               }}
-              className="w-9 h-9 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-xl flex items-center justify-center transition-all duration-300 transform hover:scale-110 hover:rotate-12 shadow-lg hover:shadow-xl"
+              className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition-all duration-150 hover:scale-105 shadow-sm hover:shadow-md touch-manipulation"
+              style={{
+                backgroundColor: themeColors.interactive.primary.background,
+                color: themeColors.interactive.primary.text
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = themeColors.interactive.primary.hover
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = themeColors.interactive.primary.background
+              }}
               title="Move Down"
             >
-              <ArrowDown className="w-5 h-5" />
+              <ArrowDown className="w-3 h-3 sm:w-4 sm:h-4" />
             </button>
           )}
 
           {/* Edit Button */}
           <button
             onClick={handleEdit}
-            className="w-9 h-9 bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white rounded-xl flex items-center justify-center transition-all duration-300 transform hover:scale-110 hover:rotate-12 shadow-lg hover:shadow-xl"
+            className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition-all duration-150 hover:scale-105 shadow-sm hover:shadow-md touch-manipulation"
+            style={{
+              backgroundColor: themeColors.status.success.background,
+              color: themeColors.status.success.text
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = themeColors.status.success.hover
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = themeColors.status.success.background
+            }}
             title="Edit Panel"
           >
-            <Edit3 className="w-5 h-5" />
+            <Edit3 className="w-3 h-3 sm:w-4 sm:h-4" />
           </button>
 
           {/* Delete Button */}
           <button
             onClick={handleDelete}
-            className="w-9 h-9 bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white rounded-xl flex items-center justify-center transition-all duration-300 transform hover:scale-110 hover:rotate-12 shadow-lg hover:shadow-xl"
+            className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition-all duration-150 hover:scale-105 shadow-sm hover:shadow-md touch-manipulation"
+            style={{
+              backgroundColor: themeColors.status.error.background,
+              color: themeColors.status.error.text
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = themeColors.status.error.hover
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = themeColors.status.error.background
+            }}
             title="Delete Panel"
           >
-            <Trash2 className="w-5 h-5" />
+            <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
           </button>
         </div>
 
-        {/* Like Button */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation()
-            setIsLiked(!isLiked)
-          }}
-          className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 transform hover:scale-110 shadow-lg ${
-            isLiked 
-              ? 'bg-gradient-to-r from-red-500 to-pink-500 text-white' 
-              : 'text-gray-600 hover:text-red-500'
-          }`}
-          style={{
-            backgroundColor: isLiked ? undefined : `${themeState.theme.colors.background.primary}90`,
-          }}
-          title="Like Panel"
-        >
-          <Heart className={`w-5 h-5 ${isLiked ? 'fill-current' : ''}`} />
-        </button>
+        {/* Secondary Action Row - Simplified */}
+        <div className="flex flex-wrap gap-1 justify-end">
+          {/* Generate Image Button */}
+          <button
+            onClick={handleGenerateImage}
+            disabled={isGeneratingImage}
+            className={`w-7 h-7 sm:w-8 sm:h-8 bg-purple-500 hover:bg-purple-600 text-white rounded-lg flex items-center justify-center transition-all duration-150 hover:scale-105 shadow-sm hover:shadow-md touch-manipulation ${
+              isGeneratingImage ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
+            title="Generate Image"
+          >
+            {isGeneratingImage ? (
+              <Loader className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
+            ) : (
+              <Zap className="w-3 h-3 sm:w-4 sm:h-4" />
+            )}
+          </button>
+        </div>
       </div>
 
-      {/* Enhanced Header with Glass Effect */}
+      {/* Header - Fixed text alignment and visibility */}
       {!isEditing ? (
-        <div className={`p-5 border-b transition-all duration-500 glass-effect animate-slide-in`}
+        <div className="p-4 border-b relative z-10"
           style={{
-            background: isActive 
-              ? isSelected 
-                ? `linear-gradient(135deg, ${themeState.theme.colors.primary[500]}90, ${themeState.theme.colors.primary[600]}90)`
-                : `linear-gradient(135deg, ${themeState.theme.colors.secondary[500]}80, ${themeState.theme.colors.primary[500]}80)`
-              : `${themeState.theme.colors.background.secondary}95`,
-            borderColor: themeState.theme.colors.border.primary,
-            backdropFilter: 'blur(12px)',
-            WebkitBackdropFilter: 'blur(12px)'
+            backgroundColor: isSelected 
+              ? `${themeState.theme.colors.primary[50]}90`
+              : themeState.theme.colors.background.secondary,
+            borderColor: themeState.theme.colors.border.primary
           }}
         >
-          <div className="flex items-center justify-between">
-            <div className="flex-1">
-              <h3 className={`font-bold transition-all duration-500 leading-tight text-high-contrast animate-fade-in ${
-                isActive ? 'text-white text-xl drop-shadow-lg transform scale-105' : 'text-lg'
-              }`}
+          <div className="flex items-start justify-between">
+            <div className="flex-1 min-w-0 pl-12 pr-3">
+              <h3 className="text-lg font-semibold leading-tight truncate mb-2"
                 style={{ 
-                  color: isActive ? 'white' : themeState.theme.colors.text.primary,
-                  textShadow: isActive ? '0 2px 4px rgba(0,0,0,0.3)' : 'none'
+                  color: themeState.theme.colors.text.primary,
+                  textShadow: isActive ? '0 1px 2px rgba(0,0,0,0.1)' : 'none'
                 }}
               >
                 {panel.title}
               </h3>
-              <div className="flex items-center flex-wrap gap-2 mt-3">
-                <span className={`px-3 py-1 rounded-full text-xs font-bold transition-all duration-500 animate-bounce-in animate-delay-100 glass-subtle`}
+              <div className="flex items-center flex-wrap gap-2">
+                <span 
+                  className="px-2 py-1 rounded-full text-xs font-medium border"
                   style={{
-                    backgroundColor: isActive 
-                      ? 'rgba(255, 255, 255, 0.25)' 
-                      : `${themeState.theme.colors.primary[100]}90`,
-                    color: isActive 
-                      ? 'white' 
-                      : themeState.theme.colors.primary[700],
-                    backdropFilter: 'blur(8px)',
-                    boxShadow: isActive ? '0 4px 8px rgba(0,0,0,0.2)' : '0 2px 4px rgba(0,0,0,0.1)'
+                    backgroundColor: themeColors.status.info.light,
+                    color: themeColors.status.info.background,
+                    borderColor: themeColors.status.info.border
                   }}
                 >
-                  📽️ {panel.shotType}
+                  📽️ {panel.shotType.replace('-', ' ')}
                 </span>
-                <span className={`px-3 py-1 rounded-full text-xs font-bold transition-all duration-500 animate-bounce-in animate-delay-200 glass-subtle`}
+                <span 
+                  className="px-2 py-1 rounded-full text-xs font-medium border"
                   style={{
-                    backgroundColor: isActive 
-                      ? 'rgba(255, 255, 255, 0.25)' 
-                      : `${themeState.theme.colors.secondary[100]}90`,
-                    color: isActive 
-                      ? 'white' 
-                      : themeState.theme.colors.secondary[700],
-                    backdropFilter: 'blur(8px)',
-                    boxShadow: isActive ? '0 4px 8px rgba(0,0,0,0.2)' : '0 2px 4px rgba(0,0,0,0.1)'
+                    backgroundColor: themeColors.status.success.light,
+                    color: themeColors.status.success.background,
+                    borderColor: themeColors.status.success.border
                   }}
                 >
-                  📐 {panel.cameraAngle}
+                  📐 {panel.cameraAngle.replace('-', ' ')}
                 </span>
-                <div className={`flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-bold transition-all duration-300`}
+                <div 
+                  className="flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium border"
                   style={{
-                    backgroundColor: isActive 
-                      ? 'rgba(255, 255, 255, 0.2)' 
-                      : themeState.theme.colors.secondary[100],
-                    color: isActive 
-                      ? 'white' 
-                      : themeState.theme.colors.secondary[700]
+                    backgroundColor: themeColors.project.purple.light,
+                    color: themeColors.project.purple.background,
+                    borderColor: themeColors.project.purple.background + '40'
                   }}
                 >
-                  <Timer className="w-4 h-4" />
+                  <Timer className="w-3 h-3" />
                   <span>{panel.duration}s</span>
                 </div>
               </div>
@@ -367,18 +468,20 @@ export default function StoryboardPanel({
             borderColor: themeState.theme.colors.primary[200]
           }}
         >
-          <input
-            type="text"
-            value={editedTitle}
-            onChange={(e) => setEditedTitle(e.target.value)}
-            className="w-full px-4 py-3 border-2 rounded-xl font-bold text-lg focus:ring-4 transition-all duration-300 shadow-sm"
-            style={{
-              backgroundColor: themeState.theme.colors.background.primary,
-              borderColor: themeState.theme.colors.primary[300],
-              color: themeState.theme.colors.text.primary
-            }}
-            placeholder="Panel title..."
-          />
+          <div className="pl-12 pr-3">
+            <input
+              type="text"
+              value={editedTitle}
+              onChange={(e) => setEditedTitle(e.target.value)}
+              className="w-full px-4 py-3 border-2 rounded-xl font-bold text-lg focus:ring-4 transition-all duration-300 shadow-sm"
+              style={{
+                backgroundColor: themeState.theme.colors.background.primary,
+                borderColor: themeState.theme.colors.primary[300],
+                color: themeState.theme.colors.text.primary
+              }}
+              placeholder="Panel title..."
+            />
+          </div>
         </div>
       )}
 
@@ -432,20 +535,14 @@ export default function StoryboardPanel({
               </div>
             )}
 
-            {/* Enhanced Image Stats Overlay */}
-            <div className={`absolute bottom-3 left-3 right-3 glass-effect rounded-xl p-3 transition-all duration-500 ${
+            {/* Image Status Indicator - Simplified */}
+            <div className={`absolute bottom-3 left-3 right-3 glass-effect rounded-xl p-2 transition-all duration-500 ${
               isActive ? 'opacity-100 transform translate-y-0' : 'opacity-0 transform translate-y-4'
             }`}>
               <div className="flex items-center justify-between text-white text-sm">
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-1">
-                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                    <span className="font-medium">Image Ready</span>
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    <Award className="w-4 h-4" />
-                    <span>{Math.round(Math.random() * 100)}% Quality</span>
-                  </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                  <span className="font-medium text-xs">Ready</span>
                 </div>
                 <div className="text-xs opacity-75">
                   {new Date().toLocaleDateString()}
@@ -453,34 +550,18 @@ export default function StoryboardPanel({
               </div>
             </div>
 
-            {/* Modern Image Overlay Actions */}
+            {/* Simplified Image Overlay Actions */}
             <div className={`absolute inset-0 bg-gradient-to-br from-black/30 via-transparent to-black/30 transition-all duration-500 flex items-center justify-center ${
-              showActions ? 'opacity-100 backdrop-blur-sm' : 'opacity-0'
+              showActions ? 'opacity-100' : 'opacity-0'
             }`}>
               <div className="flex space-x-4 animate-bounce-in">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleDownloadImage()
-                  }}
-                  className="w-14 h-14 glass-effect rounded-2xl flex items-center justify-center transition-all duration-300 transform hover:scale-110 shadow-xl hover:shadow-2xl animate-fade-in animate-delay-100"
-                  style={{
-                    backgroundColor: `${themeState.theme.colors.background.primary}90`,
-                    color: themeState.theme.colors.text.primary,
-                    backdropFilter: 'blur(12px)'
-                  }}
-                  title="Download Image"
-                >
-                  <Download className="w-6 h-6" />
-                </button>
-                
                 <button
                   onClick={(e) => {
                     e.stopPropagation()
                     handleRegenerateImage()
                   }}
                   disabled={isGeneratingImage}
-                  className="w-14 h-14 bg-gradient-to-r from-purple-500/90 to-pink-500/90 hover:from-purple-600/90 hover:to-pink-600/90 backdrop-blur-sm text-white rounded-2xl flex items-center justify-center transition-all duration-300 transform hover:scale-110 disabled:opacity-50 shadow-xl hover:shadow-2xl animate-fade-in animate-delay-200"
+                  className="w-14 h-14 bg-gradient-to-r from-purple-500/90 to-pink-500/90 hover:from-purple-600/90 hover:to-pink-600/90 text-white rounded-2xl flex items-center justify-center transition-all duration-300 transform hover:scale-110 disabled:opacity-50 shadow-xl hover:shadow-2xl animate-fade-in animate-delay-200"
                   title="Regenerate Image"
                 >
                   {isGeneratingImage ? (
@@ -488,17 +569,6 @@ export default function StoryboardPanel({
                   ) : (
                     <RotateCcw className="w-6 h-6" />
                   )}
-                </button>
-
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    fileInputRef.current?.click()
-                  }}
-                  className="w-14 h-14 bg-gradient-to-r from-emerald-500/90 to-green-500/90 hover:from-emerald-600/90 hover:to-green-600/90 backdrop-blur-sm text-white rounded-2xl flex items-center justify-center transition-all duration-300 transform hover:scale-110 shadow-xl hover:shadow-2xl animate-fade-in animate-delay-300"
-                  title="Upload Custom Image"
-                >
-                  <Upload className="w-6 h-6" />
                 </button>
               </div>
             </div>
@@ -536,7 +606,7 @@ export default function StoryboardPanel({
                       style={{ backgroundColor: themeState.theme.colors.background.tertiary }}
                     >
                       <div 
-                        className="h-full rounded-full animate-glow"
+                        className="h-full rounded-full"
                         style={{
                           background: `linear-gradient(90deg, ${themeState.theme.colors.primary[500]}, ${themeState.theme.colors.secondary[500]})`
                         }}
@@ -573,9 +643,23 @@ export default function StoryboardPanel({
             <button
               onClick={handleGenerateImage}
               disabled={isGeneratingImage}
-              className={`bg-gradient-to-r from-purple-500 via-pink-500 to-purple-600 hover:from-purple-600 hover:via-pink-600 hover:to-purple-700 text-white font-bold py-3 px-6 rounded-xl flex items-center space-x-3 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl ${
+              className={`font-bold py-3 px-6 rounded-xl flex items-center space-x-3 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl ${
                 isGeneratingImage ? 'opacity-50 cursor-not-allowed' : ''
               }`}
+              style={{
+                background: `linear-gradient(135deg, ${themeState.theme.colors.primary[500]}, ${themeState.theme.colors.primary[600]})`,
+                color: '#ffffff'
+              }}
+              onMouseEnter={(e) => {
+                if (!isGeneratingImage) {
+                  e.currentTarget.style.background = `linear-gradient(135deg, ${themeState.theme.colors.primary[600]}, ${themeState.theme.colors.primary[700]})`
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isGeneratingImage) {
+                  e.currentTarget.style.background = `linear-gradient(135deg, ${themeState.theme.colors.primary[500]}, ${themeState.theme.colors.primary[600]})`
+                }
+              }}
             >
               {isGeneratingImage ? (
                 <>
@@ -593,58 +677,79 @@ export default function StoryboardPanel({
         )}
       </div>
 
-      {/* Enhanced Description Section with Better Contrast */}
+      {/* Enhanced Description Section with Better Contrast and Overflow Handling */}
       <div 
-        className="p-5"
+        className="p-3 sm:p-4 lg:p-5"
         style={{
           backgroundColor: themeState.theme.colors.background.primary
         }}
       >
         {!isEditing ? (
           <div className="space-y-3">
-            <p 
-              className={`leading-relaxed text-base transition-all duration-300 ${
-                isActive ? 'text-high-contrast' : 'text-secondary-theme'
-              }`}
-            >
-              {panel.description}
-            </p>
-            
-            {/* Quality Rating */}
-            <div 
-              className="flex items-center justify-between pt-3 border-t"
-              style={{ borderColor: themeState.theme.colors.border.primary }}
-            >
-              <div className="flex items-center space-x-2">
-                <span 
-                  className="text-sm"
-                  style={{ color: themeState.theme.colors.text.tertiary }}
-                >Quality:</span>
-                <div className="flex items-center space-x-1">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Star
-                      key={star}
-                      className={`w-4 h-4 ${
-                        star <= 4
-                          ? 'text-yellow-400 fill-current'
-                          : ''
-                      }`}
-                      style={{ 
-                        color: star <= 4 ? '#fbbf24' : themeState.theme.colors.text.tertiary
-                      }}
-                    />
-                  ))}
+            <div className="relative">
+              <p 
+                ref={descriptionRef}
+                className={`leading-relaxed text-sm sm:text-base transition-all duration-300 ${
+                  isActive ? 'text-high-contrast' : 'text-secondary-theme'
+                } ${
+                  !isDescriptionExpanded && isContentOverflowing 
+                    ? 'line-clamp-3 sm:line-clamp-4 overflow-hidden' 
+                    : ''
+                }`}
+                style={{
+                  color: themeState.theme.colors.text.primary,
+                  lineHeight: isMobile ? '1.4' : '1.5'
+                }}
+              >
+                {panel.description}
+              </p>
+              
+              {/* Expand/Collapse Button */}
+              {isContentOverflowing && (
+                <button
+                  onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+                  className={`mt-2 flex items-center gap-1 text-xs font-medium transition-all duration-200 hover:scale-105 touch-manipulation ${
+                    isMobile ? 'px-3 py-2' : 'px-2 py-1'
+                  } rounded-full`}
+                  style={{
+                    backgroundColor: `${themeState.theme.colors.primary[500]}20`,
+                    color: themeState.theme.colors.primary[600],
+                    border: `1px solid ${themeState.theme.colors.primary[200]}`
+                  }}
+                >
+                  {isDescriptionExpanded ? (
+                    <>
+                      <ChevronUp className="w-3 h-3" />
+                      Show Less
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown className="w-3 h-3" />
+                      Show More
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+
+            {/* Panel Metadata - Improved Responsive Layout */}
+            {panel.notes && (
+              <div 
+                className={`mt-3 p-2 sm:p-3 rounded-lg border ${
+                  isMobile ? 'text-xs' : 'text-sm'
+                }`}
+                style={{
+                  backgroundColor: `${themeState.theme.colors.secondary[50]}50`,
+                  borderColor: themeState.theme.colors.border.secondary,
+                  color: themeState.theme.colors.text.secondary
+                }}
+              >
+                <div className="flex items-start gap-2">
+                  <span className="text-xs opacity-75">📝</span>
+                  <span className="flex-1 leading-relaxed">{panel.notes}</span>
                 </div>
               </div>
-              
-              <div 
-                className="flex items-center space-x-2 text-sm"
-                style={{ color: themeState.theme.colors.text.tertiary }}
-              >
-                <Award className="w-4 h-4" />
-                <span>Premium</span>
-              </div>
-            </div>
+            )}
           </div>
         ) : (
           <div className="space-y-4">
@@ -663,7 +768,17 @@ export default function StoryboardPanel({
             <div className="flex space-x-3">
               <button
                 onClick={handleSave}
-                className="flex-1 bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white font-bold py-3 px-4 rounded-xl transform hover:scale-105 transition-all duration-300 shadow-lg"
+                className="flex-1 font-bold py-3 px-4 rounded-xl transform hover:scale-105 transition-all duration-300 shadow-lg"
+                style={{
+                  background: `linear-gradient(135deg, ${themeState.theme.colors.primary[500]}, ${themeState.theme.colors.primary[600]})`,
+                  color: '#ffffff'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = `linear-gradient(135deg, ${themeState.theme.colors.primary[600]}, ${themeState.theme.colors.primary[700]})`
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = `linear-gradient(135deg, ${themeState.theme.colors.primary[500]}, ${themeState.theme.colors.primary[600]})`
+                }}
               >
                 ✅ Save Changes
               </button>
@@ -728,19 +843,10 @@ export default function StoryboardPanel({
         </div>
       )}
 
-      {/* Hidden File Input */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        onChange={handleUploadImage}
-        className="hidden"
-      />
-
       {/* Modern Glow Effects - FIXED: No more blinking */}
       {isSelected && (
         <div 
-          className="absolute -inset-1 rounded-3xl opacity-20 animate-glow pointer-events-none blur-sm"
+          className="absolute -inset-1 rounded-3xl opacity-20 pointer-events-none blur-sm"
           style={{
             background: `linear-gradient(135deg, ${themeState.theme.colors.primary[500]}, ${themeState.theme.colors.secondary[500]}, ${themeState.theme.colors.primary[500]})`
           }}
@@ -749,7 +855,7 @@ export default function StoryboardPanel({
       
       {isHovered && !isSelected && (
         <div 
-          className="absolute -inset-0.5 rounded-3xl opacity-10 animate-glow pointer-events-none blur-sm"
+          className="absolute -inset-0.5 rounded-3xl opacity-10 pointer-events-none blur-sm"
           style={{
             background: `linear-gradient(135deg, ${themeState.theme.colors.primary[400]}, ${themeState.theme.colors.secondary[400]}, ${themeState.theme.colors.primary[400]})`
           }}

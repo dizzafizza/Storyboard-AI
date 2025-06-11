@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { X, Save, RotateCcw } from 'lucide-react'
+import { Save, RotateCcw, Settings } from 'lucide-react'
+import WindowFrame from './WindowFrame'
 
 interface AIImageSettingsProps {
   isOpen: boolean
@@ -57,18 +58,24 @@ export default function AIImageSettings({ isOpen, onClose, onSave, currentSettin
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-primary rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto scrollable m-4">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-primary">
-          <h2 className="text-xl font-semibold text-primary">AI Image Generation Settings</h2>
-          <button
-            onClick={onClose}
-            className="text-secondary hover:text-primary transition-colors p-1"
-          >
-            <X className="w-6 h-6" />
-          </button>
-        </div>
+    <WindowFrame
+      isOpen={isOpen}
+      onClose={onClose}
+      title="AI Image Generation Settings"
+      subtitle="Customize AI image creation parameters"
+      icon={<Settings className="w-5 h-5" />}
+      defaultWidth="600px"
+      defaultHeight="700px"
+      minWidth={500}
+      minHeight={600}
+      maxWidth="800px"
+      maxHeight="900px"
+      resizable={true}
+      minimizable={true}
+      maximizable={true}
+      windowId="ai-image-settings"
+      zIndex={9500}
+    >
 
         {/* Settings Content */}
         <div className="p-6 space-y-6">
@@ -259,7 +266,6 @@ export default function AIImageSettings({ isOpen, onClose, onSave, currentSettin
             </button>
           </div>
         </div>
-      </div>
-    </div>
+    </WindowFrame>
   )
 } 

@@ -1,0 +1,97 @@
+---
+description: AI integration patterns for OpenAI services and prompt management in Storyboard AI
+globs: 
+alwaysApply: false
+---
+---
+description: AI integration patterns for OpenAI services and prompt management in Storyboard AI
+globs: ["src/services/ai*.ts", "src/components/AI*.tsx", "src/components/*Prompt*.tsx"]
+alwaysApply: false
+---
+
+# AI Integration Patterns for Storyboard AI
+
+## OpenAI Service Integration
+
+### API Client Patterns
+- Follow established patterns in @src/services/ai.ts (43KB)
+- Use environment variables for API key management (never hardcode)
+- Implement proper request/response typing with TypeScript interfaces
+- Include user-agent headers for API tracking and debugging
+
+### Error Handling & Resilience
+- Implement exponential backoff for rate limiting (429 errors)
+- Handle network timeouts with appropriate retry logic
+- Provide graceful degradation when AI services are unavailable
+- Log errors with context but never expose API keys or sensitive data
+
+### Request Optimization
+- Batch requests when possible to reduce API calls
+- Implement request deduplication for identical prompts
+- Use streaming responses for long-form content generation
+- Cache responses appropriately while respecting user privacy
+
+## Prompt Engineering
+
+### Prompt Template Management
+- Store reusable prompt templates in structured format
+- Use template variables for dynamic content insertion
+- Version control prompt templates for consistency
+- Document prompt rationale and expected outcomes
+
+### Context Assembly
+- Implement systematic context building: Background → Constraints → Task
+- Limit context length to stay within model token limits
+- Prioritize recent and relevant context over completeness
+- Use ConPort for retrieving structured project knowledge
+
+### Response Processing
+- Parse structured responses using TypeScript interfaces
+- Implement fallback parsing for malformed responses
+- Validate AI responses before using in application logic
+- Handle partial responses and streaming data appropriately
+
+## Component Integration
+
+### AI Assistant Components
+- **AIAssistant.tsx** (81KB): Follow established conversation patterns
+- **VideoPromptGenerator.tsx** (31KB): Use specialized prompt templates
+- **AIAgentSelector.tsx**: Implement agent switching with context preservation
+- **AIImageSettings.tsx**: Manage model parameters and configuration
+
+### State Management for AI Features
+- Use loading states for all AI operations
+- Implement progress indicators for long-running operations
+- Handle conversation history with proper memory management
+- Preserve user context across AI interactions
+
+### User Experience Patterns
+- Provide clear feedback for AI processing states
+- Implement cancellation for long-running AI operations
+- Show cost estimates for expensive operations when applicable
+- Handle AI errors with user-friendly messages
+
+## Performance & Cost Optimization
+
+### Request Efficiency
+- Minimize unnecessary API calls through intelligent caching
+- Use appropriate model sizes for different use cases
+- Implement request queuing to manage concurrent operations
+- Monitor and log API usage for cost tracking
+
+### Response Caching
+- Cache AI responses while respecting user privacy
+- Implement cache invalidation strategies
+- Consider local storage for frequently accessed responses
+- Balance cache size with application performance
+
+### Monitoring & Analytics
+- Track AI operation success rates and performance metrics
+- Monitor API cost and usage patterns
+- Log user interaction patterns for optimization
+- Implement health checks for AI service availability
+
+These patterns ensure reliable, efficient, and cost-effective AI integration across Storyboard AI's AI-powered features.
+
+@src/services/ai.ts
+@src/services/aiAgents.ts

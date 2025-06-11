@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { X, Film, Users, Zap, Heart } from 'lucide-react'
 import { useStoryboard } from '../context/StoryboardContext'
 import { useTheme } from '../context/ThemeContext'
+import WindowFrame from './WindowFrame'
 import type { StoryboardProject } from '../types'
 
 interface ProjectTemplatesProps {
@@ -14,7 +15,7 @@ const templates: Array<{
   title: string
   description: string
   icon: React.ReactNode
-  color: string
+  gradient: string
   project: StoryboardProject
 }> = [
   {
@@ -22,7 +23,7 @@ const templates: Array<{
     title: 'Dialogue Scene',
     description: 'Two-person conversation template',
     icon: <Users className="w-6 h-6" />,
-    color: 'bg-blue-500',
+    gradient: 'from-blue-500 to-cyan-500',
     project: {
       id: 'dialogue-template',
       title: 'Dialogue Scene Template',
@@ -86,7 +87,7 @@ const templates: Array<{
     title: 'Action Sequence',
     description: 'High-energy action scene template',
     icon: <Zap className="w-6 h-6" />,
-    color: 'bg-orange-500',
+    gradient: 'from-orange-500 to-red-500',
     project: {
       id: 'action-template',
       title: 'Action Sequence Template',
@@ -150,7 +151,7 @@ const templates: Array<{
     title: 'Romantic Scene',
     description: 'Intimate romantic moment template',
     icon: <Heart className="w-6 h-6" />,
-    color: 'bg-pink-500',
+    gradient: 'from-pink-500 to-rose-500',
     project: {
       id: 'romantic-template',
       title: 'Romantic Scene Template',
@@ -222,50 +223,23 @@ export default function ProjectTemplates({ isOpen, onClose }: ProjectTemplatesPr
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div 
-        className="rounded-xl shadow-2xl w-full max-w-4xl max-h-[80vh] overflow-y-auto scrollable"
-        style={{
-          backgroundColor: themeState.theme.colors.background.primary,
-        }}
-      >
-        {/* Header */}
-        <div 
-          className="flex items-center justify-between p-6 border-b"
-          style={{
-            borderColor: themeState.theme.colors.border.primary,
-          }}
-        >
-          <div>
-            <h2 
-              className="text-xl font-semibold"
-              style={{ color: themeState.theme.colors.text.primary }}
-            >
-              Project Templates
-            </h2>
-            <p 
-              className="text-sm mt-1"
-              style={{ color: themeState.theme.colors.text.secondary }}
-            >
-              Start with a pre-built storyboard template
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-lg transition-colors"
-            style={{
-              color: themeState.theme.colors.text.secondary,
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.backgroundColor = themeState.theme.colors.background.tertiary
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.backgroundColor = 'transparent'
-            }}
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+    <WindowFrame
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Project Templates"
+      subtitle="Start with a pre-built storyboard template"
+      icon={<Film className="w-5 h-5" />}
+              defaultWidth="min(92vw, 1000px)"
+      defaultHeight="min(85vh, 700px)"
+      maxWidth="98vw"
+      maxHeight="95vh"
+      resizable={true}
+      minimizable={true}
+      maximizable={true}
+      windowId="project-templates"
+      zIndex={9100}
+    >
+      <div className="h-full overflow-y-auto">
 
         {/* Templates Grid */}
         <div className="p-6">
@@ -295,7 +269,7 @@ export default function ProjectTemplates({ isOpen, onClose }: ProjectTemplatesPr
                 onClick={() => setSelectedTemplate(template.id)}
               >
                 {/* Template Header */}
-                <div className={`${template.color} p-4 text-white`}>
+                <div className={`bg-gradient-to-r ${template.gradient} p-4 text-white`}>
                   <div className="flex items-center space-x-3">
                     {template.icon}
                     <div>
@@ -408,6 +382,6 @@ export default function ProjectTemplates({ isOpen, onClose }: ProjectTemplatesPr
           </div>
         </div>
       </div>
-    </div>
+    </WindowFrame>
   )
 } 

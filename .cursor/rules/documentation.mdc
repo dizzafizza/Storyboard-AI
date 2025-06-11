@@ -1,0 +1,88 @@
+---
+description: Documentation standards and ConPort knowledge management for Storyboard AI
+globs: 
+alwaysApply: false
+---
+---
+description: Documentation standards and ConPort knowledge management for Storyboard AI
+globs: ["*.md", "docs/**/*.md", ".cursor/**/*.md"]
+alwaysApply: false
+---
+
+# Documentation Standards for Storyboard AI
+
+## ConPort Knowledge Management
+
+### Knowledge Graph Maintenance
+- Update KNOWLEDGE_INDEX.md when adding new concepts or relationships
+- Use semantic linking between architectural decisions and implementations
+- Document component relationships and dependencies in ConPort
+- Maintain glossary terms for domain-specific concepts
+
+### Decision Documentation
+- Log architectural decisions to ConPort with rationale and context
+- Include trade-offs and alternatives considered in decision records
+- Link decisions to affected components and code patterns
+- Update decisions when implementations change or evolve
+
+### Pattern Documentation
+- Document reusable code patterns in DEVELOPMENT_PATTERNS.md
+- Include code examples and usage guidelines for each pattern
+- Link patterns to specific component implementations
+- Update patterns when better approaches are discovered
+
+## Documentation Structure
+
+### File Organization
+- Follow established hierarchy: Architecture → Patterns → Implementation
+- Use clear, descriptive filenames that reflect content scope
+- Maintain consistent formatting across all documentation files
+- Include table of contents for documents longer than 100 lines
+
+### Cross-Reference Management
+- Use relative links for internal documentation references
+- Maintain link integrity when restructuring documentation
+- Include bidirectional references between related concepts
+- Update related documentation when making structural changes
+
+### Code Documentation
+- Include inline comments for complex business logic
+- Document component props and interfaces in TypeScript
+- Provide usage examples for custom hooks and utilities
+- Explain non-obvious architectural decisions in code comments
+
+## ConPort Integration
+
+### Structured Knowledge Entry
+- Use consistent terminology across documentation and ConPort
+- Tag documentation with relevant domain concepts from glossary
+- Link documentation sections to related ConPort entities
+- Maintain synchronization between documentation and ConPort knowledge
+
+### Semantic Search Optimization
+- Include relevant keywords for semantic search discovery
+- Use clear, descriptive headings that reflect content
+- Provide context that helps AI understand relationships
+- Structure content for easy knowledge extraction
+
+### Knowledge Validation
+- Regularly review documentation for accuracy and relevance
+- Update outdated information and deprecated patterns
+- Validate ConPort relationships and linkages
+- Ensure documentation reflects current codebase state
+
+## Collaborative Documentation
+
+### Team Synchronization
+- Document decisions and changes that affect team workflows
+- Include context that helps new team members understand choices
+- Maintain change logs for significant architectural updates
+- Provide clear onboarding documentation for project setup
+
+### Version Control
+- Use meaningful commit messages for documentation changes
+- Include documentation updates in feature development cycles
+- Maintain documentation branches for experimental features
+- Tag documentation versions with corresponding code releases
+
+This ensures documentation serves as an effective knowledge base for both human developers and AI-assisted development workflows.

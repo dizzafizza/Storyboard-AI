@@ -43,8 +43,8 @@ A powerful, privacy-first AI-powered storyboard generator built with React and T
 
 ```bash
 # Clone the repository
-git clone https://github.com/storyboard-ai/storyboard-ai.git
-cd storyboard-ai
+git clone https://github.com/dizzafizza/Storyboard-AI.git
+cd Storyboard-AI
 
 # Install dependencies
 npm install
@@ -233,9 +233,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support
 
-- **Documentation**: [GitHub Wiki](https://github.com/storyboard-ai/storyboard-ai/wiki)
-- **Issues**: [GitHub Issues](https://github.com/storyboard-ai/storyboard-ai/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/storyboard-ai/storyboard-ai/discussions)
+- **Documentation**: [GitHub Wiki](https://github.com/dizzafizza/Storyboard-AI/wiki)
+- **Issues**: [GitHub Issues](https://github.com/dizzafizza/Storyboard-AI/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/dizzafizza/Storyboard-AI/discussions)
 
 ## 🗺️ Roadmap
 

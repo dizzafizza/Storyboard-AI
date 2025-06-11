@@ -6,6 +6,9 @@ export default {
   ],
   theme: {
     extend: {
+      screens: {
+        '3xl': '1920px',
+      },
       colors: {
         primary: {
           50: '#f0f9ff',

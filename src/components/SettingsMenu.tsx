@@ -3,10 +3,12 @@ import { X, Key, Download, Upload, Zap, Eye, Monitor, Save, AlertCircle, CheckCi
 import { useTheme } from '../context/ThemeContext'
 import { aiService } from '../services/ai'
 import { storage } from '../utils/storage'
+import WindowFrame from './WindowFrame'
 
 interface SettingsMenuProps {
   isOpen: boolean
   onClose: () => void
+  onOpenThemeSettings?: () => void
 }
 
 interface Settings {
@@ -22,9 +24,9 @@ interface Settings {
   language: 'en' | 'es' | 'fr' | 'de' | 'ja'
 }
 
-export default function SettingsMenu({ isOpen, onClose }: SettingsMenuProps) {
+export default function SettingsMenu({ isOpen, onClose, onOpenThemeSettings }: SettingsMenuProps) {
   const { state: themeState } = useTheme()
-  const [activeTab, setActiveTab] = useState<'general' | 'ai' | 'advanced'>('general')
+  const [activeTab, setActiveTab] = useState<'general' | 'ai' | 'themes' | 'advanced'>('general')
   const [settings, setSettings] = useState<Settings>({
     openaiApiKey: '',
     autoSave: true,
@@ -161,104 +163,145 @@ export default function SettingsMenu({ isOpen, onClose }: SettingsMenuProps) {
   const tabs = [
     { id: 'general', label: 'General', icon: Monitor, gradient: 'from-blue-500 to-cyan-500' },
     { id: 'ai', label: 'AI Settings', icon: Zap, gradient: 'from-purple-500 to-pink-500' },
+    { id: 'themes', label: 'Themes', icon: Palette, gradient: 'from-pink-500 to-rose-500' },
     { id: 'advanced', label: 'Advanced', icon: Key, gradient: 'from-orange-500 to-red-500' }
   ]
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
-      <div 
-        className="bg-primary/95 backdrop-blur-xl rounded-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden shadow-2xl border border-primary/20 animate-scale-in"
-        style={{
-          backgroundImage: 'linear-gradient(135deg, rgba(var(--primary), 0.95), rgba(var(--secondary), 0.9))',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.4), 0 0 100px rgba(var(--primary), 0.1)',
-          transform: 'translateZ(0)'
-        }}
-      >
-        {/* Enhanced Header */}
-        <div className="flex items-center justify-between p-6 border-b border-primary/20 bg-secondary/30 backdrop-blur-sm">
-          <div className="flex items-center space-x-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-gray-600 to-gray-800 rounded-xl flex items-center justify-center shadow-lg animate-float">
-              <SettingsIcon className="w-6 h-6 text-white" />
+    <WindowFrame
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Settings & Preferences"
+      subtitle="Configure your workspace • AI models • Export settings"
+      icon={<SettingsIcon className="w-5 h-5" />}
+              defaultWidth="min(92vw, 1000px)"
+      defaultHeight="min(85vh, 700px)"
+      maxWidth="98vw"
+      maxHeight="95vh"
+      resizable={true}
+      minimizable={true}
+      maximizable={true}
+      windowId="settings-menu"
+      zIndex={9100}
+          >
+        {/* Save Status Bar */}
+        <div className="flex items-center justify-between p-4 border-b border-primary/20 bg-secondary/30">
+          <div className="flex items-center space-x-3">
+            <div 
+              className="w-8 h-8 rounded-lg flex items-center justify-center shadow-sm"
+              style={{
+                background: `linear-gradient(135deg, ${themeState.theme.colors.primary[600]}, ${themeState.theme.colors.primary[700]})`
+              }}
+            >
+              <SettingsIcon className="w-4 h-4 text-white" />
             </div>
-            <div>
-              <h2 className="text-2xl font-bold text-primary bg-gradient-to-r from-primary to-primary-600 bg-clip-text text-transparent">
-                Settings & Preferences
-              </h2>
-              <p className="text-sm text-secondary/80 mt-1">
-                Configure your workspace • AI models • Export settings
-              </p>
+            <div className="text-sm text-secondary">
+              Customize your Storyboard AI experience
             </div>
           </div>
-          
-          <div className="flex items-center space-x-3">
-            {/* Save Status Indicator */}
-            <div className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-all duration-300 ${
-              saveStatus === 'saving' && 'bg-blue-500/20 text-blue-400' ||
-              saveStatus === 'saved' && 'bg-green-500/20 text-green-400' ||
-              saveStatus === 'error' && 'bg-red-500/20 text-red-400' ||
-              'bg-tertiary/50 text-secondary'
-            }`}>
-              {saveStatus === 'saving' && <Cpu className="w-4 h-4 animate-spin" />}
-              {saveStatus === 'saved' && <CheckCircle className="w-4 h-4" />}
-              {saveStatus === 'error' && <AlertCircle className="w-4 h-4" />}
-              {saveStatus === 'idle' && <Save className="w-4 h-4" />}
-              <span className="text-xs font-medium">
-                {saveStatus === 'saving' && 'Saving...'}
-                {saveStatus === 'saved' && 'Saved'}
-                {saveStatus === 'error' && 'Error'}
-                {saveStatus === 'idle' && 'Ready'}
-              </span>
-            </div>
-            
-            <button
-              onClick={onClose}
-              className="p-3 hover:bg-tertiary/50 rounded-xl transition-all duration-300 border border-transparent hover:border-primary/30 hover:shadow-lg group"
-            >
-              <X className="w-5 h-5 text-secondary group-hover:text-primary transition-colors" />
-            </button>
+
+          {/* Save Status Indicator */}
+          <div className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-all duration-300 ${
+            saveStatus === 'saving' && 'bg-blue-500/20 text-blue-400' ||
+            saveStatus === 'saved' && 'bg-green-500/20 text-green-400' ||
+            saveStatus === 'error' && 'bg-red-500/20 text-red-400' ||
+            'bg-tertiary/50 text-secondary'
+          }`}>
+            {saveStatus === 'saving' && <Cpu className="w-4 h-4 animate-spin" />}
+            {saveStatus === 'saved' && <CheckCircle className="w-4 h-4" />}
+            {saveStatus === 'error' && <AlertCircle className="w-4 h-4" />}
+            {saveStatus === 'idle' && <Save className="w-4 h-4" />}
+            <span className="text-xs font-medium">
+              {saveStatus === 'saving' && 'Saving...'}
+              {saveStatus === 'saved' && 'Saved'}
+              {saveStatus === 'error' && 'Error'}
+              {saveStatus === 'idle' && 'Ready'}
+            </span>
           </div>
         </div>
 
-        <div className="flex h-full max-h-[80vh]">
+        <div className="flex flex-col md:flex-row h-full max-h-[80vh]">
           {/* Enhanced Sidebar Navigation */}
-          <div className="w-72 border-r border-primary/20 p-6 bg-secondary/20 backdrop-blur-sm">
-            <nav className="space-y-3">
-              {tabs.map(({ id, label, icon: Icon, gradient }, index) => (
+          <div 
+            className="w-full md:w-64 border-b md:border-b-0 md:border-r p-4 md:p-6"
+            style={{
+              borderColor: themeState.theme.colors.border.primary,
+              backgroundColor: themeState.theme.colors.background.secondary
+            }}
+          >
+            <nav className="flex md:flex-col space-x-2 md:space-x-0 md:space-y-2 overflow-x-auto md:overflow-x-visible">
+              {tabs.map(({ id, label, icon: Icon, gradient }) => (
                 <button
                   key={id}
-                  onClick={() => setActiveTab(id as 'general' | 'ai' | 'advanced')}
-                  className={`w-full flex items-center space-x-4 p-4 rounded-xl transition-all duration-300 group ${
-                    activeTab === id
-                      ? 'bg-gradient-to-r ' + gradient + ' text-white shadow-lg transform scale-105'
-                      : 'text-secondary hover:text-primary hover:bg-tertiary/30'
-                  }`}
+                  onClick={() => setActiveTab(id as 'general' | 'ai' | 'themes' | 'advanced')}
+                  className="flex-shrink-0 md:flex-shrink flex items-center space-x-3 p-3 md:p-4 rounded-lg transition-all duration-200"
                   style={{
-                    animationDelay: `${index * 100}ms`,
-                    transform: activeTab === id ? 'scale(1.05) translateZ(0)' : 'translateZ(0)'
+                    backgroundColor: activeTab === id ? themeState.theme.colors.primary[500] : 'transparent',
+                    color: activeTab === id ? '#ffffff' : themeState.theme.colors.text.secondary
+                  }}
+                  onMouseEnter={(e) => {
+                    if (activeTab !== id) {
+                      e.currentTarget.style.backgroundColor = themeState.theme.colors.background.tertiary
+                      e.currentTarget.style.color = themeState.theme.colors.text.primary
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (activeTab !== id) {
+                      e.currentTarget.style.backgroundColor = 'transparent'
+                      e.currentTarget.style.color = themeState.theme.colors.text.secondary
+                    }
                   }}
                 >
-                  <Icon className={`w-5 h-5 transition-transform duration-300 ${activeTab === id ? 'scale-110' : 'group-hover:scale-110'}`} />
-                  <span className="font-medium">{label}</span>
-                  {activeTab === id && (
-                    <div className="w-2 h-2 bg-white rounded-full ml-auto animate-pulse" />
-                  )}
+                  <Icon className="w-4 h-4 md:w-5 md:h-5" />
+                  <span className="font-medium text-sm md:text-base whitespace-nowrap">{label}</span>
                 </button>
               ))}
             </nav>
 
             {/* Quick Actions */}
             <div className="mt-8 space-y-3">
-              <h3 className="text-sm font-semibold text-secondary/80 uppercase tracking-wider">Quick Actions</h3>
+              <h3 
+                className="text-sm font-semibold uppercase tracking-wider"
+                style={{ color: themeState.theme.colors.text.secondary }}
+              >
+                Quick Actions
+              </h3>
               
               <button
                 onClick={handleExportSettings}
-                className="w-full flex items-center space-x-3 p-3 rounded-lg bg-tertiary/30 hover:bg-tertiary/50 transition-all duration-200 text-secondary hover:text-primary group"
+                className="w-full flex items-center space-x-3 p-3 rounded-lg transition-all duration-200 group"
+                style={{
+                  backgroundColor: `${themeState.theme.colors.background.tertiary}60`,
+                  color: themeState.theme.colors.text.secondary
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = `${themeState.theme.colors.background.tertiary}80`
+                  e.currentTarget.style.color = themeState.theme.colors.text.primary
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = `${themeState.theme.colors.background.tertiary}60`
+                  e.currentTarget.style.color = themeState.theme.colors.text.secondary
+                }}
               >
                 <Download className="w-4 h-4 group-hover:scale-110 transition-transform" />
                 <span className="text-sm">Export Settings</span>
               </button>
               
-              <label className="w-full flex items-center space-x-3 p-3 rounded-lg bg-tertiary/30 hover:bg-tertiary/50 transition-all duration-200 text-secondary hover:text-primary cursor-pointer group">
+              <label 
+                className="w-full flex items-center space-x-3 p-3 rounded-lg transition-all duration-200 cursor-pointer group"
+                style={{
+                  backgroundColor: `${themeState.theme.colors.background.tertiary}60`,
+                  color: themeState.theme.colors.text.secondary
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = `${themeState.theme.colors.background.tertiary}80`
+                  e.currentTarget.style.color = themeState.theme.colors.text.primary
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = `${themeState.theme.colors.background.tertiary}60`
+                  e.currentTarget.style.color = themeState.theme.colors.text.secondary
+                }}
+              >
                 <Upload className="w-4 h-4 group-hover:scale-110 transition-transform" />
                 <span className="text-sm">Import Settings</span>
                 <input
@@ -280,27 +323,58 @@ export default function SettingsMenu({ isOpen, onClose }: SettingsMenuProps) {
           </div>
 
           {/* Enhanced Content Area */}
-          <div className="flex-1 overflow-y-auto p-6 scrollable bg-primary/30 backdrop-blur-sm">
+          <div 
+            className="flex-1 overflow-y-auto p-6 scrollable backdrop-blur-sm"
+            style={{
+              backgroundColor: `${themeState.theme.colors.background.tertiary}30`,
+              color: themeState.theme.colors.text.primary
+            }}
+          >
             {activeTab === 'general' && (
               <div className="space-y-6 animate-fade-in">
                 <div>
-                  <h3 className="text-lg font-semibold text-primary mb-4 flex items-center space-x-2">
+                  <h3 
+                    className="text-lg font-semibold mb-4 flex items-center space-x-2"
+                    style={{ color: themeState.theme.colors.text.primary }}
+                  >
                     <Monitor className="w-5 h-5" />
                     <span>General Preferences</span>
                   </h3>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Auto Save Setting */}
-                    <div className="bg-secondary/40 backdrop-blur-sm rounded-xl p-5 border border-primary/20 hover:border-primary/40 transition-all duration-300">
+                    <div 
+                      className="backdrop-blur-sm rounded-xl p-5 border transition-all duration-300"
+                      style={{
+                        backgroundColor: `${themeState.theme.colors.background.secondary}70`,
+                        borderColor: `${themeState.theme.colors.border.primary}60`
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = `${themeState.theme.colors.border.primary}90`
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = `${themeState.theme.colors.border.primary}60`
+                      }}
+                    >
                       <div className="flex items-center justify-between">
                         <div>
-                          <h4 className="font-medium text-primary">Auto Save</h4>
-                          <p className="text-sm text-secondary/80 mt-1">Automatically save changes as you work</p>
+                          <h4 
+                            className="font-medium"
+                            style={{ color: themeState.theme.colors.text.primary }}
+                          >
+                            Auto Save
+                          </h4>
+                          <p 
+                            className="text-sm mt-1"
+                            style={{ color: themeState.theme.colors.text.secondary }}
+                          >
+                            Automatically save changes as you work
+                          </p>
                         </div>
                         <button
                           onClick={() => setSettings(prev => ({ ...prev, autoSave: !prev.autoSave }))}
                           className={`relative w-12 h-6 rounded-full transition-all duration-300 ${
-                            settings.autoSave ? 'bg-green-500' : 'bg-gray-400'
+                            settings.autoSave ? 'bg-green-500' : 'bg-secondary-400'
                           }`}
                         >
                           <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-lg transition-transform duration-300 ${
@@ -320,7 +394,7 @@ export default function SettingsMenu({ isOpen, onClose }: SettingsMenuProps) {
                         <button
                           onClick={() => setSettings(prev => ({ ...prev, notifications: !prev.notifications }))}
                           className={`relative w-12 h-6 rounded-full transition-all duration-300 ${
-                            settings.notifications ? 'bg-blue-500' : 'bg-gray-400'
+                            settings.notifications ? 'bg-blue-500' : 'bg-secondary-400'
                           }`}
                         >
                           <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-lg transition-transform duration-300 ${
@@ -360,11 +434,28 @@ export default function SettingsMenu({ isOpen, onClose }: SettingsMenuProps) {
                             <button
                               key={format}
                               onClick={() => setSettings(prev => ({ ...prev, exportFormat: format as any }))}
-                              className={`p-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                                settings.exportFormat === format
-                                  ? 'bg-primary text-white shadow-lg'
-                                  : 'bg-tertiary/50 text-secondary hover:bg-tertiary hover:text-primary'
-                              }`}
+                              className="p-2 rounded-lg text-sm font-medium transition-all duration-200"
+                              style={{
+                                backgroundColor: settings.exportFormat === format 
+                                  ? themeState.theme.colors.primary[500] 
+                                  : `${themeState.theme.colors.background.tertiary}80`,
+                                color: settings.exportFormat === format 
+                                  ? '#ffffff' 
+                                  : themeState.theme.colors.text.secondary,
+                                boxShadow: settings.exportFormat === format ? '0 4px 12px rgba(0,0,0,0.15)' : 'none'
+                              }}
+                              onMouseEnter={(e) => {
+                                if (settings.exportFormat !== format) {
+                                  e.currentTarget.style.backgroundColor = `${themeState.theme.colors.background.tertiary}90`
+                                  e.currentTarget.style.color = themeState.theme.colors.text.primary
+                                }
+                              }}
+                              onMouseLeave={(e) => {
+                                if (settings.exportFormat !== format) {
+                                  e.currentTarget.style.backgroundColor = `${themeState.theme.colors.background.tertiary}80`
+                                  e.currentTarget.style.color = themeState.theme.colors.text.secondary
+                                }
+                              }}
                             >
                               {format.toUpperCase()}
                             </button>
@@ -453,6 +544,42 @@ export default function SettingsMenu({ isOpen, onClose }: SettingsMenuProps) {
               </div>
             )}
 
+            {activeTab === 'themes' && (
+              <div className="space-y-6 animate-fade-in">
+                <div>
+                  <h3 className="text-lg font-semibold text-primary mb-4 flex items-center space-x-2">
+                    <Palette className="w-5 h-5" />
+                    <span>Theme & Appearance</span>
+                  </h3>
+                  
+                  <div className="bg-secondary/40 backdrop-blur-sm rounded-xl p-6 border border-primary/20 hover:border-primary/40 transition-all duration-300">
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h4 className="font-medium text-primary">Theme Settings</h4>
+                        <p className="text-sm text-secondary/80 mt-1">Customize your workspace appearance</p>
+                      </div>
+                      <button
+                        onClick={onOpenThemeSettings}
+                        className="btn-primary px-4 py-2 text-sm shadow-lg hover:shadow-xl transition-all duration-300"
+                      >
+                        Open Theme Selector
+                      </button>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+                      <div className="flex items-center space-x-2 p-3 rounded-lg bg-tertiary/30">
+                        <div 
+                          className="w-4 h-4 rounded-full border-2 border-white/30"
+                          style={{ backgroundColor: themeState.theme.colors.primary[500] }}
+                        />
+                        <span className="text-sm font-medium text-primary">Current: {themeState.theme.name}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {activeTab === 'advanced' && (
               <div className="space-y-6 animate-fade-in">
                 <div>
@@ -508,11 +635,28 @@ export default function SettingsMenu({ isOpen, onClose }: SettingsMenuProps) {
                           <button
                             key={quality}
                             onClick={() => setSettings(prev => ({ ...prev, videoQuality: quality as any }))}
-                            className={`p-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                              settings.videoQuality === quality
-                                ? 'bg-primary text-white shadow-lg'
-                                : 'bg-tertiary/50 text-secondary hover:bg-tertiary hover:text-primary'
-                            }`}
+                            className="p-2 rounded-lg text-sm font-medium transition-all duration-200"
+                            style={{
+                              backgroundColor: settings.videoQuality === quality 
+                                ? themeState.theme.colors.primary[500] 
+                                : `${themeState.theme.colors.background.tertiary}80`,
+                              color: settings.videoQuality === quality 
+                                ? '#ffffff' 
+                                : themeState.theme.colors.text.secondary,
+                              boxShadow: settings.videoQuality === quality ? '0 4px 12px rgba(0,0,0,0.15)' : 'none'
+                            }}
+                            onMouseEnter={(e) => {
+                              if (settings.videoQuality !== quality) {
+                                e.currentTarget.style.backgroundColor = `${themeState.theme.colors.background.tertiary}90`
+                                e.currentTarget.style.color = themeState.theme.colors.text.primary
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              if (settings.videoQuality !== quality) {
+                                e.currentTarget.style.backgroundColor = `${themeState.theme.colors.background.tertiary}80`
+                                e.currentTarget.style.color = themeState.theme.colors.text.secondary
+                              }
+                            }}
                           >
                             {quality.charAt(0).toUpperCase() + quality.slice(1)}
                           </button>
@@ -541,15 +685,8 @@ export default function SettingsMenu({ isOpen, onClose }: SettingsMenuProps) {
             >
               {saveStatus === 'saving' ? 'Saving...' : 'Save Changes'}
             </button>
-            <button
-              onClick={onClose}
-              className="btn-secondary px-6 py-2"
-            >
-              Close
-            </button>
           </div>
         </div>
-      </div>
-    </div>
+    </WindowFrame>
   )
 } 

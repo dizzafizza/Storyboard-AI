@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "conport": {
+      "command": "/Library/Frameworks/Python.framework/Versions/3.13/bin/conport-mcp",
+      "args": [
+        "--mode",
+        "stdio",
+        "--workspace_id",
+        "${workspaceFolder}",
+        "--log-level",
+        "INFO"
+      ]
+    }
+  }
+} 

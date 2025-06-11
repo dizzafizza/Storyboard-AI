@@ -103,11 +103,18 @@ export default function MobileDrawer({ isOpen, onClose, onNavigate, currentSecti
           isOpen && !isClosing ? 'translate-x-0' : '-translate-x-full'
         }`}
         style={{
-          backgroundColor: themeState.theme.colors.background.primary
+          backgroundColor: themeState.theme.colors.background.primary,
+          borderRight: `1px solid ${themeState.theme.colors.border.primary}`
         }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gradient-to-r from-purple-600 to-pink-600 text-white">
+        <div 
+          className="flex items-center justify-between p-4 border-b text-white"
+          style={{
+            background: `linear-gradient(135deg, ${themeState.theme.colors.primary[600]}, ${themeState.theme.colors.primary[700]})`,
+            borderColor: themeState.theme.colors.border.primary
+          }}
+        >
           <div className="flex items-center space-x-3">
             <div 
               className="w-10 h-10 rounded-lg flex items-center justify-center"
@@ -119,56 +126,82 @@ export default function MobileDrawer({ isOpen, onClose, onNavigate, currentSecti
             </div>
             <div>
               <h2 className="font-bold text-lg">Storyboard AI</h2>
-              <p className="text-purple-100 text-sm">Navigation Menu</p>
+              <p className="text-white/80 text-sm">Navigation Menu</p>
             </div>
           </div>
           <button
             onClick={handleClose}
-                          className="w-10 h-10 rounded-lg flex items-center justify-center transition-colors"
-              style={{
-                backgroundColor: 'rgba(255, 255, 255, 0.2)'
-              }}
+            className="w-10 h-10 rounded-lg flex items-center justify-center transition-colors hover:bg-white/20"
+            style={{
+              backgroundColor: 'rgba(255, 255, 255, 0.1)'
+            }}
           >
             <X className="w-6 h-6" />
           </button>
         </div>
 
         {/* Navigation Items */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar">
+        <div className="flex-1 overflow-y-auto scrollable">
           <div className="p-4 space-y-2">
             {navigationItems.map((item, index) => (
               <button
                 key={item.id}
                 onClick={() => handleNavigate(item.id)}
-                className={`w-full flex items-center space-x-4 p-4 rounded-xl transition-all duration-200 transform hover:scale-105 animate-slideIn ${
+                className={`w-full flex items-center space-x-4 p-4 rounded-xl transition-all duration-200 transform hover:scale-105 animate-menu-item-entrance transform-gpu border-2 ${
                   currentSection === item.id
-                    ? 'bg-gradient-to-r from-purple-100 to-pink-100 border-2 border-purple-300 shadow-lg'
-                    : 'bg-gray-50 hover:bg-gray-100 border-2 border-transparent'
+                    ? 'shadow-lg'
+                    : 'border-transparent hover:shadow-md'
                 }`}
-                style={{ animationDelay: `${index * 50}ms` }}
+                style={{ 
+                  animationDelay: `${index * 50}ms`,
+                  backgroundColor: currentSection === item.id 
+                    ? `${themeState.theme.colors.primary[100]}` 
+                    : themeState.theme.colors.background.secondary,
+                  borderColor: currentSection === item.id 
+                    ? themeState.theme.colors.primary[300] 
+                    : 'transparent'
+                }}
               >
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                  currentSection === item.id
-                    ? 'bg-gradient-to-br from-purple-500 to-pink-500 text-white shadow-lg'
-                    : 'bg-white shadow-sm text-gray-600'
-                }`}>
+                <div 
+                  className="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm"
+                  style={{
+                    background: currentSection === item.id
+                      ? `linear-gradient(135deg, ${themeState.theme.colors.primary[500]}, ${themeState.theme.colors.primary[600]})`
+                      : themeState.theme.colors.background.primary,
+                    color: currentSection === item.id 
+                      ? 'white' 
+                      : themeState.theme.colors.text.secondary
+                  }}
+                >
                   {item.icon}
                 </div>
                 <div className="flex-1 text-left">
-                  <h3 className={`font-semibold ${
-                    currentSection === item.id ? 'text-purple-700' : 'text-gray-800'
-                  }`}>
+                  <h3 
+                    className="font-semibold"
+                    style={{
+                      color: currentSection === item.id 
+                        ? themeState.theme.colors.primary[700] 
+                        : themeState.theme.colors.text.primary
+                    }}
+                  >
                     {item.label}
                   </h3>
                   <p 
-                  className="text-sm"
-                  style={{
-                    color: themeState.theme.colors.text.tertiary
-                  }}
-                >{item.description}</p>
+                    className="text-sm"
+                    style={{
+                      color: themeState.theme.colors.text.tertiary
+                    }}
+                  >
+                    {item.description}
+                  </p>
                 </div>
                 {currentSection === item.id && (
-                  <div className="w-3 h-3 bg-purple-500 rounded-full animate-pulse" />
+                  <div 
+                    className="w-3 h-3 rounded-full animate-pulse" 
+                    style={{
+                      backgroundColor: themeState.theme.colors.primary[500]
+                    }}
+                  />
                 )}
               </button>
             ))}
@@ -176,17 +209,34 @@ export default function MobileDrawer({ isOpen, onClose, onNavigate, currentSecti
 
           {/* Footer Info */}
           <div 
-          className="p-4 mt-8 border-t"
-          style={{
-            borderColor: themeState.theme.colors.border.primary
-          }}
-        >
-            <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-4">
+            className="p-4 mt-8 border-t"
+            style={{
+              borderColor: themeState.theme.colors.border.primary
+            }}
+          >
+            <div 
+              className="rounded-xl p-4"
+              style={{
+                backgroundColor: `${themeState.theme.colors.primary[50]}`,
+                border: `1px solid ${themeState.theme.colors.primary[200]}`
+              }}
+            >
               <div className="flex items-center space-x-3 mb-2">
-                <Palette className="w-5 h-5 text-purple-600" />
-                <span className="font-medium text-purple-800">Quick Tip</span>
+                <Palette 
+                  className="w-5 h-5" 
+                  style={{ color: themeState.theme.colors.primary[600] }}
+                />
+                <span 
+                  className="font-medium"
+                  style={{ color: themeState.theme.colors.primary[800] }}
+                >
+                  Quick Tip
+                </span>
               </div>
-              <p className="text-sm text-purple-700">
+              <p 
+                className="text-sm"
+                style={{ color: themeState.theme.colors.primary[700] }}
+              >
                 Swipe right or tap the menu button to access navigation anytime. 
                 Long press panels for quick actions!
               </p>

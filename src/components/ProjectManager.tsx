@@ -1,8 +1,11 @@
-import { useState, useEffect } from 'react'
-import { Plus, FolderOpen, Trash2, Edit3, Calendar, User, Star, Archive, Search, Filter, Grid, List, Clock, CheckCircle2, Sparkles, Download, Upload, Settings, MoreVertical, Eye, Copy, Tag } from 'lucide-react'
+import { useState, useEffect, useMemo } from 'react'
+import { Plus, FolderOpen, Trash2, Edit3, Calendar, Star, Archive, Search, Grid, List, CheckCircle2, Download, Tag, Filter, Copy, FileText, Settings } from 'lucide-react'
 import { useStoryboard } from '../context/StoryboardContext'
 import { useTheme } from '../context/ThemeContext'
+import { getThemeColors } from '../utils/themeColors'
 import { storage } from '../utils/storage'
+import { ResponsiveScaling } from '../utils/windowManager'
+import WindowFrame from './WindowFrame'
 
 interface ProjectManagerProps {
   isOpen: boolean
@@ -24,11 +27,42 @@ interface Project {
   thumbnailUrl?: string
   collaborators?: string[]
   status?: 'draft' | 'in-progress' | 'review' | 'completed'
+  color?: string
+  template?: string
+  category?: string
+  priority?: 'low' | 'medium' | 'high'
+}
+
+// Project templates for customization
+const PROJECT_TEMPLATES = [
+  { id: 'blank', name: 'Blank Project', description: 'Start from scratch', icon: '📄' },
+  { id: 'commercial', name: 'Commercial', description: '30-60 second commercial template', icon: '📺' },
+  { id: 'social', name: 'Social Media', description: 'Short form content template', icon: '📱' },
+  { id: 'narrative', name: 'Narrative Film', description: 'Long form storytelling template', icon: '🎬' },
+  { id: 'explainer', name: 'Explainer Video', description: 'Educational content template', icon: '🎓' },
+  { id: 'music-video', name: 'Music Video', description: 'Music video template', icon: '🎵' }
+]
+
+// Theme-aware project color function
+const getProjectColors = (theme: any) => {
+  const themeColors = getThemeColors(theme)
+  return [
+    { id: 'blue', color: themeColors.project.blue.background, name: 'Blue' },
+    { id: 'purple', color: themeColors.project.purple.background, name: 'Purple' },
+    { id: 'green', color: themeColors.project.green.background, name: 'Green' },
+    { id: 'red', color: themeColors.project.red.background, name: 'Red' },
+    { id: 'orange', color: themeColors.project.orange.background, name: 'Orange' },
+    { id: 'pink', color: themeColors.project.pink.background, name: 'Pink' },
+    { id: 'indigo', color: themeColors.project.indigo.background, name: 'Indigo' },
+    { id: 'gray', color: themeColors.project.gray.background, name: 'Gray' }
+  ]
 }
 
 export default function ProjectManager({ isOpen, onClose }: ProjectManagerProps) {
-  const { state, dispatch } = useStoryboard()
+  const { dispatch } = useStoryboard()
   const { state: themeState } = useTheme()
+  const themeColors = getThemeColors(themeState.theme)
+  const PROJECT_COLORS = getProjectColors(themeState.theme)
   const [projects, setProjects] = useState<Project[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [filterBy, setFilterBy] = useState<'all' | 'starred' | 'recent' | 'archived'>('all')
@@ -36,12 +70,18 @@ export default function ProjectManager({ isOpen, onClose }: ProjectManagerProps)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [selectedProjects, setSelectedProjects] = useState<string[]>([])
   const [showCreateForm, setShowCreateForm] = useState(false)
-  const [showProjectMenu, setShowProjectMenu] = useState<string | null>(null)
+  const [showFilters, setShowFilters] = useState(false)
+  const [editingProject, setEditingProject] = useState<Project | null>(null)
+
   const [newProject, setNewProject] = useState({
     title: '',
     description: '',
     tags: [] as string[],
-    status: 'draft' as Project['status']
+    status: 'draft' as Project['status'],
+    template: 'blank',
+    color: '#3B82F6',
+    category: '',
+    priority: 'medium' as Project['priority']
   })
 
   useEffect(() => {
@@ -51,7 +91,6 @@ export default function ProjectManager({ isOpen, onClose }: ProjectManagerProps)
   const loadProjects = async () => {
     try {
       const savedProjects = await storage.getAllProjects()
-      // Convert StoryboardProject to our Project interface
       const convertedProjects = savedProjects.map(p => ({
         id: p.id,
         title: p.title,
@@ -66,7 +105,11 @@ export default function ProjectManager({ isOpen, onClose }: ProjectManagerProps)
         lastOpenedAt: p.updatedAt,
         thumbnailUrl: '',
         collaborators: [],
-        status: 'draft' as Project['status']
+        status: 'draft' as Project['status'],
+        color: '#3B82F6',
+        template: 'blank',
+        category: '',
+        priority: 'medium' as Project['priority']
       }))
       setProjects(convertedProjects)
     } catch (error) {
@@ -76,7 +119,6 @@ export default function ProjectManager({ isOpen, onClose }: ProjectManagerProps)
 
   const saveProject = async (project: Project) => {
     try {
-      // Convert our Project back to StoryboardProject for storage
       const storyboardProject = {
         id: project.id,
         title: project.title,
@@ -88,7 +130,6 @@ export default function ProjectManager({ isOpen, onClose }: ProjectManagerProps)
       
       await storage.saveProject(storyboardProject)
       
-      // Update local state
       const updatedProjects = projects.map(p => 
         p.id === project.id ? { ...project, updatedAt: new Date() } : p
       )
@@ -115,10 +156,13 @@ export default function ProjectManager({ isOpen, onClose }: ProjectManagerProps)
       tags: newProject.tags,
       status: newProject.status,
       collaborators: [],
-      thumbnailUrl: ''
+      thumbnailUrl: '',
+      color: newProject.color,
+      template: newProject.template,
+      category: newProject.category,
+      priority: newProject.priority
     }
 
-    // Save to storage first
     const storyboardProject = {
       id: project.id,
       title: project.title,
@@ -129,15 +173,31 @@ export default function ProjectManager({ isOpen, onClose }: ProjectManagerProps)
     }
     await storage.saveProject(storyboardProject)
 
-    // Update local state
     const updatedProjects = [project, ...projects]
     setProjects(updatedProjects)
     
-    setNewProject({ title: '', description: '', tags: [], status: 'draft' })
+    setNewProject({ 
+      title: '', 
+      description: '', 
+      tags: [], 
+      status: 'draft',
+      template: 'blank',
+      color: '#3B82F6',
+      category: '',
+      priority: 'medium'
+    })
     setShowCreateForm(false)
     
-    // Auto-open the new project
     openProject(project)
+  }
+
+  const updateProject = async (projectId: string, updates: Partial<Project>) => {
+    const project = projects.find(p => p.id === projectId)
+    if (!project) return
+
+    const updatedProject = { ...project, ...updates, updatedAt: new Date() }
+    await saveProject(updatedProject)
+    setEditingProject(null)
   }
 
   const openProject = async (project: Project) => {
@@ -156,7 +216,6 @@ export default function ProjectManager({ isOpen, onClose }: ProjectManagerProps)
   const deleteProjects = async (projectIds: string[]) => {
     if (!confirm(`Delete ${projectIds.length} project(s)? This cannot be undone.`)) return
     
-    // Delete each project from storage
     for (const projectId of projectIds) {
       try {
         await storage.deleteProject(projectId)
@@ -165,7 +224,6 @@ export default function ProjectManager({ isOpen, onClose }: ProjectManagerProps)
       }
     }
     
-    // Update local state
     const updatedProjects = projects.filter(p => !projectIds.includes(p.id))
     setProjects(updatedProjects)
     setSelectedProjects([])
@@ -180,8 +238,6 @@ export default function ProjectManager({ isOpen, onClose }: ProjectManagerProps)
   }
 
   const archiveProjects = async (projectIds: string[]) => {
-    // Since storage doesn't support archiving, we'll just update local state
-    // In a real app, you'd implement archive functionality in storage
     const updatedProjects = projects.map(p => 
       projectIds.includes(p.id) ? { ...p, isArchived: !p.isArchived } : p
     )
@@ -200,7 +256,6 @@ export default function ProjectManager({ isOpen, onClose }: ProjectManagerProps)
       isStarred: false
     }
 
-    // Save the duplicated project
     const storyboardProject = {
       id: duplicatedProject.id,
       title: duplicatedProject.title,
@@ -211,7 +266,6 @@ export default function ProjectManager({ isOpen, onClose }: ProjectManagerProps)
     }
     await storage.saveProject(storyboardProject)
 
-    // Update local state
     const updatedProjects = [duplicatedProject, ...projects]
     setProjects(updatedProjects)
   }
@@ -239,7 +293,8 @@ export default function ProjectManager({ isOpen, onClose }: ProjectManagerProps)
     .filter(project => {
       const matchesSearch = project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           project.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          project.tags?.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+                          project.tags?.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                          project.category?.toLowerCase().includes(searchTerm.toLowerCase())
       
       const matchesFilter = 
         filterBy === 'all' ? !project.isArchived :
@@ -263,13 +318,20 @@ export default function ProjectManager({ isOpen, onClose }: ProjectManagerProps)
       }
     })
 
+  // Calculate responsive layout for project grid
+  const responsiveLayout = useMemo(() => {
+    // Estimate window width based on viewport or use a reasonable default
+    const windowWidth = window.innerWidth > 1200 ? 1200 : window.innerWidth * 0.9
+    return ResponsiveScaling.getOptimalLayout(windowWidth, filteredProjects.length)
+  }, [filteredProjects.length])
+
   const getStatusColor = (status: Project['status']) => {
     switch (status) {
-      case 'completed': return 'bg-green-500'
-      case 'review': return 'bg-blue-500'
-      case 'in-progress': return 'bg-yellow-500'
-      case 'draft': return 'bg-gray-500'
-      default: return 'bg-gray-500'
+      case 'completed': return themeColors.status.success.background
+      case 'review': return themeColors.status.info.background
+      case 'in-progress': return themeColors.status.warning.background
+      case 'draft': return themeColors.project.gray.background
+      default: return themeColors.project.gray.background
     }
   }
 
@@ -280,6 +342,15 @@ export default function ProjectManager({ isOpen, onClose }: ProjectManagerProps)
       case 'in-progress': return 'In Progress'
       case 'draft': return 'Draft'
       default: return 'Draft'
+    }
+  }
+
+  const getPriorityColor = (priority: Project['priority']) => {
+    switch (priority) {
+      case 'high': return themeColors.status.error.background
+      case 'medium': return themeColors.status.warning.background
+      case 'low': return themeColors.status.success.background
+      default: return themeColors.project.gray.background
     }
   }
 
@@ -302,259 +373,434 @@ export default function ProjectManager({ isOpen, onClose }: ProjectManagerProps)
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
-      <div 
-        className="bg-primary/95 backdrop-blur-xl rounded-2xl w-full max-w-7xl max-h-[95vh] overflow-hidden shadow-2xl border border-primary/20 animate-scale-in"
-        style={{
-          backgroundImage: 'linear-gradient(135deg, rgba(var(--primary), 0.95), rgba(var(--secondary), 0.9))',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.4), 0 0 100px rgba(var(--primary), 0.1)',
-          transform: 'translateZ(0)'
-        }}
-      >
-        {/* Enhanced Header */}
-        <div className="flex items-center justify-between p-6 border-b border-primary/20 bg-secondary/30 backdrop-blur-sm">
-          <div className="flex items-center space-x-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-700 rounded-xl flex items-center justify-center shadow-lg animate-float">
-              <FolderOpen className="w-6 h-6 text-white" />
+    <WindowFrame
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Projects"
+      subtitle={`${filteredProjects.length} of ${projects.length} projects`}
+      icon={<FolderOpen className="w-5 h-5" />}
+      defaultWidth="1400"
+      defaultHeight="900"
+      maxWidth="98vw"
+      maxHeight="98vh"
+      minWidth={280}
+      minHeight={400}
+      resizable={true}
+      minimizable={true}
+      maximizable={true}
+      windowId="project-manager"
+      zIndex={9100}
+    >
+      <div className="h-full w-full flex flex-col bg-primary">
+        {/* Modern Header Bar */}
+        <div 
+          className="border-b p-4"
+          style={{ 
+            backgroundColor: themeColors.interactive.secondary.background,
+            borderColor: themeColors.interactive.secondary.border 
+          }}
+        >
+          <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+            {/* Search Bar */}
+            <div className="flex-1 relative">
+              <Search 
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5" 
+                style={{ color: themeColors.interactive.secondary.text }}
+              />
+              <input
+                type="text"
+                placeholder="Search projects by name, description, tags, or category..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-11 pr-4 py-3 text-base rounded-xl transition-all duration-200"
+                style={{
+                  backgroundColor: themeState.theme.colors.background.primary,
+                  border: `1px solid ${themeState.theme.colors.border.primary}`,
+                  color: themeState.theme.colors.text.primary
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = themeState.theme.colors.primary[500]
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = themeState.theme.colors.border.primary
+                }}
+              />
             </div>
-            <div>
-              <h2 className="text-2xl font-bold text-primary bg-gradient-to-r from-primary to-primary-600 bg-clip-text text-transparent">
-                Project Manager
-              </h2>
-              <p className="text-sm text-secondary/80 mt-1">
-                {projects.length} projects • {filteredProjects.length} showing
-              </p>
-            </div>
-          </div>
 
-          <div className="flex items-center space-x-3">
-            {/* Quick Actions */}
-            <div className="flex items-center space-x-2">
+            {/* Action Buttons */}
+            <div className="flex items-center gap-3">
+              {/* Filters */}
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className="px-4 py-3 flex items-center gap-2 rounded-lg transition-all duration-200"
+                style={{
+                  backgroundColor: showFilters 
+                    ? themeColors.interactive.primary.background
+                    : themeColors.interactive.secondary.background,
+                  color: showFilters 
+                    ? themeColors.interactive.primary.text
+                    : themeColors.interactive.secondary.text,
+                  border: `1px solid ${themeColors.interactive.secondary.border}`
+                }}
+                onMouseEnter={(e) => {
+                  if (!showFilters) {
+                    e.currentTarget.style.backgroundColor = themeColors.interactive.secondary.hover
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!showFilters) {
+                    e.currentTarget.style.backgroundColor = themeColors.interactive.secondary.background
+                  }
+                }}
+              >
+                <Filter className="w-4 h-4" />
+                <span className="hidden sm:inline">Filters</span>
+              </button>
+
+              {/* Sort */}
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as any)}
+                className="px-3 py-3 rounded-xl text-sm transition-all duration-200"
+                style={{
+                  backgroundColor: themeState.theme.colors.background.primary,
+                  border: `1px solid ${themeState.theme.colors.border.primary}`,
+                  color: themeState.theme.colors.text.primary
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = themeState.theme.colors.primary[500]
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = themeState.theme.colors.border.primary
+                }}
+              >
+                <option value="updated">Recently Updated</option>
+                <option value="created">Recently Created</option>
+                <option value="title">Name A-Z</option>
+                <option value="panels">Panel Count</option>
+              </select>
+
+              {/* View Mode */}
+              <div 
+                className="flex rounded-lg p-1"
+                style={{ backgroundColor: themeColors.interactive.secondary.background }}
+              >
+                <button
+                  onClick={() => setViewMode('grid')}
+                  className="p-2 rounded-md transition-all duration-200"
+                  style={{
+                    backgroundColor: viewMode === 'grid' 
+                      ? themeColors.interactive.primary.background
+                      : 'transparent',
+                    color: viewMode === 'grid' 
+                      ? themeColors.interactive.primary.text
+                      : themeColors.interactive.secondary.text
+                  }}
+                  onMouseEnter={(e) => {
+                    if (viewMode !== 'grid') {
+                      e.currentTarget.style.color = themeState.theme.colors.text.primary
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (viewMode !== 'grid') {
+                      e.currentTarget.style.color = themeColors.interactive.secondary.text
+                    }
+                  }}
+                >
+                  <Grid className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setViewMode('list')}
+                  className="p-2 rounded-md transition-all duration-200"
+                  style={{
+                    backgroundColor: viewMode === 'list' 
+                      ? themeColors.interactive.primary.background
+                      : 'transparent',
+                    color: viewMode === 'list' 
+                      ? themeColors.interactive.primary.text
+                      : themeColors.interactive.secondary.text
+                  }}
+                  onMouseEnter={(e) => {
+                    if (viewMode !== 'list') {
+                      e.currentTarget.style.color = themeState.theme.colors.text.primary
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (viewMode !== 'list') {
+                      e.currentTarget.style.color = themeColors.interactive.secondary.text
+                    }
+                  }}
+                >
+                  <List className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* New Project */}
               <button
                 onClick={() => setShowCreateForm(true)}
-                className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:shadow-lg transition-all duration-300 transform hover:scale-105"
+                className="px-6 py-3 flex items-center gap-2 rounded-lg transition-all duration-200 font-medium shadow-lg hover:shadow-xl"
+                style={{
+                  backgroundColor: themeColors.interactive.primary.background,
+                  color: themeColors.interactive.primary.text
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = themeColors.interactive.primary.hover
+                  e.currentTarget.style.transform = 'translateY(-1px)'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = themeColors.interactive.primary.background
+                  e.currentTarget.style.transform = 'translateY(0)'
+                }}
               >
                 <Plus className="w-4 h-4" />
                 <span>New Project</span>
               </button>
-
-              {selectedProjects.length > 0 && (
-                <div className="flex items-center space-x-2 px-3 py-2 bg-tertiary/50 rounded-lg border border-primary/20">
-                  <span className="text-sm text-secondary">{selectedProjects.length} selected</span>
-                  <button
-                    onClick={() => exportProjects(selectedProjects)}
-                    className="p-1 hover:bg-tertiary rounded transition-colors"
-                    title="Export selected"
-                  >
-                    <Download className="w-4 h-4 text-secondary" />
-                  </button>
-                  <button
-                    onClick={() => archiveProjects(selectedProjects)}
-                    className="p-1 hover:bg-tertiary rounded transition-colors"
-                    title="Archive selected"
-                  >
-                    <Archive className="w-4 h-4 text-secondary" />
-                  </button>
-                  <button
-                    onClick={() => deleteProjects(selectedProjects)}
-                    className="p-1 hover:bg-red-500/20 rounded transition-colors"
-                    title="Delete selected"
-                  >
-                    <Trash2 className="w-4 h-4 text-red-500" />
-                  </button>
-                </div>
-              )}
             </div>
-
-            <button
-              onClick={onClose}
-              className="p-3 hover:bg-tertiary/50 rounded-xl transition-all duration-300 border border-transparent hover:border-primary/30 hover:shadow-lg group"
-            >
-              <Eye className="w-5 h-5 text-secondary group-hover:text-primary transition-colors" />
-            </button>
           </div>
+
+          {/* Filter Bar */}
+          {showFilters && (
+            <div 
+              className="mt-4 flex flex-wrap gap-2 p-4 rounded-xl"
+              style={{ backgroundColor: themeColors.interactive.secondary.background }}
+            >
+              {['all', 'starred', 'recent', 'archived'].map((filter) => (
+                <button
+                  key={filter}
+                  onClick={() => setFilterBy(filter as any)}
+                  className="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200"
+                  style={{
+                    backgroundColor: filterBy === filter
+                      ? themeColors.interactive.primary.background
+                      : 'transparent',
+                    color: filterBy === filter
+                      ? themeColors.interactive.primary.text
+                      : themeColors.interactive.secondary.text,
+                    border: `1px solid ${filterBy === filter 
+                      ? themeColors.interactive.primary.background 
+                      : 'transparent'}`
+                  }}
+                  onMouseEnter={(e) => {
+                    if (filterBy !== filter) {
+                      e.currentTarget.style.backgroundColor = themeColors.interactive.secondary.hover
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (filterBy !== filter) {
+                      e.currentTarget.style.backgroundColor = 'transparent'
+                    }
+                  }}
+                >
+                  {filter === 'all' ? 'All Projects' : 
+                   filter.charAt(0).toUpperCase() + filter.slice(1)}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Bulk Actions */}
+          {selectedProjects.length > 0 && (
+            <div 
+              className="mt-4 flex items-center justify-between p-3 rounded-xl border"
+              style={{ 
+                backgroundColor: themeColors.status.info.light,
+                borderColor: themeColors.status.info.border
+              }}
+            >
+              <span 
+                className="text-sm font-medium"
+                style={{ color: themeColors.status.info.background }}
+              >
+                {selectedProjects.length} project{selectedProjects.length > 1 ? 's' : ''} selected
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => exportProjects(selectedProjects)}
+                  className="px-3 py-2 text-sm rounded-lg transition-all duration-200"
+                  style={{
+                    backgroundColor: themeColors.interactive.secondary.background,
+                    color: themeColors.interactive.secondary.text,
+                    border: `1px solid ${themeColors.interactive.secondary.border}`
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = themeColors.interactive.secondary.hover
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = themeColors.interactive.secondary.background
+                  }}
+                >
+                  <Download className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => archiveProjects(selectedProjects)}
+                  className="px-3 py-2 text-sm rounded-lg transition-all duration-200"
+                  style={{
+                    backgroundColor: themeColors.interactive.secondary.background,
+                    color: themeColors.interactive.secondary.text,
+                    border: `1px solid ${themeColors.interactive.secondary.border}`
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = themeColors.interactive.secondary.hover
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = themeColors.interactive.secondary.background
+                  }}
+                >
+                  <Archive className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => deleteProjects(selectedProjects)}
+                  className="px-3 py-2 text-sm rounded-lg transition-all duration-200"
+                  style={{
+                    backgroundColor: themeColors.status.error.background,
+                    color: themeColors.status.error.text
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = themeColors.status.error.hover
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = themeColors.status.error.background
+                  }}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
-        <div className="flex h-full max-h-[85vh]">
-          {/* Enhanced Sidebar */}
-          <div className="w-80 border-r border-primary/20 p-6 bg-secondary/20 backdrop-blur-sm">
-            {/* Search and Filters */}
-            <div className="space-y-4 mb-6">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-secondary" />
-                <input
-                  type="text"
-                  placeholder="Search projects..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="input-modern w-full pl-10 bg-tertiary/50 border border-primary/30 focus:border-primary/60"
-                />
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <select
-                  value={filterBy}
-                  onChange={(e) => setFilterBy(e.target.value as any)}
-                  className="select-modern flex-1 bg-tertiary/50 border border-primary/30 focus:border-primary/60"
+        {/* Main Content */}
+        <div className="flex-1 overflow-auto w-full">
+          {showCreateForm ? (
+            /* Enhanced Create Form with Customization */
+            <div 
+              className="max-w-4xl mx-auto rounded-2xl p-8 border m-6"
+              style={{
+                backgroundColor: themeColors.interactive.secondary.background,
+                borderColor: themeColors.interactive.secondary.border
+              }}
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h3 
+                  className="text-2xl font-bold"
+                  style={{ color: themeColors.text.primary.color }}
                 >
-                  <option value="all">All Projects</option>
-                  <option value="starred">Starred</option>
-                  <option value="recent">Recent</option>
-                  <option value="archived">Archived</option>
-                </select>
-
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as any)}
-                  className="select-modern flex-1 bg-tertiary/50 border border-primary/30 focus:border-primary/60"
-                >
-                  <option value="updated">Last Updated</option>
-                  <option value="created">Created Date</option>
-                  <option value="title">Title</option>
-                  <option value="panels">Panel Count</option>
-                </select>
-              </div>
-
-              <div className="flex items-center space-x-2">
+                  Create New Project
+                </h3>
                 <button
-                  onClick={() => setViewMode('grid')}
-                  className={`flex-1 flex items-center justify-center space-x-2 p-2 rounded-lg transition-all duration-200 ${
-                    viewMode === 'grid' 
-                      ? 'bg-primary text-white shadow-lg' 
-                      : 'bg-tertiary/30 text-secondary hover:bg-tertiary/50'
-                  }`}
+                  onClick={() => setShowCreateForm(false)}
+                  className="p-2 rounded-lg transition-all duration-200"
+                  style={{
+                    color: themeColors.interactive.secondary.text
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = themeColors.interactive.secondary.hover
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'transparent'
+                  }}
                 >
-                  <Grid className="w-4 h-4" />
-                  <span className="text-sm">Grid</span>
-                </button>
-                <button
-                  onClick={() => setViewMode('list')}
-                  className={`flex-1 flex items-center justify-center space-x-2 p-2 rounded-lg transition-all duration-200 ${
-                    viewMode === 'list' 
-                      ? 'bg-primary text-white shadow-lg' 
-                      : 'bg-tertiary/30 text-secondary hover:bg-tertiary/50'
-                  }`}
-                >
-                  <List className="w-4 h-4" />
-                  <span className="text-sm">List</span>
+                  <Edit3 className="w-5 h-5" />
                 </button>
               </div>
-            </div>
 
-            {/* Quick Stats */}
-            <div className="grid grid-cols-2 gap-3 mb-6">
-              <div className="bg-gradient-to-br from-blue-500/20 to-blue-600/20 p-4 rounded-xl border border-blue-500/30 backdrop-blur-sm">
-                <div className="text-lg font-bold text-primary">{projects.length}</div>
-                <div className="text-xs text-secondary">Total Projects</div>
-              </div>
-              <div className="bg-gradient-to-br from-green-500/20 to-green-600/20 p-4 rounded-xl border border-green-500/30 backdrop-blur-sm">
-                <div className="text-lg font-bold text-primary">
-                  {projects.filter(p => p.status === 'completed').length}
-                </div>
-                <div className="text-xs text-secondary">Completed</div>
-              </div>
-              <div className="bg-gradient-to-br from-yellow-500/20 to-yellow-600/20 p-4 rounded-xl border border-yellow-500/30 backdrop-blur-sm">
-                <div className="text-lg font-bold text-primary">
-                  {projects.filter(p => p.isStarred).length}
-                </div>
-                <div className="text-xs text-secondary">Starred</div>
-              </div>
-              <div className="bg-gradient-to-br from-purple-500/20 to-purple-600/20 p-4 rounded-xl border border-purple-500/30 backdrop-blur-sm">
-                <div className="text-lg font-bold text-primary">
-                  {projects.reduce((sum, p) => sum + p.panels.length, 0)}
-                </div>
-                <div className="text-xs text-secondary">Total Panels</div>
-              </div>
-            </div>
-
-            {/* Recent Activity */}
-            <div className="bg-tertiary/30 rounded-xl p-4 border border-primary/20">
-              <h3 className="font-semibold text-primary mb-3 flex items-center space-x-2">
-                <Clock className="w-4 h-4" />
-                <span>Recent Activity</span>
-              </h3>
-              <div className="space-y-2">
-                {projects
-                  .filter(p => p.lastOpenedAt)
-                  .sort((a, b) => new Date(b.lastOpenedAt!).getTime() - new Date(a.lastOpenedAt!).getTime())
-                  .slice(0, 5)
-                  .map(project => (
-                    <div key={project.id} className="flex items-center space-x-2 p-2 hover:bg-tertiary/30 rounded-lg transition-colors cursor-pointer"
-                         onClick={() => openProject(project)}>
-                      <div className={`w-2 h-2 rounded-full ${getStatusColor(project.status!)}`} />
-                      <span className="text-sm text-primary truncate flex-1">{project.title}</span>
-                    </div>
-                  ))}
-                {projects.filter(p => p.lastOpenedAt).length === 0 && (
-                  <p className="text-sm text-secondary/60">No recent projects</p>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Enhanced Main Content */}
-          <div className="flex-1 overflow-y-auto p-6 scrollable bg-primary/30 backdrop-blur-sm">
-            {showCreateForm ? (
-              /* Enhanced Create Project Form */
-              <div className="max-w-2xl mx-auto bg-secondary/40 backdrop-blur-sm rounded-xl p-8 border border-primary/20 animate-fade-in">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-xl font-bold text-primary flex items-center space-x-3">
-                    <Sparkles className="w-6 h-6 text-blue-500" />
-                    <span>Create New Project</span>
-                  </h3>
-                  <button
-                    onClick={() => setShowCreateForm(false)}
-                    className="p-2 hover:bg-tertiary/50 rounded-lg transition-colors"
-                  >
-                    <Edit3 className="w-5 h-5 text-secondary" />
-                  </button>
-                </div>
-
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Basic Info */}
                 <div className="space-y-6">
                   <div>
-                    <label className="block text-sm font-medium text-primary mb-2">Project Title</label>
+                    <label 
+                      className="block text-sm font-semibold mb-3"
+                      style={{ color: themeColors.text.primary.color }}
+                    >
+                      Project Name *
+                    </label>
                     <input
                       type="text"
                       value={newProject.title}
                       onChange={(e) => setNewProject(prev => ({ ...prev, title: e.target.value }))}
-                      placeholder="Enter project title..."
-                      className="input-modern w-full bg-tertiary/50 border border-primary/30 focus:border-primary/60"
+                      placeholder="Enter your project name..."
+                      className="w-full text-lg p-4 rounded-xl transition-all duration-200"
+                      style={{
+                        backgroundColor: themeState.theme.colors.background.primary,
+                        border: `1px solid ${themeState.theme.colors.border.primary}`,
+                        color: themeColors.text.primary.color
+                      }}
+                      onFocus={(e) => {
+                        e.currentTarget.style.borderColor = themeState.theme.colors.primary[500]
+                      }}
+                      onBlur={(e) => {
+                        e.currentTarget.style.borderColor = themeState.theme.colors.border.primary
+                      }}
                       autoFocus
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-primary mb-2">Description</label>
+                    <label 
+                      className="block text-sm font-semibold mb-3"
+                      style={{ color: themeColors.text.primary.color }}
+                    >
+                      Description
+                    </label>
                     <textarea
                       value={newProject.description}
                       onChange={(e) => setNewProject(prev => ({ ...prev, description: e.target.value }))}
                       placeholder="Describe your project..."
                       rows={3}
-                      className="input-modern w-full bg-tertiary/50 border border-primary/30 focus:border-primary/60"
+                      className="w-full p-4 rounded-xl transition-all duration-200"
+                      style={{
+                        backgroundColor: themeState.theme.colors.background.primary,
+                        border: `1px solid ${themeState.theme.colors.border.primary}`,
+                        color: themeColors.text.primary.color
+                      }}
+                      onFocus={(e) => {
+                        e.currentTarget.style.borderColor = themeState.theme.colors.primary[500]
+                      }}
+                      onBlur={(e) => {
+                        e.currentTarget.style.borderColor = themeState.theme.colors.border.primary
+                      }}
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-primary mb-2">Status</label>
-                    <select
-                      value={newProject.status}
-                      onChange={(e) => setNewProject(prev => ({ ...prev, status: e.target.value as Project['status'] }))}
-                      className="select-modern w-full bg-tertiary/50 border border-primary/30 focus:border-primary/60"
+                    <label 
+                      className="block text-sm font-semibold mb-3"
+                      style={{ color: themeColors.text.primary.color }}
                     >
-                      <option value="draft">Draft</option>
-                      <option value="in-progress">In Progress</option>
-                      <option value="review">Review</option>
-                      <option value="completed">Completed</option>
-                    </select>
+                      Category
+                    </label>
+                    <input
+                      type="text"
+                      value={newProject.category}
+                      onChange={(e) => setNewProject(prev => ({ ...prev, category: e.target.value }))}
+                      placeholder="e.g., Marketing, Internal, Client Work..."
+                      className="w-full p-4 rounded-xl transition-all duration-200"
+                      style={{
+                        backgroundColor: themeState.theme.colors.background.primary,
+                        border: `1px solid ${themeState.theme.colors.border.primary}`,
+                        color: themeColors.text.primary.color
+                      }}
+                      onFocus={(e) => {
+                        e.currentTarget.style.borderColor = themeState.theme.colors.primary[500]
+                      }}
+                      onBlur={(e) => {
+                        e.currentTarget.style.borderColor = themeState.theme.colors.border.primary
+                      }}
+                    />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-primary mb-2">Tags</label>
-                    <div className="flex flex-wrap gap-2 mb-2">
+                    <label 
+                      className="block text-sm font-semibold mb-3"
+                      style={{ color: themeColors.text.primary.color }}
+                    >
+                      Tags
+                    </label>
+                    <div className="flex flex-wrap gap-2 mb-3">
                       {newProject.tags.map((tag, index) => (
                         <span
                           key={index}
-                          className="inline-flex items-center space-x-1 px-3 py-1 bg-primary/20 text-primary rounded-full text-sm border border-primary/30"
+                          className="inline-flex items-center gap-2 px-3 py-1 bg-primary/20 text-primary rounded-full text-sm border border-primary/30"
                         >
                           <Tag className="w-3 h-3" />
                           <span>{tag}</span>
@@ -570,7 +816,7 @@ export default function ProjectManager({ isOpen, onClose }: ProjectManagerProps)
                     <input
                       type="text"
                       placeholder="Add tags (press Enter)..."
-                      className="input-modern w-full bg-tertiary/50 border border-primary/30 focus:border-primary/60"
+                      className="input-modern w-full p-3 bg-primary border border-primary/30 focus:border-primary/60 rounded-xl"
                       onKeyPress={(e) => {
                         if (e.key === 'Enter') {
                           e.preventDefault()
@@ -580,299 +826,599 @@ export default function ProjectManager({ isOpen, onClose }: ProjectManagerProps)
                       }}
                     />
                   </div>
+                </div>
 
-                  <div className="flex space-x-3 pt-4">
-                    <button
-                      onClick={createProject}
-                      disabled={!newProject.title.trim()}
-                      className="btn-primary flex-1 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transition-all duration-300"
-                    >
-                      Create Project
-                    </button>
-                    <button
-                      onClick={() => setShowCreateForm(false)}
-                      className="btn-secondary flex-1"
-                    >
-                      Cancel
-                    </button>
+                {/* Customization Options */}
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-sm font-semibold text-primary mb-3">Template</label>
+                    <div className="grid grid-cols-2 gap-3">
+                      {PROJECT_TEMPLATES.map((template) => (
+                        <button
+                          key={template.id}
+                          onClick={() => setNewProject(prev => ({ ...prev, template: template.id }))}
+                          className={`p-4 rounded-xl border-2 transition-all text-left ${
+                            newProject.template === template.id
+                              ? 'border-primary/60 bg-primary/20'
+                              : 'border-primary/20 bg-primary/5 hover:border-primary/40'
+                          }`}
+                        >
+                          <div className="text-2xl mb-2">{template.icon}</div>
+                          <div className="font-semibold text-primary text-sm">{template.name}</div>
+                          <div className="text-xs text-secondary mt-1">{template.description}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-primary mb-3">Project Color</label>
+                    <div className="flex flex-wrap gap-3">
+                      {PROJECT_COLORS.map((colorOption) => (
+                        <button
+                          key={colorOption.id}
+                          onClick={() => setNewProject(prev => ({ ...prev, color: colorOption.color }))}
+                          className={`w-10 h-10 rounded-lg border-2 transition-all ${
+                            newProject.color === colorOption.color
+                              ? 'border-white scale-110 shadow-lg'
+                              : 'border-primary/20 hover:scale-105'
+                          }`}
+                          style={{ backgroundColor: colorOption.color }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-primary mb-3">Status</label>
+                      <select
+                        value={newProject.status}
+                        onChange={(e) => setNewProject(prev => ({ ...prev, status: e.target.value as Project['status'] }))}
+                        className="select-modern w-full p-3 bg-primary border border-primary/30 focus:border-primary/60 rounded-xl"
+                      >
+                        <option value="draft">Draft</option>
+                        <option value="in-progress">In Progress</option>
+                        <option value="review">Review</option>
+                        <option value="completed">Completed</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-primary mb-3">Priority</label>
+                      <select
+                        value={newProject.priority}
+                        onChange={(e) => setNewProject(prev => ({ ...prev, priority: e.target.value as Project['priority'] }))}
+                        className="select-modern w-full p-3 bg-primary border border-primary/30 focus:border-primary/60 rounded-xl"
+                      >
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
               </div>
-            ) : (
-              /* Enhanced Projects Display */
-              <>
-                {filteredProjects.length === 0 ? (
-                  <div className="text-center py-20 animate-fade-in">
-                    <div className="w-20 h-20 bg-gradient-to-br from-gray-400 to-gray-600 rounded-xl mx-auto mb-6 flex items-center justify-center">
-                      <FolderOpen className="w-10 h-10 text-white" />
-                    </div>
-                    <h3 className="text-xl font-semibold text-primary mb-2">No Projects Found</h3>
-                    <p className="text-secondary mb-6">
-                      {searchTerm ? 'Try adjusting your search terms' : 'Create your first project to get started'}
-                    </p>
-                    {!searchTerm && (
-                      <button
-                        onClick={() => setShowCreateForm(true)}
-                        className="btn-primary shadow-lg hover:shadow-xl transition-all duration-300"
-                      >
-                        <Plus className="w-4 h-4 mr-2" />
-                        Create Project
-                      </button>
-                    )}
-                  </div>
-                ) : (
-                  <div className={`${
-                    viewMode === 'grid' 
-                      ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6' 
-                      : 'space-y-4'
-                  } animate-fade-in`}>
-                    {filteredProjects.map((project, index) => (
-                      <div
-                        key={project.id}
-                        className={`group relative cursor-pointer transition-all duration-300 hover:scale-105 ${
-                          viewMode === 'grid' 
-                            ? 'bg-secondary/40 backdrop-blur-sm rounded-xl p-6 border border-primary/20 hover:border-primary/40 hover:shadow-xl' 
-                            : 'bg-secondary/30 backdrop-blur-sm rounded-lg p-4 border border-primary/20 hover:border-primary/40 flex items-center space-x-4'
-                        }`}
-                        style={{
-                          animationDelay: `${index * 50}ms`,
-                          transform: 'translateZ(0)'
-                        }}
-                        onClick={() => openProject(project)}
-                      >
-                        {viewMode === 'grid' ? (
-                          <>
-                            {/* Grid View */}
-                            <div className="flex items-start justify-between mb-4">
-                              <div className={`w-3 h-3 rounded-full ${getStatusColor(project.status!)}`} />
-                              <div className="flex items-center space-x-2">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    toggleStar(project.id)
-                                  }}
-                                  className={`p-1 rounded transition-colors ${
-                                    project.isStarred ? 'text-yellow-500' : 'text-secondary hover:text-yellow-500'
-                                  }`}
-                                >
-                                  <Star className="w-4 h-4" fill={project.isStarred ? 'currentColor' : 'none'} />
-                                </button>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    setShowProjectMenu(showProjectMenu === project.id ? null : project.id)
-                                  }}
-                                  className="p-1 text-secondary hover:text-primary rounded transition-colors"
-                                >
-                                  <MoreVertical className="w-4 h-4" />
-                                </button>
-                              </div>
-                            </div>
 
-                            <div className="mb-4">
-                              <h3 className="font-bold text-primary mb-2 line-clamp-2">{project.title}</h3>
-                              <p className="text-sm text-secondary/80 line-clamp-3 mb-3">{project.description}</p>
-                              
-                              <div className="flex items-center space-x-4 text-xs text-secondary/70 mb-3">
-                                <span className="flex items-center space-x-1">
-                                  <Calendar className="w-3 h-3" />
-                                  <span>{new Date(project.updatedAt).toLocaleDateString()}</span>
-                                </span>
-                                <span className="flex items-center space-x-1">
-                                  <CheckCircle2 className="w-3 h-3" />
-                                  <span>{project.panels.length} panels</span>
-                                </span>
-                              </div>
-
-                              {project.tags && project.tags.length > 0 && (
-                                <div className="flex flex-wrap gap-1 mb-3">
-                                  {project.tags.slice(0, 3).map((tag, tagIndex) => (
-                                    <span
-                                      key={tagIndex}
-                                      className="px-2 py-1 bg-primary/20 text-primary rounded-full text-xs border border-primary/30"
-                                    >
-                                      {tag}
-                                    </span>
-                                  ))}
-                                  {project.tags.length > 3 && (
-                                    <span className="px-2 py-1 bg-tertiary/50 text-secondary rounded-full text-xs">
-                                      +{project.tags.length - 3}
-                                    </span>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-
-                            <div className="flex items-center justify-between">
-                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(project.status!)} text-white`}>
-                                {getStatusText(project.status!)}
-                              </span>
-                              
-                              <input
-                                type="checkbox"
-                                checked={selectedProjects.includes(project.id)}
-                                onChange={(e) => {
-                                  e.stopPropagation()
-                                  setSelectedProjects(prev => 
-                                    e.target.checked 
-                                      ? [...prev, project.id]
-                                      : prev.filter(id => id !== project.id)
-                                  )
-                                }}
-                                className="rounded accent-primary"
-                              />
-                            </div>
-                          </>
-                        ) : (
-                          /* List View */
-                          <>
-                            <div className={`w-4 h-4 rounded-full ${getStatusColor(project.status!)}`} />
-                            
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center space-x-3 mb-1">
-                                <h3 className="font-semibold text-primary truncate">{project.title}</h3>
-                                {project.isStarred && <Star className="w-4 h-4 text-yellow-500" fill="currentColor" />}
-                              </div>
-                              <p className="text-sm text-secondary/80 truncate">{project.description}</p>
-                              <div className="flex items-center space-x-4 text-xs text-secondary/70 mt-1">
-                                <span>{project.panels.length} panels</span>
-                                <span>{new Date(project.updatedAt).toLocaleDateString()}</span>
-                                <span className="capitalize">{getStatusText(project.status!)}</span>
-                              </div>
-                            </div>
-
-                            <div className="flex items-center space-x-2">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  setShowProjectMenu(showProjectMenu === project.id ? null : project.id)
-                                }}
-                                className="p-2 text-secondary hover:text-primary rounded transition-colors"
-                              >
-                                <MoreVertical className="w-4 h-4" />
-                              </button>
-                              
-                              <input
-                                type="checkbox"
-                                checked={selectedProjects.includes(project.id)}
-                                onChange={(e) => {
-                                  e.stopPropagation()
-                                  setSelectedProjects(prev => 
-                                    e.target.checked 
-                                      ? [...prev, project.id]
-                                      : prev.filter(id => id !== project.id)
-                                  )
-                                }}
-                                className="rounded accent-primary"
-                              />
-                            </div>
-                          </>
-                        )}
-
-                        {/* Enhanced Context Menu */}
-                        {showProjectMenu === project.id && (
-                          <div className="absolute top-full right-0 mt-2 w-48 bg-primary/95 backdrop-blur-xl rounded-lg shadow-xl border border-primary/20 z-50 animate-scale-in">
-                            <div className="p-2">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  openProject(project)
-                                  setShowProjectMenu(null)
-                                }}
-                                className="w-full flex items-center space-x-3 px-3 py-2 text-sm text-primary hover:bg-secondary/50 rounded transition-colors"
-                              >
-                                <Eye className="w-4 h-4" />
-                                <span>Open Project</span>
-                              </button>
-                              
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  duplicateProject(project)
-                                  setShowProjectMenu(null)
-                                }}
-                                className="w-full flex items-center space-x-3 px-3 py-2 text-sm text-primary hover:bg-secondary/50 rounded transition-colors"
-                              >
-                                <Copy className="w-4 h-4" />
-                                <span>Duplicate</span>
-                              </button>
-                              
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  toggleStar(project.id)
-                                  setShowProjectMenu(null)
-                                }}
-                                className="w-full flex items-center space-x-3 px-3 py-2 text-sm text-primary hover:bg-secondary/50 rounded transition-colors"
-                              >
-                                <Star className="w-4 h-4" />
-                                <span>{project.isStarred ? 'Unstar' : 'Star'}</span>
-                              </button>
-                              
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  archiveProjects([project.id])
-                                  setShowProjectMenu(null)
-                                }}
-                                className="w-full flex items-center space-x-3 px-3 py-2 text-sm text-primary hover:bg-secondary/50 rounded transition-colors"
-                              >
-                                <Archive className="w-4 h-4" />
-                                <span>{project.isArchived ? 'Unarchive' : 'Archive'}</span>
-                              </button>
-                              
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  exportProjects([project.id])
-                                  setShowProjectMenu(null)
-                                }}
-                                className="w-full flex items-center space-x-3 px-3 py-2 text-sm text-primary hover:bg-secondary/50 rounded transition-colors"
-                              >
-                                <Download className="w-4 h-4" />
-                                <span>Export</span>
-                              </button>
-                              
-                              <hr className="my-2 border-primary/20" />
-                              
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  deleteProjects([project.id])
-                                  setShowProjectMenu(null)
-                                }}
-                                className="w-full flex items-center space-x-3 px-3 py-2 text-sm text-red-500 hover:bg-red-500/10 rounded transition-colors"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                                <span>Delete</span>
-                              </button>
-                            </div>
+              <div 
+                className="flex gap-4 pt-8 mt-8 border-t"
+                style={{ borderColor: themeColors.interactive.secondary.border }}
+              >
+                <button
+                  onClick={createProject}
+                  disabled={!newProject.title.trim()}
+                  className="flex-1 py-4 text-lg font-semibold rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{
+                    backgroundColor: !newProject.title.trim() 
+                      ? themeColors.interactive.primary.disabled
+                      : themeColors.interactive.primary.background,
+                    color: themeColors.interactive.primary.text
+                  }}
+                  onMouseEnter={(e) => {
+                    if (newProject.title.trim()) {
+                      e.currentTarget.style.backgroundColor = themeColors.interactive.primary.hover
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (newProject.title.trim()) {
+                      e.currentTarget.style.backgroundColor = themeColors.interactive.primary.background
+                    }
+                  }}
+                >
+                  Create Project
+                </button>
+                <button
+                  onClick={() => setShowCreateForm(false)}
+                  className="flex-1 py-4 text-lg font-semibold rounded-lg transition-all duration-200"
+                  style={{
+                    backgroundColor: themeColors.interactive.secondary.background,
+                    color: themeColors.interactive.secondary.text,
+                    border: `1px solid ${themeColors.interactive.secondary.border}`
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = themeColors.interactive.secondary.hover
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = themeColors.interactive.secondary.background
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : filteredProjects.length === 0 ? (
+            /* Empty State */
+            <div className="text-center py-20 px-6">
+              <div 
+                className="w-32 h-32 rounded-3xl mx-auto mb-8 flex items-center justify-center"
+                style={{
+                  background: `linear-gradient(135deg, ${themeState.theme.colors.primary[500]}20, ${themeState.theme.colors.secondary[500]}20)`
+                }}
+              >
+                <FolderOpen 
+                  className="w-16 h-16"
+                  style={{ color: `${themeState.theme.colors.text.primary}60` }}
+                />
+              </div>
+              <h3 
+                className="text-2xl font-bold mb-4"
+                style={{ color: themeColors.text.primary.color }}
+              >
+                {searchTerm ? 'No projects found' : 'No projects yet'}
+              </h3>
+              <p 
+                className="text-lg mb-8 max-w-md mx-auto"
+                style={{ color: themeColors.text.secondary.color }}
+              >
+                {searchTerm 
+                  ? 'Try adjusting your search terms or filters' 
+                  : 'Create your first project to start building amazing storyboards'}
+              </p>
+              {!searchTerm && (
+                <button
+                  onClick={() => setShowCreateForm(true)}
+                  className="px-8 py-4 text-lg font-semibold rounded-lg transition-all duration-200 shadow-xl hover:shadow-2xl"
+                  style={{
+                    backgroundColor: themeColors.interactive.primary.background,
+                    color: themeColors.interactive.primary.text
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = themeColors.interactive.primary.hover
+                    e.currentTarget.style.transform = 'translateY(-2px)'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = themeColors.interactive.primary.background
+                    e.currentTarget.style.transform = 'translateY(0)'
+                  }}
+                >
+                  <Plus className="w-5 h-5 mr-2" />
+                  Create Your First Project
+                </button>
+              )}
+            </div>
+          ) : (
+            /* Enhanced Projects Grid/List */
+            <div 
+              className={viewMode === 'grid' ? 'grid p-6' : 'space-y-4 p-6'}
+              style={viewMode === 'grid' ? {
+                gridTemplateColumns: `repeat(${responsiveLayout.columns}, 1fr)`,
+                gap: responsiveLayout.gap
+              } : {}}
+            >
+              {filteredProjects.map((project) => (
+                <div
+                  key={project.id}
+                  className={`group relative transition-all duration-300 transform hover:scale-105 rounded-2xl border hover:shadow-xl ${
+                    viewMode === 'grid' ? 'p-6' : 'p-4 flex items-center gap-4'
+                  }`}
+                  style={{ 
+                    backgroundColor: themeColors.interactive.secondary.background,
+                    borderColor: themeColors.interactive.secondary.border,
+                    borderLeftColor: project.color,
+                    borderLeftWidth: viewMode === 'grid' ? '4px' : '6px'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = themeState.theme.colors.primary[300]
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = themeColors.interactive.secondary.border
+                  }}
+                >
+                  {viewMode === 'grid' ? (
+                    <>
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-center gap-2">
+                          <div 
+                            className="w-4 h-4 rounded-full" 
+                            style={{ backgroundColor: project.color }}
+                          />
+                          <span 
+                            className="text-xs font-semibold px-2 py-1 rounded-full"
+                            style={{
+                              backgroundColor: getPriorityColor(project.priority!) === 'text-red-600' ? '#fee2e2' : 
+                                              getPriorityColor(project.priority!) === 'text-yellow-600' ? '#fef3c7' : '#f0fdf4',
+                              color: getPriorityColor(project.priority!) === 'text-red-600' ? '#dc2626' : 
+                                     getPriorityColor(project.priority!) === 'text-yellow-600' ? '#d97706' : '#059669'
+                            }}
+                          >
+                            {project.priority?.toUpperCase()}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              toggleStar(project.id)
+                            }}
+                            className="p-2 rounded-lg transition-colors"
+                            style={{
+                              color: project.isStarred ? '#eab308' : themeColors.text.tertiary.color,
+                              backgroundColor: project.isStarred ? '#fef3c720' : 'transparent'
+                            }}
+                            onMouseEnter={(e) => {
+                              if (!project.isStarred) {
+                                e.currentTarget.style.color = '#eab308'
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              if (!project.isStarred) {
+                                e.currentTarget.style.color = themeColors.text.tertiary.color
+                              }
+                            }}
+                          >
+                            <Star className="w-4 h-4" fill={project.isStarred ? 'currentColor' : 'none'} />
+                          </button>
+                          
+                          {/* Inline Actions */}
+                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                duplicateProject(project)
+                              }}
+                              className="p-2 rounded-lg transition-colors"
+                              style={{ color: themeColors.text.tertiary.color }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.color = themeColors.text.primary.color
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.color = themeColors.text.tertiary.color
+                              }}
+                              title="Duplicate"
+                            >
+                              <Copy className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setEditingProject(project)
+                              }}
+                              className="p-2 rounded-lg transition-colors"
+                              style={{ color: themeColors.text.tertiary.color }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.color = themeColors.text.primary.color
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.color = themeColors.text.tertiary.color
+                              }}
+                              title="Edit"
+                            >
+                              <Settings className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                exportProjects([project.id])
+                              }}
+                              className="p-2 rounded-lg transition-colors"
+                              style={{ color: themeColors.text.tertiary.color }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.color = themeColors.text.primary.color
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.color = themeColors.text.tertiary.color
+                              }}
+                              title="Export"
+                            >
+                              <Download className="w-4 h-4" />
+                            </button>
                           </div>
-                        )}
-
-                        {/* Selection Checkbox for Grid */}
-                        {viewMode === 'grid' && selectedProjects.includes(project.id) && (
-                          <div className="absolute inset-0 bg-primary/20 backdrop-blur-sm rounded-xl border-2 border-primary/50 flex items-center justify-center">
-                            <CheckCircle2 className="w-8 h-8 text-primary" />
-                          </div>
-                        )}
+                        </div>
                       </div>
+
+                      <div className="mb-4" onClick={() => openProject(project)}>
+                        <h3 
+                          className="font-bold text-lg mb-2 line-clamp-2"
+                          style={{ color: themeColors.text.primary.color }}
+                        >
+                          {project.title}
+                        </h3>
+                        {project.description && (
+                          <p 
+                            className="text-sm line-clamp-3 mb-3"
+                            style={{ color: themeColors.text.secondary.color }}
+                          >
+                            {project.description}
+                          </p>
+                        )}
+                        
+                        {project.category && (
+                          <div className="flex items-center gap-1 mb-2">
+                            <FileText 
+                              className="w-3 h-3"
+                              style={{ color: themeColors.text.tertiary.color }}
+                            />
+                            <span 
+                              className="text-xs"
+                              style={{ color: themeColors.text.tertiary.color }}
+                            >
+                              {project.category}
+                            </span>
+                          </div>
+                        )}
+
+                        {project.tags && project.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mb-3">
+                            {project.tags.slice(0, 3).map((tag, index) => (
+                              <span
+                                key={index}
+                                className="px-2 py-1 rounded-full text-xs"
+                                style={{
+                                  backgroundColor: `${themeState.theme.colors.primary[500]}20`,
+                                  color: themeState.theme.colors.primary[600]
+                                }}
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                            {project.tags.length > 3 && (
+                              <span 
+                                className="px-2 py-1 rounded-full text-xs"
+                                style={{
+                                  backgroundColor: themeColors.interactive.secondary.background,
+                                  color: themeColors.text.tertiary.color
+                                }}
+                              >
+                                +{project.tags.length - 3}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                        
+                        <div 
+                          className="flex items-center justify-between text-xs"
+                          style={{ color: themeColors.text.muted.color }}
+                        >
+                          <span className="flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            {new Date(project.updatedAt).toLocaleDateString()}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <CheckCircle2 className="w-3 h-3" />
+                            {project.panels.length} panels
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(project.status!)} text-white`}>
+                          {getStatusText(project.status!)}
+                        </span>
+                        
+                        <input
+                          type="checkbox"
+                          checked={selectedProjects.includes(project.id)}
+                          onChange={(e) => {
+                            e.stopPropagation()
+                            setSelectedProjects(prev => 
+                              e.target.checked 
+                                ? [...prev, project.id]
+                                : prev.filter(id => id !== project.id)
+                            )
+                          }}
+                          className="w-4 h-4 rounded accent-primary"
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    /* List View */
+                    <>
+                      <div 
+                        className="w-6 h-6 rounded-full flex-shrink-0" 
+                        style={{ backgroundColor: project.color }}
+                      />
+                      
+                      <div className="flex-1 min-w-0" onClick={() => openProject(project)}>
+                        <div className="flex items-center gap-3 mb-1">
+                          <h3 
+                            className="font-semibold text-lg truncate"
+                            style={{ color: themeColors.text.primary.color }}
+                          >
+                            {project.title}
+                          </h3>
+                          {project.isStarred && <Star className="w-4 h-4 text-yellow-500" fill="currentColor" />}
+                          <span 
+                            className="text-xs font-semibold px-2 py-1 rounded-full"
+                            style={{
+                              backgroundColor: getPriorityColor(project.priority!) === 'text-red-600' ? '#fee2e2' : 
+                                              getPriorityColor(project.priority!) === 'text-yellow-600' ? '#fef3c7' : '#f0fdf4',
+                              color: getPriorityColor(project.priority!) === 'text-red-600' ? '#dc2626' : 
+                                     getPriorityColor(project.priority!) === 'text-yellow-600' ? '#d97706' : '#059669'
+                            }}
+                          >
+                            {project.priority?.toUpperCase()}
+                          </span>
+                        </div>
+                        {project.description && (
+                          <p 
+                            className="text-sm truncate mb-2"
+                            style={{ color: themeColors.text.secondary.color }}
+                          >
+                            {project.description}
+                          </p>
+                        )}
+                        <div 
+                          className="flex items-center gap-4 text-xs"
+                          style={{ color: themeColors.text.muted.color }}
+                        >
+                          <span>{project.panels.length} panels</span>
+                          <span>{new Date(project.updatedAt).toLocaleDateString()}</span>
+                          <span className="capitalize">{getStatusText(project.status!)}</span>
+                          {project.category && <span>{project.category}</span>}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1">
+                        {/* Inline Actions */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            duplicateProject(project)
+                          }}
+                          className="p-2 rounded-lg transition-colors"
+                          style={{ color: themeColors.text.tertiary.color }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.color = themeColors.text.primary.color
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.color = themeColors.text.tertiary.color
+                          }}
+                          title="Duplicate"
+                        >
+                          <Copy className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setEditingProject(project)
+                          }}
+                          className="p-2 rounded-lg transition-colors"
+                          style={{ color: themeColors.text.tertiary.color }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.color = themeColors.text.primary.color
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.color = themeColors.text.tertiary.color
+                          }}
+                          title="Edit"
+                        >
+                          <Settings className="w-4 h-4" />
+                        </button>
+                        
+                        <input
+                          type="checkbox"
+                          checked={selectedProjects.includes(project.id)}
+                          onChange={(e) => {
+                            e.stopPropagation()
+                            setSelectedProjects(prev => 
+                              e.target.checked 
+                                ? [...prev, project.id]
+                                : prev.filter(id => id !== project.id)
+                            )
+                          }}
+                          className="w-4 h-4 rounded accent-primary"
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  {/* Selection Overlay for Grid */}
+                  {viewMode === 'grid' && selectedProjects.includes(project.id) && (
+                    <div className="absolute inset-0 bg-primary/20 backdrop-blur-sm rounded-2xl border-2 border-primary/50 flex items-center justify-center">
+                      <CheckCircle2 className="w-8 h-8 text-primary" />
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Quick Edit Modal */}
+        {editingProject && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+            <div className="bg-secondary rounded-2xl p-6 max-w-md w-full border border-primary/20">
+              <h3 className="text-xl font-bold text-primary mb-4">Edit Project</h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-primary mb-2">Project Name</label>
+                  <input
+                    type="text"
+                    value={editingProject.title}
+                    onChange={(e) => setEditingProject(prev => prev ? {...prev, title: e.target.value} : null)}
+                    className="input-modern w-full p-3 bg-primary border border-primary/30 rounded-xl"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-semibold text-primary mb-2">Color</label>
+                  <div className="flex gap-2">
+                    {PROJECT_COLORS.map((colorOption) => (
+                      <button
+                        key={colorOption.id}
+                        onClick={() => setEditingProject(prev => prev ? {...prev, color: colorOption.color} : null)}
+                        className={`w-8 h-8 rounded-lg border-2 transition-all ${
+                          editingProject.color === colorOption.color
+                            ? 'border-white scale-110'
+                            : 'border-primary/20 hover:scale-105'
+                        }`}
+                        style={{ backgroundColor: colorOption.color }}
+                      />
                     ))}
                   </div>
-                )}
-              </>
-            )}
-          </div>
-        </div>
-      </div>
+                </div>
 
-      {/* Click outside to close menu */}
-      {showProjectMenu && (
-        <div 
-          className="fixed inset-0 z-40" 
-          onClick={() => setShowProjectMenu(null)}
-        />
-      )}
-    </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-semibold text-primary mb-2">Status</label>
+                    <select
+                      value={editingProject.status}
+                      onChange={(e) => setEditingProject(prev => prev ? {...prev, status: e.target.value as Project['status']} : null)}
+                      className="select-modern w-full p-2 bg-primary border border-primary/30 rounded-lg text-sm"
+                    >
+                      <option value="draft">Draft</option>
+                      <option value="in-progress">In Progress</option>
+                      <option value="review">Review</option>
+                      <option value="completed">Completed</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-primary mb-2">Priority</label>
+                    <select
+                      value={editingProject.priority}
+                      onChange={(e) => setEditingProject(prev => prev ? {...prev, priority: e.target.value as Project['priority']} : null)}
+                      className="select-modern w-full p-2 bg-primary border border-primary/30 rounded-lg text-sm"
+                    >
+                      <option value="low">Low</option>
+                      <option value="medium">Medium</option>
+                      <option value="high">High</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={() => {
+                    updateProject(editingProject.id, editingProject)
+                  }}
+                  className="btn-primary flex-1 py-3"
+                >
+                  Save Changes
+                </button>
+                <button
+                  onClick={() => setEditingProject(null)}
+                  className="btn-secondary flex-1 py-3"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </WindowFrame>
   )
 } 

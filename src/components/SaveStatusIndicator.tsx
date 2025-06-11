@@ -13,8 +13,8 @@ export default function SaveStatusIndicator({ saveState, className = '' }: SaveS
         return {
           icon: <Loader2 className="w-4 h-4 animate-spin" />,
           text: 'Saving...',
-          color: 'text-blue-600 bg-blue-50',
-          textColor: 'text-blue-700'
+          color: 'text-secondary-theme bg-secondary-100',
+          textColor: 'text-secondary-theme'
         }
       case 'saved':
         return {
@@ -34,8 +34,8 @@ export default function SaveStatusIndicator({ saveState, className = '' }: SaveS
         return {
           icon: <Clock className="w-4 h-4" />,
           text: 'Not saved',
-          color: 'text-gray-600 bg-gray-50',
-          textColor: 'text-gray-700'
+          color: 'text-secondary-theme bg-secondary-100',
+          textColor: 'text-secondary-theme'
         }
     }
   }

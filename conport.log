@@ -1,0 +1,25 @@
+/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/context_portal_mcp/main.py:755: DeprecationWarning: The sse_app method is deprecated (as of 2.3.2). Use http_app as a modern (non-SSE) alternative, or call `fastmcp.server.http.create_sse_app` directly.
+  app.mount("/mcp", conport_mcp.sse_app())
+2025-06-07 22:11:34,993 - INFO - __main__ - Mounted FastMCP app at /mcp
+2025-06-07 22:11:34,993 - INFO - __main__ - ConPort Server Root Directory identified as: /Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13
+2025-06-07 22:11:34,993 - INFO - __main__ - ConPort MCP Server CLI entry point called.
+usage: main.py [-h] [--host HOST] [--port PORT] [--workspace_id WORKSPACE_ID]
+               [--mode {http,stdio}] [--log-file LOG_FILE]
+               [--log-level {DEBUG,INFO,WARNING,ERROR,CRITICAL}]
+main.py: error: unrecognized arguments: --workspace-id /Users/jamisonstevens/Documents/Storyboard AI --db-path .conport/context.db
+2025-06-07 22:12:20,592 - INFO - __main__ - Logging to file: conport.log
+2025-06-07 22:12:20,592 - INFO - __main__ - Starting ConPort in STDIO mode using FastMCP for initial CLI arg workspace_id: /Users/jamisonstevens/Documents/Storyboard AI
+2025-06-07 22:12:20,592 - WARNING - context_portal_mcp.db.database - Template alembic.ini not found at /Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/context_portal_mcp/templates/alembic/alembic.ini. Cannot auto-provision.
+2025-06-07 22:12:20,592 - WARNING - context_portal_mcp.db.database - Template alembic/ directory not found at /Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/context_portal_mcp/templates/alembic/alembic. Cannot auto-provision.
+2025-06-07 22:12:20,592 - INFO - __main__ - STDIO mode: Using effective_workspace_id '/Users/jamisonstevens/Documents/Storyboard AI'. Database directory will be created on first actual DB use.
+2025-06-07 22:12:20,594 - INFO - FastMCP.fastmcp.server.server - Starting MCP server 'ConPort' with transport 'stdio'
+2025-06-07 22:12:20,596 - INFO - __main__ - ConPort FastMCP server lifespan starting.
+2025-06-07 22:12:20,597 - INFO - __main__ - ConPort FastMCP server lifespan shutting down. Closing all DB connections.
+2025-06-07 22:15:53,336 - INFO - __main__ - Logging to file: conport.log
+2025-06-07 22:15:53,337 - INFO - __main__ - Starting ConPort in STDIO mode using FastMCP for initial CLI arg workspace_id: /Users/jamisonstevens/Documents/Storyboard AI
+2025-06-07 22:15:53,337 - WARNING - context_portal_mcp.db.database - Template alembic.ini not found at /Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/context_portal_mcp/templates/alembic/alembic.ini. Cannot auto-provision.
+2025-06-07 22:15:53,337 - WARNING - context_portal_mcp.db.database - Template alembic/ directory not found at /Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/context_portal_mcp/templates/alembic/alembic. Cannot auto-provision.
+2025-06-07 22:15:53,337 - INFO - __main__ - STDIO mode: Using effective_workspace_id '/Users/jamisonstevens/Documents/Storyboard AI'. Database directory will be created on first actual DB use.
+2025-06-07 22:15:53,339 - INFO - FastMCP.fastmcp.server.server - Starting MCP server 'ConPort' with transport 'stdio'
+2025-06-07 22:15:53,341 - INFO - __main__ - ConPort FastMCP server lifespan starting.
+2025-06-07 22:15:53,341 - INFO - __main__ - ConPort FastMCP server lifespan shutting down. Closing all DB connections.

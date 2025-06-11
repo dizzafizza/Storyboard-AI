@@ -10,8 +10,12 @@
   31-40: Window frames (dragging/resizing)
   41-50: Mobile overlays
   51-60: Toast notifications
-  9000-9999: Windows (normal)
-  10000+: Windows (active/dragging)
+  9000-9099: Main windows (AI Assistant, Project Manager, etc.)
+  9100-9199: Secondary windows (Settings, Templates, etc.)
+  9200-9299: Tertiary windows (User Guide, etc.)
+  9500-9599: Sub-windows (opened from other windows)
+  9900-9999: Confirmation dialogs and critical overlays
+  10000+: Windows (active/dragging/resizing)
 */
 
 /* ===== THEME-AWARE CSS VARIABLES ===== */
@@ -79,6 +83,14 @@
   --glass-border: rgba(255, 255, 255, 0.2);
   --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
   --blur-amount: 12px;
+
+  /* Button & Interactive Element Colors */
+  --btn-text-primary: #ffffff;
+  --btn-text-secondary: var(--text-primary);
+  --success-color: #10b981;
+  --error-color: #ef4444;
+  --warning-color: #f59e0b;
+  --info-color: var(--primary-500);
 }
 
 /* Dark theme variables */
@@ -94,6 +106,206 @@
   --glass-bg: rgba(0, 0, 0, 0.7);
   --glass-border: rgba(255, 255, 255, 0.1);
   --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+
+  /* Dark theme button colors */
+  --btn-text-primary: #ffffff;
+  --btn-text-secondary: var(--text-primary);
+}
+
+/* ===== THEME-AWARE COMPONENT STYLES ===== */
+.bg-primary {
+  background-color: var(--bg-primary);
+}
+
+.bg-secondary {
+  background-color: var(--bg-secondary);
+}
+
+.bg-tertiary {
+  background-color: var(--bg-tertiary);
+}
+
+.text-primary {
+  color: var(--text-primary);
+}
+
+.text-secondary {
+  color: var(--text-secondary);
+}
+
+.text-tertiary {
+  color: var(--text-tertiary);
+}
+
+.border-primary {
+  border-color: var(--border-primary);
+}
+
+.border-secondary {
+  border-color: var(--border-secondary);
+}
+
+/* Enhanced button styles with proper theming */
+.btn-primary {
+  @apply px-4 py-2 rounded-xl font-semibold transition-all duration-300 transform-gpu;
+  @apply hover:scale-105 active:scale-95;
+  @apply shadow-lg hover:shadow-xl;
+  @apply border border-transparent;
+  background: linear-gradient(135deg, var(--primary-500), var(--primary-600));
+  color: var(--btn-text-primary);
+  font-weight: 600;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, var(--primary-600), var(--primary-700));
+  box-shadow: 0 10px 25px rgba(var(--primary-600), 0.3);
+  transform: translateY(-1px) scale(1.05);
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+}
+
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.btn-primary:hover::before {
+  left: 100%;
+}
+
+.btn-secondary {
+  @apply px-4 py-2 rounded-xl font-semibold transition-all duration-300 transform-gpu;
+  @apply hover:scale-105 active:scale-95;
+  @apply shadow-md hover:shadow-lg;
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-primary);
+  font-weight: 600;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-secondary:hover {
+  background-color: var(--bg-tertiary);
+  border-color: var(--primary-300);
+  color: var(--primary-700);
+  transform: translateY(-1px) scale(1.02);
+}
+
+.btn-secondary:active {
+  transform: scale(0.98);
+}
+
+/* Input and form elements with proper theming */
+.input-modern {
+  @apply px-4 py-3 rounded-xl border-2 transition-all duration-300;
+  @apply focus:ring-4 focus:ring-opacity-20 focus:outline-none;
+  @apply shadow-sm hover:shadow-md focus:shadow-lg;
+  background-color: var(--bg-primary);
+  border-color: var(--border-primary);
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.input-modern:focus {
+  border-color: var(--primary-500);
+  box-shadow: 0 0 0 4px rgba(var(--primary-500), 0.1);
+  transform: translateY(-1px);
+}
+
+.input-modern:hover {
+  border-color: var(--primary-300);
+}
+
+.input-modern::placeholder {
+  color: var(--text-tertiary);
+  font-weight: 400;
+}
+
+.textarea-modern {
+  @apply px-4 py-3 rounded-xl border-2 transition-all duration-300 resize-none;
+  @apply focus:ring-4 focus:ring-opacity-20 focus:outline-none;
+  @apply shadow-sm hover:shadow-md focus:shadow-lg;
+  background-color: var(--bg-primary);
+  border-color: var(--border-primary);
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.textarea-modern:focus {
+  border-color: var(--primary-500);
+  box-shadow: 0 0 0 4px rgba(var(--primary-500), 0.1);
+  transform: translateY(-1px);
+}
+
+.textarea-modern:hover {
+  border-color: var(--primary-300);
+}
+
+.textarea-modern::placeholder {
+  color: var(--text-tertiary);
+  font-weight: 400;
+}
+
+.select-modern {
+  @apply px-4 py-3 rounded-xl border-2 transition-all duration-300;
+  @apply focus:ring-4 focus:ring-opacity-20 focus:outline-none;
+  @apply shadow-sm hover:shadow-md focus:shadow-lg;
+  background-color: var(--bg-primary);
+  border-color: var(--border-primary);
+  color: var(--text-primary);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.select-modern:focus {
+  border-color: var(--primary-500);
+  box-shadow: 0 0 0 4px rgba(var(--primary-500), 0.1);
+}
+
+.select-modern:hover {
+  border-color: var(--primary-300);
+  transform: translateY(-1px);
+}
+
+/* Card components with proper theming */
+.card-modern {
+  @apply rounded-2xl shadow-lg border transition-all duration-300 transform-gpu;
+  @apply hover:shadow-xl hover:scale-105;
+  background-color: var(--bg-primary);
+  border-color: var(--border-primary);
+}
+
+.card-modern:hover {
+  border-color: var(--border-secondary);
+  transform: translateY(-2px) scale(1.02);
+}
+
+.card-interactive {
+  @apply rounded-2xl shadow-lg border transition-all duration-300 transform-gpu cursor-pointer;
+  @apply hover:shadow-xl hover:scale-105 active:scale-95;
+  background-color: var(--bg-primary);
+  border-color: var(--border-primary);
+}
+
+.card-interactive:hover {
+  border-color: var(--primary-300);
+  box-shadow: 0 10px 30px rgba(var(--primary-500), 0.15);
+  transform: translateY(-3px);
+}
+
+.card-interactive:active {
+  transform: translateY(-1px) scale(0.98);
 }
 
 /* ===== ENHANCED ANIMATIONS ===== */
@@ -269,17 +481,105 @@
 }
 
 @keyframes colorShift {
-  0%, 100% {
+  0%, 100% { 
     filter: hue-rotate(0deg);
   }
-  25% {
+  25% { 
     filter: hue-rotate(90deg);
   }
-  50% {
+  50% { 
     filter: hue-rotate(180deg);
   }
-  75% {
+  75% { 
     filter: hue-rotate(270deg);
+  }
+}
+
+/* Enhanced Hamburger Menu Animations */
+@keyframes hamburger-bounce {
+  0%, 100% {
+    transform: scale(1) rotate(0deg);
+  }
+  50% {
+    transform: scale(1.1) rotate(90deg);
+  }
+}
+
+@keyframes nav-slide-in {
+  0% {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes nav-backdrop-fade {
+  0% {
+    opacity: 0;
+    backdrop-filter: blur(0px);
+  }
+  100% {
+    opacity: 1;
+    backdrop-filter: blur(12px);
+  }
+}
+
+@keyframes menu-item-entrance {
+  0% {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes hamburger-active-glow {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(14, 165, 233, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(14, 165, 233, 0.6), 0 0 30px rgba(14, 165, 233, 0.3);
+  }
+}
+
+/* Enhanced bubble animations for minimized windows */
+@keyframes bubble-float {
+  0%, 100% { 
+    transform: translateY(0px) rotate(0deg); 
+  }
+  25% { 
+    transform: translateY(-3px) rotate(0.5deg); 
+  }
+  50% { 
+    transform: translateY(-1px) rotate(0deg); 
+  }
+  75% { 
+    transform: translateY(2px) rotate(-0.5deg); 
+  }
+}
+
+@keyframes bubble-glow {
+  0%, 100% { 
+    filter: brightness(1) saturate(1);
+  }
+  50% { 
+    filter: brightness(1.1) saturate(1.2);
+  }
+}
+
+@keyframes bubble-pulse-ring {
+  0% {
+    transform: scale(0.8);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.4);
+    opacity: 0;
   }
 }
 
@@ -387,6 +687,144 @@
   animation: colorShift 6s ease-in-out infinite;
 }
 
+/* Enhanced hamburger menu animation classes */
+.animate-hamburger-bounce {
+  animation: hamburger-bounce 0.4s var(--animate-bounce);
+}
+
+.animate-nav-slide-in {
+  animation: nav-slide-in 0.3s var(--animate-smooth);
+}
+
+.animate-nav-backdrop-fade {
+  animation: nav-backdrop-fade 0.3s var(--animate-smooth);
+}
+
+.animate-menu-item-entrance {
+  animation: menu-item-entrance 0.4s var(--animate-smooth);
+}
+
+.animate-hamburger-active-glow {
+  animation: hamburger-active-glow 2s ease-in-out infinite;
+}
+
+/* Hamburger menu button enhanced styles */
+.hamburger-menu-button {
+  position: relative;
+  overflow: hidden;
+  will-change: transform, background-color, box-shadow;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+.hamburger-menu-button:active {
+  animation: hamburger-bounce 0.4s var(--animate-bounce);
+}
+
+.hamburger-menu-button.active {
+  animation: hamburger-active-glow 2s ease-in-out infinite;
+}
+
+.hamburger-menu-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.3s ease;
+}
+
+.hamburger-menu-button:hover::before {
+  left: 100%;
+}
+
+/* Enhanced bubble animation classes */
+.minimized-bubble {
+  animation: bubble-float 8s ease-in-out infinite;
+}
+
+.minimized-bubble:hover {
+  animation: bubble-float 4s ease-in-out infinite, bubble-glow 3s ease-in-out infinite;
+}
+
+.bubble-pulse-ring {
+  animation: bubble-pulse-ring 2s cubic-bezier(0.455, 0.03, 0.515, 0.955) infinite;
+}
+
+/* Enhanced animations for redesigned minimized windows */
+@keyframes minimized-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes minimized-restore {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.3) translateY(-20px);
+  }
+}
+
+@keyframes taskbar-glow {
+  0%, 100% {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+  }
+  50% {
+    box-shadow: 0 8px 16px rgba(0,0,0,0.12), 0 2px 4px rgba(0,0,0,0.06);
+  }
+}
+
+/* Minimized window styling classes */
+.minimized-window-card {
+  animation: minimized-slide-in 0.3s ease-out;
+}
+
+.minimized-window-card.restoring {
+  animation: minimized-restore 0.5s ease-out forwards;
+}
+
+.minimized-window-card:hover {
+  animation: taskbar-glow 2s ease-in-out infinite;
+}
+
+/* Enhanced glass effect for minimized windows */
+.minimized-glass {
+  backdrop-filter: blur(12px) saturate(120%);
+  -webkit-backdrop-filter: blur(12px) saturate(120%);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Responsive minimized window adjustments */
+@media (max-width: 768px) {
+  .minimized-window-card {
+    width: 160px !important;
+    height: 50px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .minimized-window-card {
+    width: 140px !important;
+    height: 45px !important;
+  }
+}
+
 /* Enhanced Delayed animations for staggered effects */
 .animate-delay-50 { animation-delay: 0.05s; }
 .animate-delay-100 { animation-delay: 0.1s; }
@@ -439,8 +877,9 @@
 /* ===== PERFORMANCE OPTIMIZATIONS ===== */
 .transform-gpu {
   transform: translateZ(0);
-  will-change: transform, opacity;
+  will-change: auto;
   backface-visibility: hidden;
+  -webkit-transform: translateZ(0);
 }
 
 .transition-smooth {
@@ -455,67 +894,37 @@
   transition: all var(--animate-duration) var(--animate-spring);
 }
 
+/* Enhanced theme transition optimization */
+.theme-transition {
+  transition: background-color 0.2s ease-out, color 0.2s ease-out, border-color 0.2s ease-out;
+}
+
+.theme-transition-fast {
+  transition: background-color 0.1s ease-out, color 0.1s ease-out, border-color 0.1s ease-out;
+}
+
+/* Optimized animation classes */
+.animate-scale-in {
+  animation: scaleIn 0.15s ease-out forwards;
+}
+
+.animate-scale-out {
+  animation: scaleOut 0.15s ease-in forwards;
+}
+
+@keyframes scaleIn {
+  from { transform: scale(0.95) translateZ(0); opacity: 0; }
+  to { transform: scale(1) translateZ(0); opacity: 1; }
+}
+
+@keyframes scaleOut {
+  from { transform: scale(1) translateZ(0); opacity: 1; }
+  to { transform: scale(0.95) translateZ(0); opacity: 0; }
+}
+
 /* ===== ENHANCED COMPONENT STYLING ===== */
 
-/* Modern Button System with Better Theming */
-.btn-primary {
-  @apply px-4 py-2 rounded-xl font-semibold transition-all duration-300 transform-gpu;
-  @apply hover:scale-105 active:scale-95;
-  @apply shadow-lg hover:shadow-xl;
-  @apply border border-transparent;
-  background: linear-gradient(135deg, var(--primary-600), var(--primary-700));
-  color: white;
-  font-weight: 600;
-  position: relative;
-  overflow: hidden;
-}
-
-.btn-primary:hover {
-  background: linear-gradient(135deg, var(--primary-700), var(--primary-800));
-  box-shadow: 0 10px 25px rgba(var(--primary-600), 0.3);
-}
-
-.btn-primary:active {
-  transform: scale(0.98);
-}
-
-.btn-primary::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transition: left 0.5s;
-}
-
-.btn-primary:hover::before {
-  left: 100%;
-}
-
-.btn-secondary {
-  @apply px-4 py-2 rounded-xl font-semibold transition-all duration-300 transform-gpu;
-  @apply hover:scale-105 active:scale-95;
-  @apply shadow-md hover:shadow-lg;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-primary);
-  color: var(--text-primary);
-  font-weight: 600;
-  position: relative;
-  overflow: hidden;
-}
-
-.btn-secondary:hover {
-  background: var(--bg-tertiary);
-  border-color: var(--primary-300);
-  color: var(--primary-700);
-  transform: translateY(-1px) scale(1.02);
-}
-
-.btn-secondary:active {
-  transform: scale(0.98);
-}
+/* Button styles are now in the theme-aware section above */
 
 .btn-ghost {
   @apply px-4 py-2 rounded-xl font-semibold transition-all duration-300 transform-gpu;
@@ -533,107 +942,7 @@
   transform: translateY(-1px);
 }
 
-/* Modern Input System with Enhanced Theming */
-.input-modern {
-  @apply px-4 py-3 rounded-xl border-2 transition-all duration-300;
-  @apply focus:ring-4 focus:ring-opacity-20 focus:outline-none;
-  @apply shadow-sm hover:shadow-md focus:shadow-lg;
-  background: var(--bg-primary);
-  border-color: var(--border-primary);
-  color: var(--text-primary);
-  font-weight: 500;
-}
-
-.input-modern:focus {
-  border-color: var(--primary-500);
-  box-shadow: 0 0 0 4px rgba(var(--primary-500), 0.1);
-  transform: translateY(-1px);
-}
-
-.input-modern:hover {
-  border-color: var(--primary-300);
-}
-
-.input-modern::placeholder {
-  color: var(--text-tertiary);
-  font-weight: 400;
-}
-
-.textarea-modern {
-  @apply px-4 py-3 rounded-xl border-2 transition-all duration-300 resize-none;
-  @apply focus:ring-4 focus:ring-opacity-20 focus:outline-none;
-  @apply shadow-sm hover:shadow-md focus:shadow-lg;
-  background: var(--bg-primary);
-  border-color: var(--border-primary);
-  color: var(--text-primary);
-  font-weight: 500;
-}
-
-.textarea-modern:focus {
-  border-color: var(--primary-500);
-  box-shadow: 0 0 0 4px rgba(var(--primary-500), 0.1);
-  transform: translateY(-1px);
-}
-
-.textarea-modern:hover {
-  border-color: var(--primary-300);
-}
-
-.textarea-modern::placeholder {
-  color: var(--text-tertiary);
-  font-weight: 400;
-}
-
-/* Select Elements */
-.select-modern {
-  @apply px-4 py-3 rounded-xl border-2 transition-all duration-300;
-  @apply focus:ring-4 focus:ring-opacity-20 focus:outline-none;
-  @apply shadow-sm hover:shadow-md focus:shadow-lg;
-  background: var(--bg-primary);
-  border-color: var(--border-primary);
-  color: var(--text-primary);
-  font-weight: 500;
-  cursor: pointer;
-}
-
-.select-modern:focus {
-  border-color: var(--primary-500);
-  box-shadow: 0 0 0 4px rgba(var(--primary-500), 0.1);
-}
-
-.select-modern:hover {
-  border-color: var(--primary-300);
-  transform: translateY(-1px);
-}
-
-/* Card System with Enhanced Theme Support */
-.card-modern {
-  @apply rounded-2xl shadow-lg border transition-all duration-300 transform-gpu;
-  @apply hover:shadow-xl hover:scale-105;
-  background: var(--bg-primary);
-  border-color: var(--border-primary);
-}
-
-.card-modern:hover {
-  transform: translateY(-2px) scale(1.02);
-}
-
-.card-interactive {
-  @apply rounded-2xl shadow-lg border transition-all duration-300 transform-gpu cursor-pointer;
-  @apply hover:shadow-xl hover:scale-105 active:scale-95;
-  background: var(--bg-primary);
-  border-color: var(--border-primary);
-}
-
-.card-interactive:hover {
-  border-color: var(--primary-300);
-  box-shadow: 0 10px 30px rgba(var(--primary-500), 0.15);
-  transform: translateY(-3px);
-}
-
-.card-interactive:active {
-  transform: translateY(-1px) scale(0.98);
-}
+/* Input/form/card styles are now in the theme-aware section above */
 
 /* Enhanced Text Styles with Better Saturation */
 .text-primary-theme {
@@ -656,6 +965,82 @@
   color: var(--text-primary);
   font-weight: 700;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Themed Button Utilities */
+.btn-success {
+  @apply btn-primary;
+  background: linear-gradient(135deg, var(--success-color), #059669);
+  color: var(--btn-text-primary);
+}
+
+.btn-success:hover {
+  background: linear-gradient(135deg, #059669, #047857);
+}
+
+.btn-error {
+  @apply btn-primary;
+  background: linear-gradient(135deg, var(--error-color), #dc2626);
+  color: var(--btn-text-primary);
+}
+
+.btn-error:hover {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+}
+
+.btn-warning {
+  @apply btn-primary;
+  background: linear-gradient(135deg, var(--warning-color), #d97706);
+  color: var(--btn-text-primary);
+}
+
+.btn-warning:hover {
+  background: linear-gradient(135deg, #d97706, #b45309);
+}
+
+/* Button with proper text color for light/dark themes */
+.btn-theme-aware {
+  color: var(--btn-text-primary);
+}
+
+.btn-secondary-theme {
+  color: var(--btn-text-secondary);
+}
+
+/* Utility classes for common hardcoded color patterns */
+.text-theme-primary {
+  color: var(--text-primary) !important;
+}
+
+.text-theme-secondary {
+  color: var(--text-secondary) !important;
+}
+
+.bg-theme-primary {
+  background-color: var(--bg-primary) !important;
+}
+
+.bg-theme-secondary {
+  background-color: var(--bg-secondary) !important;
+}
+
+.border-theme-primary {
+  border-color: var(--border-primary) !important;
+}
+
+/* Spinner utility with theme colors */
+.spinner-theme {
+  border-color: var(--text-primary);
+  border-top-color: transparent;
+}
+
+/* Modal backdrop with theme support */
+.modal-backdrop-theme {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dark"] .modal-backdrop-theme {
+  background-color: rgba(0, 0, 0, 0.7);
 }
 
 /* Background theme classes */
@@ -738,13 +1123,19 @@
   background: var(--scrollbar-thumb-hover);
 }
 
-/* Window System with Fixed Z-Index and Improved Positioning */
+/* Enhanced Window System with Performance Optimizations */
 .window-frame {
   @apply fixed rounded-2xl shadow-2xl overflow-hidden;
   z-index: 9000;
   transform: translateZ(0);
-  will-change: transform;
-  transition: transform 0.2s var(--animate-smooth);
+  will-change: auto;
+  transition: transform 0.15s var(--animate-smooth), box-shadow 0.15s var(--animate-smooth);
+  /* Ensure windows are not clipped by parent containers */
+  contain: layout style;
+  isolation: isolate;
+  backface-visibility: hidden;
+  /* Enhanced compositing layer */
+  -webkit-transform: translateZ(0);
 }
 
 .window-frame.dragging {
@@ -752,12 +1143,43 @@
   cursor: grabbing;
   transition: none;
   user-select: none;
+  will-change: transform, left, top;
+  /* Higher stacking context during drag */
+  isolation: isolate;
+  contain: layout;
 }
 
 .window-frame.resizing {
   z-index: 10000;
   transition: none;
   user-select: none;
+  will-change: transform, width, height, left, top;
+  /* Higher stacking context during resize */
+  isolation: isolate;
+  contain: layout;
+}
+
+/* Improved window content scaling */
+.window-frame .scrollable {
+  /* Better scroll performance */
+  scroll-behavior: smooth;
+  overflow-x: hidden;
+  overflow-y: auto;
+  contain: layout style;
+}
+
+/* Responsive window scaling utilities */
+.window-responsive-text {
+  font-size: clamp(11px, 2vw, 15px);
+  line-height: clamp(1.2, 1.4, 1.5);
+}
+
+.window-responsive-padding {
+  padding: clamp(0.25rem, 1.5vw, 0.75rem);
+}
+
+.window-responsive-margin {
+  margin: clamp(0.125rem, 0.75vw, 0.375rem);
 }
 
 /* Enhanced Project Stats */
@@ -1182,44 +1604,586 @@ select:focus-visible {
 
 /* Responsive Utilities */
 @media (max-width: 768px) {
+  /* Enhanced card interactions for mobile */
   .card-modern,
   .card-interactive {
-    @apply hover:scale-100;
+    @apply hover:scale-100 active:scale-95;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    border-radius: 16px;
+    min-height: 200px;
   }
   
+  /* Mobile-specific panel styling */
+  .storyboard-panel-mobile {
+    border-radius: 16px;
+    min-height: 240px;
+    touch-action: manipulation;
+  }
+  
+  /* Better mobile header */
+  .mobile-header {
+    padding: 12px 16px;
+    border-radius: 0 0 20px 20px;
+  }
+  
+  /* Mobile fab improvements */
+  .mobile-fab-container {
+    position: fixed;
+    bottom: 20px;
+    right: 16px;
+    z-index: 30;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  /* Enhanced button interactions */
   .btn-primary,
   .btn-secondary,
   .btn-ghost {
     @apply hover:scale-100 active:scale-95;
+    min-height: 44px; /* iOS minimum touch target */
+    min-width: 44px;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
   }
   
+  /* Enhanced window frames for mobile */
   .window-frame {
     @apply inset-0 rounded-none;
     z-index: 9999;
+    max-height: 100vh;
+    max-width: 100vw;
   }
   
+  /* Enhanced traffic lights for mobile */
   .traffic-light {
-    width: 16px;
-    height: 16px;
+    width: 20px;
+    height: 20px;
+    min-height: 44px;
+    min-width: 44px;
+    touch-action: manipulation;
   }
 
+  /* Enhanced project stats for mobile */
   .project-stats {
-    @apply flex-col space-x-0 space-y-2;
+    @apply flex-col space-x-0 space-y-3;
   }
 
   .project-stat-item {
-    @apply flex-row space-y-0 space-x-2;
+    @apply flex-row space-y-0 space-x-3 p-4;
+    min-height: 60px;
+  }
+
+  /* Enhanced form inputs for mobile */
+  input, textarea, select {
+    min-height: 44px;
+    font-size: 16px; /* Prevent zoom on iOS */
+    border-radius: 12px;
+    padding: 12px 16px;
+  }
+
+  /* Enhanced navigation for mobile */
+  .mobile-nav-item {
+    min-height: 56px;
+    border-radius: 16px;
+    margin-bottom: 8px;
+    touch-action: manipulation;
+  }
+
+  /* Enhanced floating action buttons */
+  .mobile-fab {
+    min-height: 56px;
+    min-width: 56px;
+    border-radius: 28px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Enhanced minimized window bubbles for mobile */
+  .minimized-bubble {
+    min-height: 64px;
+    min-width: 64px;
+    border-radius: 20px;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Enhanced grid layouts for mobile */
+  .grid-responsive {
+    @apply grid-cols-1 gap-4;
+  }
+
+  .grid-responsive-sm {
+    @apply grid-cols-2 gap-3;
+  }
+
+  /* Enhanced spacing for mobile */
+  .mobile-spacing {
+    @apply px-4 py-3;
+  }
+
+  .mobile-spacing-lg {
+    @apply px-6 py-4;
+  }
+
+  /* Enhanced typography for mobile */
+  .mobile-title {
+    @apply text-xl font-bold leading-tight;
+  }
+
+  .mobile-subtitle {
+    @apply text-sm font-medium leading-relaxed;
+  }
+
+  .mobile-body {
+    @apply text-base leading-relaxed;
+  }
+
+  /* Enhanced scrollable areas for mobile */
+  .scrollable-mobile {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+    overscroll-behavior: contain;
+  }
+
+  /* Enhanced modal overlays for mobile */
+  .modal-overlay-mobile {
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  /* Enhanced AI assistant for mobile */
+  .ai-assistant-mobile {
+    max-height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  }
+
+  .ai-send-input-mobile {
+    min-height: 44px;
+    font-size: 16px;
+    border-radius: 22px;
+    padding: 12px 20px;
+  }
+
+  .ai-send-button-mobile {
+    min-height: 44px;
+    min-width: 44px;
+    border-radius: 22px;
+  }
+
+  /* Enhanced theme picker for mobile */
+  .theme-picker-mobile {
+    @apply grid-cols-2 gap-3;
+  }
+
+  /* Enhanced project manager for mobile */
+  .project-card-mobile {
+    min-height: 120px;
+    border-radius: 16px;
+    touch-action: manipulation;
+  }
+
+  /* Enhanced video prompt generator for mobile */
+  .video-prompt-mobile {
+    min-height: 200px;
+    border-radius: 16px;
+  }
+
+  /* Enhanced storyboard grid for mobile */
+  .storyboard-panel-mobile {
+    min-height: 280px;
+    border-radius: 20px;
+    touch-action: manipulation;
+  }
+
+  /* Enhanced timeline view for mobile */
+  .timeline-mobile {
+    padding: 0 16px;
+  }
+
+  .timeline-panel-mobile {
+    min-height: 160px;
+    border-radius: 16px;
+    margin-bottom: 16px;
   }
 }
 
-/* Print Styles */
+/* ===== ENHANCED TABLET OPTIMIZATION ===== */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .grid-responsive {
+    @apply grid-cols-2 gap-4;
+  }
+
+  .grid-responsive-lg {
+    @apply grid-cols-3 gap-4;
+  }
+
+  .window-frame {
+    min-width: 400px;
+    min-height: 300px;
+  }
+
+  .tablet-spacing {
+    @apply px-6 py-4;
+  }
+
+  .theme-picker-tablet {
+    @apply grid-cols-3 gap-4;
+  }
+
+  .project-card-tablet {
+    min-height: 200px;
+  }
+
+  .storyboard-panel-tablet {
+    min-height: 320px;
+  }
+}
+
+/* ===== LAPTOP SCREEN OPTIMIZATION (1366px - 1440px) ===== */
+@media (min-width: 1025px) and (max-width: 1440px) {
+  .grid-responsive {
+    @apply grid-cols-2 gap-4;
+  }
+
+  .grid-responsive-lg {
+    @apply grid-cols-3 gap-4;
+  }
+
+  .grid-responsive-xl {
+    @apply grid-cols-4 gap-4;
+  }
+
+  .laptop-spacing {
+    @apply px-4 py-3;
+  }
+
+  .theme-picker-laptop {
+    @apply grid-cols-3 gap-4;
+  }
+
+  .project-card-laptop {
+    min-height: 200px;
+  }
+
+  .storyboard-panel-laptop {
+    min-height: 320px;
+  }
+
+  /* Enhanced window management for laptops */
+  .window-frame {
+    min-width: 300px;
+    min-height: 220px;
+    border-radius: 10px;
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  }
+
+  .window-frame.dragging {
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2), 0 0 0 3px rgba(var(--primary-500), 0.4);
+    transform: scale(1.01) rotate(0.3deg);
+  }
+
+  .window-frame.resizing {
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.18), 0 0 0 2px rgba(var(--primary-500), 0.6);
+  }
+
+  /* Tighter spacing for laptop screens */
+  .window-responsive-padding {
+    padding: clamp(0.25rem, 1vw, 0.5rem);
+  }
+
+  /* Smaller fonts for better fit */
+  .window-responsive-text {
+    font-size: clamp(11px, 1.5vw, 14px);
+  }
+}
+
+/* ===== ENHANCED DESKTOP OPTIMIZATION (1440px+) ===== */
+@media (min-width: 1441px) {
+  .grid-responsive {
+    @apply grid-cols-3 gap-6;
+  }
+
+  .grid-responsive-lg {
+    @apply grid-cols-4 gap-6;
+  }
+
+  .grid-responsive-xl {
+    @apply grid-cols-5 gap-6;
+  }
+
+  .desktop-spacing {
+    @apply px-8 py-6;
+  }
+
+  .theme-picker-desktop {
+    @apply grid-cols-4 gap-6;
+  }
+
+  .project-card-desktop {
+    min-height: 240px;
+  }
+
+  .storyboard-panel-desktop {
+    min-height: 400px;
+  }
+
+  /* Enhanced window management for desktop */
+  .window-frame {
+    min-width: 320px;
+    min-height: 240px;
+    border-radius: 12px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  }
+
+  .window-frame.dragging {
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.25), 0 0 0 4px rgba(var(--primary-500), 0.4);
+    transform: scale(1.02) rotate(0.5deg);
+  }
+
+  .window-frame.resizing {
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2), 0 0 0 2px rgba(var(--primary-500), 0.6);
+  }
+}
+
+/* ===== ENHANCED TOUCH INTERACTIONS ===== */
+@media (hover: none) and (pointer: coarse) {
+  /* Enhanced touch targets */
+  button, .btn, [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Enhanced hover effects for touch devices */
+  .hover-touch-none:hover {
+    transform: none !important;
+    box-shadow: initial !important;
+  }
+
+  /* Enhanced focus styles for touch */
+  input:focus, textarea:focus, select:focus, button:focus {
+    outline: 2px solid var(--primary-500);
+    outline-offset: 2px;
+  }
+
+  /* Enhanced scroll behavior for touch */
+  .scrollable {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+}
+
+/* ===== ENHANCED ACCESSIBILITY FOR MOBILE ===== */
+@media (prefers-reduced-motion: reduce) {
+  .window-frame,
+  .minimized-bubble,
+  .mobile-fab,
+  .project-card-mobile,
+  .storyboard-panel-mobile {
+    transition: none !important;
+    animation: none !important;
+    transform: none !important;
+  }
+
+  .animate-float,
+  .animate-glow,
+  .animate-pulse-soft,
+  .animate-bounce,
+  .animate-spin {
+    animation: none !important;
+  }
+}
+
+/* ===== ENHANCED HIGH CONTRAST MODE ===== */
+@media (prefers-contrast: high) {
+  .window-frame,
+  .mobile-fab,
+  .project-card-mobile,
+  .storyboard-panel-mobile {
+    border: 3px solid var(--text-primary) !important;
+    background: var(--bg-primary) !important;
+  }
+
+  .btn-primary,
+  .btn-secondary,
+  .btn-ghost {
+    border: 2px solid var(--text-primary) !important;
+    font-weight: 700 !important;
+  }
+
+  .text-primary-theme,
+  .text-secondary-theme,
+  .text-tertiary-theme {
+    font-weight: 700 !important;
+    text-shadow: none !important;
+  }
+}
+
+/* ===== ENHANCED SAFE AREA SUPPORT ===== */
+@supports (padding: max(0px)) {
+  .safe-area-mobile {
+    padding-top: max(1rem, env(safe-area-inset-top));
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
+
+  .safe-top-mobile {
+    padding-top: max(1rem, env(safe-area-inset-top));
+  }
+
+  .safe-bottom-mobile {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+    margin-bottom: max(0rem, env(safe-area-inset-bottom));
+  }
+
+  .safe-left-mobile {
+    padding-left: max(1rem, env(safe-area-inset-left));
+  }
+
+  .safe-right-mobile {
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
+
+  /* Enhanced floating elements with safe area */
+  .mobile-fab {
+    bottom: max(20px, env(safe-area-inset-bottom) + 20px);
+    right: max(20px, env(safe-area-inset-right) + 20px);
+  }
+
+  .minimized-bubble {
+    bottom: max(20px, env(safe-area-inset-bottom) + 20px);
+  }
+
+  .mobile-drawer {
+    bottom: max(0px, env(safe-area-inset-bottom));
+  }
+
+  .toast-container-mobile {
+    top: max(20px, env(safe-area-inset-top) + 20px);
+    right: max(20px, env(safe-area-inset-right) + 20px);
+  }
+}
+
+/* ===== ENHANCED PERFORMANCE OPTIMIZATION ===== */
+@media (max-width: 768px) and (max-resolution: 1.5dppx) {
+  /* Reduce visual effects on low-end mobile devices */
+  .glass-effect,
+  .glass-light,
+  .glass-dark,
+  .glass-subtle {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: var(--bg-secondary) !important;
+  }
+
+  .animate-glow,
+  .animate-gradient-move,
+  .animate-color-shift {
+    animation: none !important;
+  }
+
+  .transform-gpu {
+    transform: none !important;
+  }
+
+  .shadow-2xl,
+  .shadow-3xl {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  }
+}
+
+/* ===== ENHANCED DARK MODE FOR MOBILE ===== */
+@media (prefers-color-scheme: dark) and (max-width: 768px) {
+  .window-frame {
+    background: rgba(15, 23, 42, 0.95) !important;
+    border-color: rgba(71, 85, 105, 0.5) !important;
+  }
+
+  .mobile-fab {
+    background: linear-gradient(135deg, var(--primary-600), var(--primary-700)) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  }
+
+  .project-card-mobile,
+  .storyboard-panel-mobile {
+    background: rgba(30, 41, 59, 0.9) !important;
+    border-color: rgba(71, 85, 105, 0.3) !important;
+  }
+
+  .mobile-drawer {
+    background: rgba(15, 23, 42, 0.98) !important;
+    backdrop-filter: blur(20px) !important;
+  }
+}
+
+/* ===== ENHANCED LANDSCAPE ORIENTATION ===== */
+@media (max-width: 768px) and (orientation: landscape) {
+  .window-frame {
+    max-height: 90vh;
+  }
+
+  .ai-assistant-mobile {
+    max-height: calc(90vh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  }
+
+  .mobile-drawer {
+    max-height: 70vh;
+  }
+
+  .project-card-mobile {
+    min-height: 100px;
+  }
+
+  .storyboard-panel-mobile {
+    min-height: 200px;
+  }
+
+  .timeline-panel-mobile {
+    min-height: 120px;
+  }
+
+  /* Adjust grid for landscape */
+  .grid-responsive {
+    @apply grid-cols-2 gap-3;
+  }
+
+  .theme-picker-mobile {
+    @apply grid-cols-3 gap-2;
+  }
+}
+
+/* ===== ENHANCED PRINT STYLES ===== */
 @media print {
   .window-frame,
   .modal-backdrop,
   .dropdown-menu,
   .toast-container,
-  .mobile-drawer {
+  .mobile-drawer,
+  .mobile-fab,
+  .minimized-bubble {
     display: none !important;
+  }
+
+  .storyboard-panel,
+  .project-card {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    border: 1px solid #000 !important;
+    background: white !important;
+    color: black !important;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    border: 1px solid #000 !important;
+    background: white !important;
+    color: black !important;
   }
 }
 
@@ -1279,7 +2243,7 @@ select:focus-visible {
   }
 }
 
-/* Safe Area for Mobile */
+/* Safe Area for Mobile - Enhanced Safari Support */
 @supports (padding: max(0px)) {
   .safe-top {
     padding-top: max(1rem, env(safe-area-inset-top));
@@ -1296,4 +2260,895 @@ select:focus-visible {
   .safe-right {
     padding-right: max(1rem, env(safe-area-inset-right));
   }
-} 
+}
+
+/* Enhanced iOS Safari viewport support */
+@supports (height: 100dvh) {
+  .full-height-modern {
+    height: 100dvh;
+  }
+}
+
+@supports not (height: 100dvh) {
+  .full-height-modern {
+    height: 100vh;
+    height: calc(var(--vh, 1vh) * 100);
+  }
+}
+
+/* iOS Safari keyboard handling */
+@supports (height: 100dvh) {
+  .keyboard-aware {
+    height: 100dvh;
+    min-height: 100svh;
+  }
+}
+
+/* Safari-specific scrolling improvements */
+.safari-scroll-fix {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* Enhanced Safari touch and interaction support */
+.safari-optimized {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Safari button and input optimizations */
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
+button {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+/* Safari-specific focus improvements */
+@supports selector(:focus-visible) {
+  button:focus:not(:focus-visible),
+  input:focus:not(:focus-visible),
+  textarea:focus:not(:focus-visible),
+  select:focus:not(:focus-visible) {
+    outline: none;
+  }
+}
+
+/* iOS Safari specific fixes */
+@supports (-webkit-touch-callout: none) {
+  /* iOS detected */
+  .window-frame {
+    -webkit-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
+  }
+  
+  .storyboard-panel {
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+  }
+  
+  /* Fix iOS Safari rubber band scrolling */
+  body {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+}
+
+/* Touch and responsive enhancements */
+.touch-manipulation {
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Enhanced responsive breakpoints */
+@media (max-width: 480px) {
+  .btn-primary,
+  .btn-secondary {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    min-height: 2.5rem;
+    border-radius: 0.75rem;
+  }
+  
+  .window-frame {
+    border-radius: 0.75rem !important;
+  }
+  
+  .storyboard-panel button {
+    min-width: 1.75rem;
+    min-height: 1.75rem;
+  }
+  
+  .input-modern,
+  .textarea-modern,
+  .select-modern {
+    padding: 0.75rem;
+    font-size: 0.875rem;
+    border-radius: 0.75rem;
+  }
+}
+
+@media (min-width: 481px) and (max-width: 768px) {
+  .btn-primary,
+  .btn-secondary {
+    padding: 0.625rem 1rem;
+    font-size: 0.9375rem;
+    min-height: 2.75rem;
+  }
+  
+  .storyboard-panel button {
+    min-width: 2rem;
+    min-height: 2rem;
+  }
+}
+
+/* Better scaling for very small screens */
+@media (max-width: 320px) {
+  .window-frame {
+    font-size: 0.8125rem;
+  }
+  
+  .btn-primary,
+  .btn-secondary {
+    padding: 0.375rem 0.625rem;
+    font-size: 0.75rem;
+    min-height: 2.25rem;
+  }
+  
+  .storyboard-panel button {
+    min-width: 1.5rem;
+    min-height: 1.5rem;
+  }
+}
+
+/* Enhanced grid responsiveness */
+.grid-responsive-enhanced {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+@media (max-width: 640px) {
+  .grid-responsive-enhanced {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .grid-responsive-enhanced {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 0.75rem;
+  }
+}
+
+@media (min-width: 1025px) and (max-width: 1366px) {
+  .grid-responsive-enhanced {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+  }
+}
+
+@media (min-width: 1367px) {
+  .grid-responsive-enhanced {
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.5rem;
+  }
+}
+
+/* Button states and accessibility */
+button:disabled,
+[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+button:focus-visible {
+  outline: 2px solid var(--primary-500);
+  outline-offset: 2px;
+}
+
+/* Laptop-specific button sizing */
+@media (min-width: 1025px) and (max-width: 1440px) {
+  .btn-primary,
+  .btn-secondary {
+    padding: 0.5rem 0.875rem;
+    font-size: 0.875rem;
+    min-height: 2.25rem;
+  }
+  
+  .btn-ghost {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.8125rem;
+    min-height: 2rem;
+  }
+}
+
+/* Panel editor specific improvements */
+.panel-editor-content {
+  min-height: 0;
+  overflow: visible;
+  width: 100%;
+}
+
+.panel-editor-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  height: 100%;
+  min-height: 0;
+  width: 100%;
+  max-width: 100%;
+}
+
+@media (min-width: 768px) {
+  .panel-editor-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+}
+
+@media (max-width: 767px) {
+  .panel-editor-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    padding: 0.5rem;
+  }
+  
+  .panel-editor-content {
+    overflow: visible;
+    min-height: auto;
+    width: 100%;
+  }
+}
+
+/* Improve input field responsiveness and visibility */
+.input-modern,
+.textarea-modern,
+.select-modern {
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  position: relative;
+  z-index: 1;
+}
+
+/* Force visibility and proper sizing on smaller screens */
+@media (max-width: 480px) {
+  .panel-editor-grid {
+    padding: 0.75rem;
+    gap: 1rem;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .panel-editor-content {
+    width: 100%;
+    max-width: 100%;
+    flex: 1;
+  }
+  
+  .panel-editor-content > div {
+    margin-bottom: 1rem;
+    width: 100%;
+    max-width: 100%;
+  }
+  
+  .input-modern,
+  .textarea-modern,
+  .select-modern {
+    font-size: 16px; /* Prevent zoom on iOS */
+    padding: 0.75rem;
+    width: 100%;
+    max-width: 100%;
+    min-height: 44px; /* Touch target */
+    display: block;
+    position: relative;
+    z-index: 1;
+  }
+  
+  label {
+    display: block;
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+}
+
+/* Text truncation utilities */
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+}
+
+.line-clamp-4 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  overflow: hidden;
+}
+
+/* Animation utilities */
+.animate-slide-down {
+  animation: slideDown 0.2s ease-out;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    max-height: 200px;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+    max-height: 200px;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-10px);
+    max-height: 0;
+  }
+}
+
+/* Improved scrollbar for touch devices */
+@media (hover: none) and (pointer: coarse) {
+  .scrollable::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  .scrollable::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+  }
+}
+
+/* Grid layout fixes to prevent overlapping */
+.storyboard-grid-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+  padding: 1rem;
+  width: 100%;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.storyboard-grid-item {
+  width: 100%;
+  min-height: 400px;
+  /* Remove max-height to allow dynamic sizing */
+  position: relative;
+  contain: layout style paint;
+  transform: translateZ(0); /* Force hardware acceleration */
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Mobile adjustments for grid items */
+@media (max-width: 768px) {
+  .storyboard-grid-item {
+    min-height: 320px; /* Slightly smaller on mobile */
+  }
+}
+
+.storyboard-grid-item:hover {
+  transform: translateY(-2px);
+}
+
+.storyboard-grid-item:active {
+  transform: translateY(0px);
+}
+
+/* Multi-selection visual enhancements */
+.storyboard-panel.multi-selected {
+  position: relative;
+  isolation: isolate;
+}
+
+.storyboard-panel.multi-selected::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  background: linear-gradient(45deg, #3b82f6, #8b5cf6, #06b6d4, #3b82f6);
+  background-size: 400% 400%;
+  border-radius: inherit;
+  z-index: -1;
+  animation: gradientShift 3s ease infinite;
+  opacity: 0.6;
+}
+
+@keyframes gradientShift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* Context menu enhancements */
+.context-menu {
+  backdrop-filter: blur(12px);
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  animation: contextMenuAppear 0.15s ease-out;
+}
+
+[data-theme="dark"] .context-menu {
+  background: rgba(31, 41, 55, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+@keyframes contextMenuAppear {
+  0% {
+    opacity: 0;
+    transform: scale(0.9) translateY(-10px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.context-menu-item {
+  transition: all 0.15s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.context-menu-item:hover {
+  transform: translateX(4px);
+}
+
+.context-menu-item:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.context-menu-item:disabled:hover {
+  transform: none;
+}
+
+/* Keyboard shortcuts overlay */
+.keyboard-shortcuts-overlay {
+  backdrop-filter: blur(8px);
+  background: rgba(0, 0, 0, 0.8);
+  animation: fadeInSlideDown 0.3s ease-out;
+}
+
+@keyframes fadeInSlideDown {
+  0% {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.keyboard-shortcuts-overlay kbd {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  font-family: monospace;
+  font-size: 10px;
+  padding: 2px 4px;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+/* Bulk actions toolbar */
+.bulk-actions-toolbar {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1));
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  backdrop-filter: blur(8px);
+  animation: slideInFromTop 0.3s ease-out;
+}
+
+@keyframes slideInFromTop {
+  0% {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.bulk-action-button {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.bulk-action-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.bulk-action-button:active {
+  transform: translateY(0);
+}
+
+.bulk-action-button::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transform: translateX(-100%);
+  transition: transform 0.5s ease;
+}
+
+.bulk-action-button:hover::before {
+  transform: translateX(100%);
+}
+
+/* Selection counter badge */
+.selection-counter {
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  animation: counterAppear 0.3s ease-out;
+  position: relative;
+  overflow: hidden;
+}
+
+.selection-counter::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  animation: shimmer 2s ease-in-out infinite;
+}
+
+@keyframes counterAppear {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes shimmer {
+  0%, 100% { transform: translateX(-100%); }
+  50% { transform: translateX(100%); }
+}
+
+/* Focus indicators for keyboard navigation */
+.storyboard-grid-container:focus-within .storyboard-panel:focus {
+  outline: 3px solid #3b82f6;
+  outline-offset: 2px;
+  border-radius: 16px;
+}
+
+.storyboard-panel:focus-visible {
+  outline: 3px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Loading states for bulk operations */
+.bulk-operation-loading {
+  position: relative;
+  overflow: hidden;
+}
+
+.bulk-operation-loading::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.4),
+    transparent
+  );
+  animation: loadingShimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes loadingShimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@media (max-width: 640px) {
+  .storyboard-grid-container {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    padding: 1rem 0.75rem;
+  }
+  
+  .storyboard-grid-item {
+    min-height: 280px;
+    max-height: none; /* Allow dynamic sizing */
+  }
+}
+
+/* Improved mobile touch targets and spacing */
+@media (max-width: 480px) {
+  .storyboard-grid-container {
+    gap: 0.75rem;
+    padding: 0.75rem 0.5rem;
+  }
+  
+  .storyboard-grid-item {
+    min-height: 260px;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .storyboard-grid-container {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+    padding: 1rem;
+  }
+  
+  .storyboard-grid-item {
+    min-height: 320px;
+  }
+}
+
+@media (min-width: 1025px) and (max-width: 1440px) {
+  .storyboard-grid-container {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.25rem;
+    padding: 1.25rem;
+  }
+  
+  .storyboard-grid-item {
+    min-height: 350px;
+  }
+}
+
+@media (min-width: 1441px) {
+  .storyboard-grid-container {
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.5rem;
+    padding: 1.5rem;
+  }
+  
+  .storyboard-grid-item {
+    min-height: 380px;
+  }
+}
+
+/* Action buttons responsive layout */
+.storyboard-panel-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  max-width: 100%;
+  overflow: visible;
+}
+
+/* Ensure proper stacking context for panels */
+.storyboard-panel {
+  isolation: isolate;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.storyboard-panel.selected {
+  z-index: 20;
+}
+
+.storyboard-panel.hovered {
+  z-index: 10;
+}
+
+/* Fix button group layout */
+.button-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  justify-content: flex-end;
+  max-width: 100%;
+}
+
+.button-group button,
+.button-group label {
+  flex-shrink: 0;
+  min-width: 1.75rem;
+  min-height: 1.75rem;
+}
+
+@media (min-width: 640px) {
+  .button-group button,
+  .button-group label {
+    min-width: 2rem;
+    min-height: 2rem;
+  }
+}
+
+/* Drag and drop enhancements */
+.storyboard-grid-item.dragging {
+  opacity: 0.5;
+  transform: scale(0.95) rotate(2deg);
+  z-index: 1000;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.storyboard-grid-item.drag-over {
+  transform: scale(1.02);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.4);
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1));
+}
+
+.storyboard-panel[draggable="true"] {
+  cursor: grab;
+}
+
+.storyboard-panel[draggable="true"]:active {
+  cursor: grabbing;
+}
+
+.storyboard-panel.dragging {
+  opacity: 0.8;
+  transform: rotate(3deg);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+}
+
+/* Drop zone indicators */
+.drop-zone-indicator {
+  position: absolute;
+  inset: -2px;
+  border: 2px dashed #3b82f6;
+  border-radius: 16px;
+  background: rgba(59, 130, 246, 0.1);
+  animation: dropZonePulse 1.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes dropZonePulse {
+  0%, 100% { 
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% { 
+    opacity: 1;
+    transform: scale(1.02);
+  }
+}
+
+/* Enhanced multi-selection visual enhancements */
+.storyboard-panel.multi-selected {
+  position: relative;
+  isolation: isolate;
+}
+
+/* Mobile-specific improvements */
+@media (max-width: 768px) {
+  .storyboard-grid-container {
+    grid-template-columns: 1fr; /* Single column on mobile */
+    gap: 16px; /* Larger gap for easier touch interaction */
+  }
+  
+  .storyboard-panel {
+    min-height: 200px; /* Ensure panels are large enough for touch */
+  }
+  
+  /* Enhanced mobile touch targets */
+  .touch-manipulation,
+  button, .btn, [role="button"], .storyboard-panel button {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    min-height: 44px !important; /* iOS HIG minimum touch target */
+    min-width: 44px !important;
+  }
+  
+  /* Better text sizing on mobile */
+  body {
+    font-size: 16px; /* Prevent zoom on iOS */
+  }
+
+  /* Improve form inputs on mobile */
+  input, textarea, select {
+    font-size: 16px !important; /* Prevent zoom on iOS */
+    min-height: 44px;
+  }
+  
+  /* Enhanced selection feedback on mobile */
+  .storyboard-panel.selected {
+    transform: scale(1.02);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  }
+  
+  /* Mobile context menu improvements */
+  .context-menu {
+    background: rgba(0, 0, 0, 0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+    min-width: 200px;
+  }
+  
+  .context-menu-item {
+    padding: 16px 20px; /* Larger touch targets */
+    font-size: 16px; /* Larger text for readability */
+    color: white;
+  }
+  
+  /* Mobile grid actions */
+  .bulk-action-button {
+    min-height: 44px;
+    min-width: 44px;
+    touch-action: manipulation;
+  }
+  
+  /* Hide hover effects on touch devices */
+  .storyboard-panel:hover {
+    transform: none;
+  }
+  
+  /* Enhanced mobile selection indicators */
+  .storyboard-panel.selected::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(45deg, #3b82f6, #8b5cf6);
+    border-radius: 18px;
+    z-index: -1;
+    animation: pulse 2s ease-in-out infinite;
+  }
+  
+  @keyframes pulse {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+  }
+
+  /* Better spacing for mobile content */
+  .mobile-spacing {
+    padding: 12px 16px;
+  }
+
+  /* Mobile-specific grid improvements */
+  .storyboard-grid-container {
+    padding: 12px !important;
+    gap: 16px !important;
+  }
+}
+
+/* Tablet-specific improvements */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .storyboard-grid-container {
+    grid-template-columns: repeat(2, 1fr); /* Two columns on tablet */
+  }
+}
+
+/* Desktop improvements */
+@media (min-width: 1025px) {
+  .storyboard-grid-container {
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Responsive columns */
+  }
+}

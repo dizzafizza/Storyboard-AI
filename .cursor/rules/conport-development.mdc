@@ -1,0 +1,92 @@
+---
+description: ConPort-first development rules for large React TypeScript codebase with structured knowledge management
+globs: 
+alwaysApply: false
+---
+---
+description: ConPort-first development rules for large React TypeScript codebase with structured knowledge management
+globs: ["src/**/*", "*.md", "scripts/**/*.py"]
+alwaysApply: true
+---
+
+# ConPort-First Development for Storyboard AI
+
+## Core Principles
+
+### ConPort Integration Protocol
+- ALWAYS query ConPort for architectural decisions before making code changes
+- Use semantic search to find related components and patterns across 24 React components
+- Log new decisions, patterns, and learnings to ConPort during development
+- Build context systematically: Architecture → Patterns → Domain → Implementation
+
+### Large Codebase Navigation
+- Follow component hierarchy: Context → Services → Components → Utils
+- Reference type definitions in @src/types/index.ts for data flow understanding
+- Use ConPort's vector embeddings for conceptual similarity matching
+- Leverage knowledge graph relationships for component dependencies
+
+## Component-Specific Guidelines
+
+### Large Components (>30KB)
+- **AIAssistant.tsx** (81KB): Use ConPort for AI integration patterns and prompt management
+- **ProjectManager.tsx** (39KB): Reference project lifecycle patterns and storage decisions
+- **VideoPromptGenerator.tsx** (31KB): Follow AI content generation and prompt optimization patterns
+- **StoryboardPanel.tsx** (30KB): Check storyboard domain concepts and panel lifecycle patterns
+
+### React & TypeScript Standards
+- Use StoryboardContext and ThemeContext as established patterns
+- Implement proper TypeScript interfaces from src/types/index.ts
+- Follow container-presenter pattern where applicable
+- Use React.memo for expensive re-renders on large components
+
+## AI Service Integration
+
+### OpenAI Integration
+- Follow patterns in @src/services/ai.ts (43KB)
+- Reference AI agent configuration decisions in ConPort
+- Implement proper error handling and retry logic
+- Use established prompt templates and context assembly
+
+### Performance Requirements
+- Target <200ms for ConPort query response times
+- Consider component splitting for files >500 lines
+- Use lazy loading for non-critical components
+- Monitor bundle size impact of changes
+
+## Development Workflow
+
+### Before Development
+1. Query ConPort for related concepts and decisions
+2. Check established patterns in DEVELOPMENT_PATTERNS.md
+3. Review domain concepts from ConPort glossary
+4. Identify affected components and dependencies
+
+### During Development
+- Log significant decisions with rationale to ConPort
+- Update progress tracking for complex features
+- Document new patterns for reuse
+- Link related components and concepts
+
+### After Implementation
+- Update ConPort with new learnings and relationships
+- Validate against established architectural principles
+- Update KNOWLEDGE_INDEX.md for new concepts
+- Record optimization opportunities
+
+## Security & Privacy
+- Never expose API keys in code or ConPort
+- Follow privacy-first patterns from ConPort decisions
+- Implement proper data validation and sanitization
+- Use established storage patterns in @src/utils/storage.ts
+
+## Error Handling
+- Implement graceful degradation for AI service failures
+- Use ErrorBoundary.tsx for component failure isolation
+- Provide meaningful user feedback for failures
+- Log errors appropriately without exposing sensitive data
+
+This project uses ConPort for structured knowledge management. Always query ConPort before making significant changes and contribute new knowledge back to the system.
+
+@KNOWLEDGE_INDEX.md
+@DEVELOPMENT_PATTERNS.md
+@projectBrief.md

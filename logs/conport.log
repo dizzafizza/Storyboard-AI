@@ -1,0 +1,181 @@
+2025-06-07 22:32:01,586 - INFO - __main__ - Logging to file: logs/conport.log
+2025-06-07 22:32:01,587 - INFO - __main__ - Starting ConPort HTTP server (via FastMCP) on 127.0.0.1:8000
+2025-06-07 22:37:52,927 - INFO - __main__ - Logging to file: logs/conport.log
+2025-06-07 22:37:52,928 - INFO - __main__ - Starting ConPort HTTP server (via FastMCP) on 127.0.0.1:8000
+2025-06-07 22:44:11,037 - INFO - context_portal_mcp.main - Logging to file: ./logs/conport.log
+2025-06-07 22:44:11,037 - INFO - context_portal_mcp.main - Starting ConPort in STDIO mode using FastMCP for initial CLI arg workspace_id: /Users/jamisonstevens/Documents/Storyboard AI
+2025-06-07 22:44:11,037 - DEBUG - context_portal_mcp.db.database - ensure_alembic_files_exist: current_file_dir = /Users/jamisonstevens/.venv/lib/python3.13/site-packages/context_portal_mcp/db
+2025-06-07 22:44:11,037 - DEBUG - context_portal_mcp.db.database - ensure_alembic_files_exist: conport_package_root = /Users/jamisonstevens/.venv/lib/python3.13/site-packages/context_portal_mcp
+2025-06-07 22:44:11,037 - DEBUG - context_portal_mcp.db.database - ensure_alembic_files_exist: template_alembic_dir = /Users/jamisonstevens/.venv/lib/python3.13/site-packages/context_portal_mcp/templates/alembic
+2025-06-07 22:44:11,037 - INFO - context_portal_mcp.main - STDIO mode: Using effective_workspace_id '/Users/jamisonstevens/Documents/Storyboard AI'. Database directory will be created on first actual DB use.
+2025-06-07 22:44:11,039 - DEBUG - asyncio - Using selector: KqueueSelector
+2025-06-07 22:44:11,040 - INFO - FastMCP.fastmcp.server.server - Starting MCP server 'ConPort' with transport 'stdio'
+2025-06-07 22:44:11,042 - INFO - context_portal_mcp.main - ConPort FastMCP server lifespan starting.
+2025-06-07 23:07:00,436 - INFO - context_portal_mcp.main - Logging to file: ./logs/conport.log
+2025-06-07 23:07:00,437 - INFO - context_portal_mcp.main - Starting ConPort in STDIO mode using FastMCP for initial CLI arg workspace_id: /Users/jamisonstevens/Documents/Storyboard AI
+2025-06-07 23:07:00,437 - DEBUG - context_portal_mcp.db.database - ensure_alembic_files_exist: current_file_dir = /Users/jamisonstevens/.venv/lib/python3.13/site-packages/context_portal_mcp/db
+2025-06-07 23:07:00,437 - DEBUG - context_portal_mcp.db.database - ensure_alembic_files_exist: conport_package_root = /Users/jamisonstevens/.venv/lib/python3.13/site-packages/context_portal_mcp
+2025-06-07 23:07:00,437 - DEBUG - context_portal_mcp.db.database - ensure_alembic_files_exist: template_alembic_dir = /Users/jamisonstevens/.venv/lib/python3.13/site-packages/context_portal_mcp/templates/alembic
+2025-06-07 23:07:00,437 - INFO - context_portal_mcp.main - STDIO mode: Using effective_workspace_id '/Users/jamisonstevens/Documents/Storyboard AI'. Database directory will be created on first actual DB use.
+2025-06-07 23:07:00,439 - DEBUG - asyncio - Using selector: KqueueSelector
+2025-06-07 23:07:00,439 - INFO - FastMCP.fastmcp.server.server - Starting MCP server 'ConPort' with transport 'stdio'
+2025-06-07 23:07:00,442 - INFO - context_portal_mcp.main - ConPort FastMCP server lifespan starting.
+2025-06-07 23:07:00,443 - INFO - context_portal_mcp.main - ConPort FastMCP server lifespan shutting down. Closing all DB connections.
+2025-06-07 23:07:00,444 - ERROR - context_portal_mcp.main - Error running FastMCP in STDIO mode
+  + Exception Group Traceback (most recent call last):
+  |   File "/Users/jamisonstevens/.venv/lib/python3.13/site-packages/context_portal_mcp/main.py", line 885, in main_logic
+  |     conport_mcp.run(transport="stdio")
+  |     ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  |   File "/Users/jamisonstevens/.venv/lib/python3.13/site-packages/fastmcp/server/server.py", line 242, in run
+  |     anyio.run(partial(self.run_async, transport, **transport_kwargs))
+  |     ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |   File "/Users/jamisonstevens/.venv/lib/python3.13/site-packages/anyio/_core/_eventloop.py", line 74, in run
+  |     return async_backend.run(func, args, {}, backend_options)
+  |            ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |   File "/Users/jamisonstevens/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 2310, in run
+  |     return runner.run(wrapper())
+  |            ~~~~~~~~~~^^^^^^^^^^^
+  |   File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/asyncio/runners.py", line 118, in run
+  |     return self._loop.run_until_complete(task)
+  |            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  |   File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/asyncio/base_events.py", line 721, in run_until_complete
+  |     return future.result()
+  |            ~~~~~~~~~~~~~^^
+  |   File "/Users/jamisonstevens/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 2298, in wrapper
+  |     return await func(*args)
+  |            ^^^^^^^^^^^^^^^^^
+  |   File "/Users/jamisonstevens/.venv/lib/python3.13/site-packages/fastmcp/server/server.py", line 225, in run_async
+  |     await self.run_stdio_async(**transport_kwargs)
+  |   File "/Users/jamisonstevens/.venv/lib/python3.13/site-packages/fastmcp/server/server.py", line 981, in run_stdio_async
+  |     async with stdio_server() as (read_stream, write_stream):
+  |                ~~~~~~~~~~~~^^
+  |   File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 235, in __aexit__
+  |     await self.gen.athrow(value)
+  |   File "/Users/jamisonstevens/.venv/lib/python3.13/site-packages/mcp/server/stdio.py", line 87, in stdio_server
+  |     async with anyio.create_task_group() as tg:
+  |                ~~~~~~~~~~~~~~~~~~~~~~~^^
+  |   File "/Users/jamisonstevens/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 772, in __aexit__
+  |     raise BaseExceptionGroup(
+  |         "unhandled errors in a TaskGroup", self._exceptions
+  |     ) from None
+  | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+  +-+---------------- 1 ----------------
+    | Exception Group Traceback (most recent call last):
+    |   File "/Users/jamisonstevens/.venv/lib/python3.13/site-packages/mcp/server/stdio.py", line 90, in stdio_server
+    |     yield read_stream, write_stream
+    |   File "/Users/jamisonstevens/.venv/lib/python3.13/site-packages/fastmcp/server/server.py", line 983, in run_stdio_async
+    |     await self._mcp_server.run(
+    |     ...<5 lines>...
+    |     )
+    |   File "/Users/jamisonstevens/.venv/lib/python3.13/site-packages/mcp/server/lowlevel/server.py", line 500, in run
+    |     async with AsyncExitStack() as stack:
+    |                ~~~~~~~~~~~~~~^^
+    |   File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 768, in __aexit__
+    |     raise exc
+    |   File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 751, in __aexit__
+    |     cb_suppress = await cb(*exc_details)
+    |                   ^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/jamisonstevens/.venv/lib/python3.13/site-packages/mcp/shared/session.py", line 223, in __aexit__
+    |     return await self._task_group.__aexit__(exc_type, exc_val, exc_tb)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/jamisonstevens/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 772, in __aexit__
+    |     raise BaseExceptionGroup(
+    |         "unhandled errors in a TaskGroup", self._exceptions
+    |     ) from None
+    | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+    +-+---------------- 1 ----------------
+      | Traceback (most recent call last):
+      |   File "/Users/jamisonstevens/.venv/lib/python3.13/site-packages/mcp/server/session.py", line 147, in _receive_loop
+      |     await super()._receive_loop()
+      |   File "/Users/jamisonstevens/.venv/lib/python3.13/site-packages/mcp/shared/session.py", line 374, in _receive_loop
+      |     await self._received_request(responder)
+      |   File "/Users/jamisonstevens/.venv/lib/python3.13/site-packages/mcp/server/session.py", line 175, in _received_request
+      |     raise RuntimeError(
+      |         "Received request before initialization was complete"
+      |     )
+      | RuntimeError: Received request before initialization was complete
+      +------------------------------------
+2025-06-07 23:07:48,696 - INFO - __main__ - Logging to file: ./logs/conport.log
+2025-06-07 23:07:48,696 - INFO - __main__ - Starting ConPort in STDIO mode using FastMCP for initial CLI arg workspace_id: /Users/jamisonstevens/Documents/Storyboard AI
+2025-06-07 23:07:48,696 - DEBUG - context_portal_mcp.db.database - ensure_alembic_files_exist: current_file_dir = /Users/jamisonstevens/.venv/lib/python3.13/site-packages/context_portal_mcp/db
+2025-06-07 23:07:48,696 - DEBUG - context_portal_mcp.db.database - ensure_alembic_files_exist: conport_package_root = /Users/jamisonstevens/.venv/lib/python3.13/site-packages/context_portal_mcp
+2025-06-07 23:07:48,696 - DEBUG - context_portal_mcp.db.database - ensure_alembic_files_exist: template_alembic_dir = /Users/jamisonstevens/.venv/lib/python3.13/site-packages/context_portal_mcp/templates/alembic
+2025-06-07 23:07:48,696 - INFO - __main__ - STDIO mode: Using effective_workspace_id '/Users/jamisonstevens/Documents/Storyboard AI'. Database directory will be created on first actual DB use.
+2025-06-07 23:07:48,697 - DEBUG - asyncio - Using selector: KqueueSelector
+2025-06-07 23:07:48,698 - INFO - FastMCP.fastmcp.server.server - Starting MCP server 'ConPort' with transport 'stdio'
+2025-06-07 23:07:48,700 - INFO - __main__ - ConPort FastMCP server lifespan starting.
+2025-06-07 23:07:48,701 - INFO - __main__ - ConPort FastMCP server lifespan shutting down. Closing all DB connections.
+2025-06-07 23:07:48,702 - ERROR - __main__ - Error running FastMCP in STDIO mode
+  + Exception Group Traceback (most recent call last):
+  |   File "/Users/jamisonstevens/.venv/lib/python3.13/site-packages/context_portal_mcp/main.py", line 885, in main_logic
+  |     conport_mcp.run(transport="stdio")
+  |     ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  |   File "/Users/jamisonstevens/.venv/lib/python3.13/site-packages/fastmcp/server/server.py", line 242, in run
+  |     anyio.run(partial(self.run_async, transport, **transport_kwargs))
+  |     ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |   File "/Users/jamisonstevens/.venv/lib/python3.13/site-packages/anyio/_core/_eventloop.py", line 74, in run
+  |     return async_backend.run(func, args, {}, backend_options)
+  |            ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |   File "/Users/jamisonstevens/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 2310, in run
+  |     return runner.run(wrapper())
+  |            ~~~~~~~~~~^^^^^^^^^^^
+  |   File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/asyncio/runners.py", line 118, in run
+  |     return self._loop.run_until_complete(task)
+  |            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  |   File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/asyncio/base_events.py", line 721, in run_until_complete
+  |     return future.result()
+  |            ~~~~~~~~~~~~~^^
+  |   File "/Users/jamisonstevens/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 2298, in wrapper
+  |     return await func(*args)
+  |            ^^^^^^^^^^^^^^^^^
+  |   File "/Users/jamisonstevens/.venv/lib/python3.13/site-packages/fastmcp/server/server.py", line 225, in run_async
+  |     await self.run_stdio_async(**transport_kwargs)
+  |   File "/Users/jamisonstevens/.venv/lib/python3.13/site-packages/fastmcp/server/server.py", line 981, in run_stdio_async
+  |     async with stdio_server() as (read_stream, write_stream):
+  |                ~~~~~~~~~~~~^^
+  |   File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 235, in __aexit__
+  |     await self.gen.athrow(value)
+  |   File "/Users/jamisonstevens/.venv/lib/python3.13/site-packages/mcp/server/stdio.py", line 87, in stdio_server
+  |     async with anyio.create_task_group() as tg:
+  |                ~~~~~~~~~~~~~~~~~~~~~~~^^
+  |   File "/Users/jamisonstevens/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 772, in __aexit__
+  |     raise BaseExceptionGroup(
+  |         "unhandled errors in a TaskGroup", self._exceptions
+  |     ) from None
+  | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+  +-+---------------- 1 ----------------
+    | Exception Group Traceback (most recent call last):
+    |   File "/Users/jamisonstevens/.venv/lib/python3.13/site-packages/mcp/server/stdio.py", line 90, in stdio_server
+    |     yield read_stream, write_stream
+    |   File "/Users/jamisonstevens/.venv/lib/python3.13/site-packages/fastmcp/server/server.py", line 983, in run_stdio_async
+    |     await self._mcp_server.run(
+    |     ...<5 lines>...
+    |     )
+    |   File "/Users/jamisonstevens/.venv/lib/python3.13/site-packages/mcp/server/lowlevel/server.py", line 500, in run
+    |     async with AsyncExitStack() as stack:
+    |                ~~~~~~~~~~~~~~^^
+    |   File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 768, in __aexit__
+    |     raise exc
+    |   File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 751, in __aexit__
+    |     cb_suppress = await cb(*exc_details)
+    |                   ^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/jamisonstevens/.venv/lib/python3.13/site-packages/mcp/shared/session.py", line 223, in __aexit__
+    |     return await self._task_group.__aexit__(exc_type, exc_val, exc_tb)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/jamisonstevens/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 772, in __aexit__
+    |     raise BaseExceptionGroup(
+    |         "unhandled errors in a TaskGroup", self._exceptions
+    |     ) from None
+    | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+    +-+---------------- 1 ----------------
+      | Traceback (most recent call last):
+      |   File "/Users/jamisonstevens/.venv/lib/python3.13/site-packages/mcp/server/session.py", line 147, in _receive_loop
+      |     await super()._receive_loop()
+      |   File "/Users/jamisonstevens/.venv/lib/python3.13/site-packages/mcp/shared/session.py", line 374, in _receive_loop
+      |     await self._received_request(responder)
+      |   File "/Users/jamisonstevens/.venv/lib/python3.13/site-packages/mcp/server/session.py", line 175, in _received_request
+      |     raise RuntimeError(
+      |         "Received request before initialization was complete"
+      |     )
+      | RuntimeError: Received request before initialization was complete
+      +------------------------------------

@@ -351,13 +351,14 @@ Generate ONLY the video prompt text, no explanations or formatting.`
           if (prompt && prompt.length > 0) {
             newPrompts[panel.id] = prompt
             
-            // Update panel with generated prompt
+            // Update panel with generated prompt (save to both fields for compatibility)
             dispatch({
               type: 'UPDATE_PANEL',
               payload: {
                 id: panel.id,
                 updates: {
                   aiGeneratedPrompt: prompt,
+                  videoPrompt: prompt,
                   updatedAt: new Date(),
                 },
               },
@@ -404,6 +405,7 @@ Generate ONLY the video prompt text, no explanations or formatting.`
             id: panel.id,
             updates: {
               aiGeneratedPrompt: prompt,
+              videoPrompt: prompt,
               updatedAt: new Date(),
             },
           },
@@ -466,10 +468,12 @@ Generate ONLY the video prompt text, no explanations or formatting.`
       title="Video Prompt Generator"
       subtitle="AI-powered prompts for video generation tools"
       icon={<Video className="w-5 h-5" />}
-      defaultWidth="700px"
+              defaultWidth="min(88vw, 750px)"
       defaultHeight="650px"
       minWidth={400}
       minHeight={500}
+      maxWidth="98vw"
+      maxHeight="95vh"
       className="flex flex-col"
     >
         
@@ -588,7 +592,10 @@ Generate ONLY the video prompt text, no explanations or formatting.`
             >
               {isGenerating ? (
                 <>
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <div 
+                  className="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin" 
+                  style={{ borderColor: themeState.theme.colors.text.primary }}
+                />
                   <span>Generating...</span>
                 </>
               ) : (
@@ -732,7 +739,7 @@ Generate ONLY the video prompt text, no explanations or formatting.`
                       </div>
                     ) : (
                       <div className="flex flex-col items-center justify-center py-8 text-center">
-                        <div className="w-16 h-16 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center mb-4 animate-pulse">
+                        <div className="w-16 h-16 bg-gradient-to-br from-secondary-200 to-secondary-300 rounded-full flex items-center justify-center mb-4 animate-pulse">
                           <Wand2 
                   className="w-8 h-8"
                   style={{
