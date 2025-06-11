@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { X, Camera, Bot, Settings, FileText, Video, Folder, Palette, Save, Download, Upload } from 'lucide-react'
 import { useTheme } from '../context/ThemeContext'
+import { getThemeColors } from '../utils/themeColors'
 
 interface MobileDrawerProps {
   isOpen: boolean
@@ -82,6 +83,7 @@ const navigationItems: NavItem[] = [
 export default function MobileDrawer({ isOpen, onClose, onNavigate, currentSection }: MobileDrawerProps) {
   const [isClosing, setIsClosing] = useState(false)
   const { state: themeState } = useTheme()
+  const themeColors = getThemeColors(themeState.theme)
 
   useEffect(() => {
     if (isOpen) {
@@ -115,9 +117,12 @@ export default function MobileDrawer({ isOpen, onClose, onNavigate, currentSecti
     <div className="fixed inset-0 z-50 md:hidden">
       {/* Backdrop */}
       <div 
-        className={`absolute inset-0 bg-black transition-opacity duration-300 ${
+        className={`absolute inset-0 transition-opacity duration-300 ${
           isOpen && !isClosing ? 'bg-opacity-60' : 'bg-opacity-0'
         }`}
+        style={{
+          backgroundColor: themeColors.overlay.backdrop
+        }}
         onClick={handleClose}
       />
       
@@ -128,7 +133,8 @@ export default function MobileDrawer({ isOpen, onClose, onNavigate, currentSecti
         }`}
         style={{
           backgroundColor: themeState.theme.colors.background.primary,
-          borderRight: `1px solid ${themeState.theme.colors.border.primary}`
+          borderRight: `1px solid ${themeState.theme.colors.border.primary}`,
+          boxShadow: themeColors.shadows.xl
         }}
       >
         {/* Header */}
@@ -143,7 +149,9 @@ export default function MobileDrawer({ isOpen, onClose, onNavigate, currentSecti
             <div 
               className="w-10 h-10 rounded-lg flex items-center justify-center"
               style={{
-                backgroundColor: 'rgba(255, 255, 255, 0.2)'
+                backgroundColor: themeState.theme.id === 'dark' 
+                  ? 'rgba(255, 255, 255, 0.2)' 
+                  : themeState.theme.colors.primary[400]
               }}
             >
               <Camera className="w-6 h-6" />
@@ -155,9 +163,12 @@ export default function MobileDrawer({ isOpen, onClose, onNavigate, currentSecti
           </div>
           <button
             onClick={handleClose}
-            className="w-10 h-10 rounded-lg flex items-center justify-center transition-colors hover:bg-white/20"
+            className="w-10 h-10 rounded-lg flex items-center justify-center transition-colors"
             style={{
-              backgroundColor: 'rgba(255, 255, 255, 0.1)'
+              backgroundColor: themeState.theme.id === 'dark' 
+                ? 'rgba(255, 255, 255, 0.1)' 
+                : 'rgba(255, 255, 255, 0.25)',
+              color: '#ffffff'
             }}
           >
             <X className="w-6 h-6" />
@@ -183,7 +194,8 @@ export default function MobileDrawer({ isOpen, onClose, onNavigate, currentSecti
                     : themeState.theme.colors.background.secondary,
                   borderColor: currentSection === item.id 
                     ? themeState.theme.colors.primary[300] 
-                    : 'transparent'
+                    : 'transparent',
+                  boxShadow: currentSection === item.id ? themeColors.shadows.md : 'none'
                 }}
               >
                 <div 
@@ -193,8 +205,9 @@ export default function MobileDrawer({ isOpen, onClose, onNavigate, currentSecti
                       ? `linear-gradient(135deg, ${themeState.theme.colors.primary[500]}, ${themeState.theme.colors.primary[600]})`
                       : themeState.theme.colors.background.primary,
                     color: currentSection === item.id 
-                      ? 'white' 
-                      : themeState.theme.colors.text.secondary
+                      ? '#ffffff' 
+                      : themeState.theme.colors.text.secondary,
+                    boxShadow: themeColors.shadows.sm
                   }}
                 >
                   {item.icon}
@@ -241,8 +254,12 @@ export default function MobileDrawer({ isOpen, onClose, onNavigate, currentSecti
             <div 
               className="rounded-xl p-4"
               style={{
-                backgroundColor: `${themeState.theme.colors.primary[50]}`,
-                border: `1px solid ${themeState.theme.colors.primary[200]}`
+                backgroundColor: themeState.theme.id === 'dark'
+                  ? `${themeState.theme.colors.primary[900]}30`
+                  : themeState.theme.colors.primary[50],
+                border: `1px solid ${themeState.theme.id === 'dark'
+                  ? themeState.theme.colors.primary[800]
+                  : themeState.theme.colors.primary[200]}`
               }}
             >
               <div className="flex items-center space-x-3 mb-2">
@@ -252,14 +269,22 @@ export default function MobileDrawer({ isOpen, onClose, onNavigate, currentSecti
                 />
                 <span 
                   className="font-medium"
-                  style={{ color: themeState.theme.colors.primary[800] }}
+                  style={{ 
+                    color: themeState.theme.id === 'dark'
+                      ? themeState.theme.colors.primary[400]
+                      : themeState.theme.colors.primary[800]
+                  }}
                 >
                   Quick Tip
                 </span>
               </div>
               <p 
                 className="text-sm"
-                style={{ color: themeState.theme.colors.primary[700] }}
+                style={{ 
+                  color: themeState.theme.id === 'dark'
+                    ? themeState.theme.colors.primary[300]
+                    : themeState.theme.colors.primary[700]
+                }}
               >
                 Swipe right or tap the menu button to access navigation anytime. 
                 Long press panels for quick actions!

@@ -390,9 +390,23 @@ export default function StoryboardPanel({
           <button
             onClick={handleGenerateImage}
             disabled={isGeneratingImage}
-            className={`w-7 h-7 sm:w-8 sm:h-8 bg-purple-500 hover:bg-purple-600 text-white rounded-lg flex items-center justify-center transition-all duration-150 hover:scale-105 shadow-sm hover:shadow-md touch-manipulation ${
+            className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition-all duration-150 hover:scale-105 shadow-sm hover:shadow-md touch-manipulation ${
               isGeneratingImage ? 'opacity-50 cursor-not-allowed' : ''
             }`}
+            style={{
+              backgroundColor: themeColors.project.purple.background,
+              color: themeColors.project.purple.text
+            }}
+            onMouseEnter={(e) => {
+              if (!isGeneratingImage) {
+                e.currentTarget.style.backgroundColor = themeState.theme.colors.primary[600];
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!isGeneratingImage) {
+                e.currentTarget.style.backgroundColor = themeColors.project.purple.background;
+              }
+            }}
             title="Generate Image"
           >
             {isGeneratingImage ? (
@@ -561,7 +575,21 @@ export default function StoryboardPanel({
                     handleRegenerateImage()
                   }}
                   disabled={isGeneratingImage}
-                  className="w-14 h-14 bg-gradient-to-r from-purple-500/90 to-pink-500/90 hover:from-purple-600/90 hover:to-pink-600/90 text-white rounded-2xl flex items-center justify-center transition-all duration-300 transform hover:scale-110 disabled:opacity-50 shadow-xl hover:shadow-2xl animate-fade-in animate-delay-200"
+                  className="w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300 transform hover:scale-110 disabled:opacity-50 shadow-xl hover:shadow-2xl animate-fade-in animate-delay-200"
+                  style={{
+                    background: `linear-gradient(135deg, ${themeState.theme.colors.primary[500]}, ${themeColors.project.purple.background})`,
+                    color: '#ffffff'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isGeneratingImage) {
+                      e.currentTarget.style.background = `linear-gradient(135deg, ${themeState.theme.colors.primary[600]}, ${themeColors.project.purple.background})`
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isGeneratingImage) {
+                      e.currentTarget.style.background = `linear-gradient(135deg, ${themeState.theme.colors.primary[500]}, ${themeColors.project.purple.background})`
+                    }
+                  }}
                   title="Regenerate Image"
                 >
                   {isGeneratingImage ? (
@@ -731,25 +759,6 @@ export default function StoryboardPanel({
                 </button>
               )}
             </div>
-
-            {/* Panel Metadata - Improved Responsive Layout */}
-            {panel.notes && (
-              <div 
-                className={`mt-3 p-2 sm:p-3 rounded-lg border ${
-                  isMobile ? 'text-xs' : 'text-sm'
-                }`}
-                style={{
-                  backgroundColor: `${themeState.theme.colors.secondary[50]}50`,
-                  borderColor: themeState.theme.colors.border.secondary,
-                  color: themeState.theme.colors.text.secondary
-                }}
-              >
-                <div className="flex items-start gap-2">
-                  <span className="text-xs opacity-75">📝</span>
-                  <span className="flex-1 leading-relaxed">{panel.notes}</span>
-                </div>
-              </div>
-            )}
           </div>
         ) : (
           <div className="space-y-4">
@@ -795,72 +804,7 @@ export default function StoryboardPanel({
             </div>
           </div>
         )}
-
-        {/* Enhanced Notes Section */}
-        {panel.notes && (
-          <div 
-            className="mt-4 p-4 rounded-xl border-l-4 shadow-sm"
-            style={{
-              background: `linear-gradient(135deg, ${themeState.theme.colors.secondary[50]}, ${themeState.theme.colors.primary[50]})`,
-              borderColor: themeState.theme.colors.primary[400]
-            }}
-          >
-            <div className="flex items-start space-x-3">
-              <div 
-                className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
-                style={{ backgroundColor: themeState.theme.colors.primary[400] }}
-              >
-                <span className="text-white text-xs font-bold">💡</span>
-              </div>
-              <p 
-                className="text-sm font-medium"
-                style={{ color: themeState.theme.colors.primary[800] }}
-              >{panel.notes}</p>
-            </div>
-          </div>
-        )}
       </div>
-
-      {/* Modern Status Notifications */}
-      {downloadStatus && (
-        <div className={`absolute bottom-4 left-4 right-4 px-4 py-3 rounded-xl text-white text-sm font-bold animate-fade-in shadow-lg ${
-          downloadStatus.includes('success') 
-            ? 'bg-gradient-to-r from-emerald-500 to-green-500' 
-            : 'bg-gradient-to-r from-red-500 to-pink-500'
-        }`}>
-          <div className="flex items-center space-x-2">
-            {downloadStatus.includes('success') ? (
-              <div className="w-5 h-5 bg-white rounded-full flex items-center justify-center">
-                <span className="text-green-500 text-xs">✓</span>
-              </div>
-            ) : (
-              <div className="w-5 h-5 bg-white rounded-full flex items-center justify-center">
-                <span className="text-red-500 text-xs">✗</span>
-              </div>
-            )}
-            <span>{downloadStatus}</span>
-          </div>
-        </div>
-      )}
-
-      {/* Modern Glow Effects - FIXED: No more blinking */}
-      {isSelected && (
-        <div 
-          className="absolute -inset-1 rounded-3xl opacity-20 pointer-events-none blur-sm"
-          style={{
-            background: `linear-gradient(135deg, ${themeState.theme.colors.primary[500]}, ${themeState.theme.colors.secondary[500]}, ${themeState.theme.colors.primary[500]})`
-          }}
-        ></div>
-      )}
-      
-      {isHovered && !isSelected && (
-        <div 
-          className="absolute -inset-0.5 rounded-3xl opacity-10 pointer-events-none blur-sm"
-          style={{
-            background: `linear-gradient(135deg, ${themeState.theme.colors.primary[400]}, ${themeState.theme.colors.secondary[400]}, ${themeState.theme.colors.primary[400]})`
-          }}
-        ></div>
-      )}
     </div>
   )
-} 
+}

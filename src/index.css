@@ -3105,10 +3105,10 @@ button:focus-visible {
   
   /* Mobile context menu improvements */
   .context-menu {
-    background: rgba(0, 0, 0, 0.95);
+    background: var(--color-modal);
     backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+    border: 1px solid var(--color-interactive-hover);
+    box-shadow: var(--shadow-lg, 0 20px 40px rgba(0, 0, 0, 0.5));
     min-width: 220px;
     z-index: 1000;
   }
@@ -3116,7 +3116,7 @@ button:focus-visible {
   .context-menu-item {
     padding: 16px 20px; /* Larger touch targets */
     font-size: 16px; /* Larger text for readability */
-    color: white;
+    color: var(--text-primary, inherit);
     min-height: 50px;
   }
   
@@ -3212,7 +3212,7 @@ button:focus-visible {
     min-height: 48px !important;
     padding: 10px !important;
     margin: 4px !important;
-    background-color: rgba(239, 68, 68, 0.9) !important;
+    background-color: var(--color-error) !important;
     color: white !important;
     border-radius: 50% !important;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
@@ -3222,7 +3222,7 @@ button:focus-visible {
 
   .storyboard-panel button[title="Delete Panel"]:active {
     transform: scale(0.95) !important;
-    background-color: rgb(220, 38, 38) !important;
+    background-color: var(--color-error-hover) !important;
   }
   
   .storyboard-panel button[title="Delete Panel"] svg {
@@ -3262,12 +3262,12 @@ button:focus-visible {
   }
   
   .scrollable::-webkit-scrollbar-track {
-    background-color: rgba(0, 0, 0, 0.05) !important;
+    background-color: var(--color-interactive-hover) !important;
     border-radius: 3px !important;
   }
   
   .scrollable::-webkit-scrollbar-thumb {
-    background-color: rgba(0, 0, 0, 0.2) !important;
+    background-color: var(--color-interactive-active) !important;
     border-radius: 3px !important;
   }
   
