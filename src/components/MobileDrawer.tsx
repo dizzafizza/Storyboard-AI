@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { X, Camera, Bot, Settings, FileText, Video, Folder, Palette } from 'lucide-react'
+import { X, Camera, Bot, Settings, FileText, Video, Folder, Palette, Save, Download, Upload } from 'lucide-react'
 import { useTheme } from '../context/ThemeContext'
 
 interface MobileDrawerProps {
@@ -30,6 +30,24 @@ const navigationItems: NavItem[] = [
     description: 'Chat with AI helper'
   },
   {
+    id: 'save-project',
+    label: 'Save Project',
+    icon: <Save className="w-6 h-6" />,
+    description: 'Save current project'
+  },
+  {
+    id: 'export-project',
+    label: 'Export',
+    icon: <Download className="w-6 h-6" />,
+    description: 'Export to various formats'
+  },
+  {
+    id: 'import-project',
+    label: 'Import',
+    icon: <Upload className="w-6 h-6" />,
+    description: 'Import project'
+  },
+  {
     id: 'video-prompts',
     label: 'Video Prompts',
     icon: <Video className="w-6 h-6" />,
@@ -46,6 +64,12 @@ const navigationItems: NavItem[] = [
     label: 'Templates',
     icon: <FileText className="w-6 h-6" />,
     description: 'Browse templates'
+  },
+  {
+    id: 'theme-settings',
+    label: 'Theme',
+    icon: <Palette className="w-6 h-6" />,
+    description: 'Customize theme'
   },
   {
     id: 'settings',

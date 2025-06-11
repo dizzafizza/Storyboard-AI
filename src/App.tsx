@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { StoryboardProvider, useStoryboard } from './context/StoryboardContext'
-import { ThemeProvider } from './context/ThemeContext'
+import { ThemeProvider, useTheme } from './context/ThemeContext'
 import Header from './components/Header'
 import Sidebar from './components/Sidebar'
 import StoryboardGrid from './components/StoryboardGrid'
@@ -17,7 +17,7 @@ import AIAgentSelector from './components/AIAgentSelector'
 import MobileDrawer from './components/MobileDrawer'
 import ExportDialog from './components/ExportDialog'
 
-import { Plus, Bot, Video, FileText, Sparkles } from 'lucide-react'
+import { Plus, Bot, Video, FileText, Sparkles, ChevronUp, MoreHorizontal } from 'lucide-react'
 
 type ViewMode = 'grid' | 'timeline'
 
@@ -45,6 +45,9 @@ function AppContent() {
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false)
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false)
 
+  // Add state for FAB menu
+  const [isFabExpanded, setIsFabExpanded] = useState(false);
+  const { state: themeState } = useTheme();
 
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
   const [currentSection, setCurrentSection] = useState('storyboard')
@@ -110,6 +113,7 @@ function AppContent() {
     setIsSettingsMenuOpen(false)
     setIsUserGuideOpen(false)
     setIsAIAgentSelectorOpen(false)
+    setIsExportDialogOpen(false)
     
     // Open the appropriate modal based on section
     switch (section) {
@@ -127,6 +131,37 @@ function AppContent() {
         break
       case 'settings':
         setIsSettingsMenuOpen(true)
+        break
+      case 'theme-settings':
+        setIsThemeSettingsOpen(true)
+        break
+      case 'export-project':
+        setIsExportDialogOpen(true)
+        break
+      case 'save-project':
+        // Handle quick save action
+        const quickSaveBtn = document.getElementById('quick-save-btn')
+        if (quickSaveBtn) {
+          quickSaveBtn.click()
+        } else {
+          // Fallback if button isn't found
+          const header = document.querySelector('header')
+          const saveEvent = new CustomEvent('quicksave')
+          if (header) header.dispatchEvent(saveEvent)
+        }
+        break
+      case 'import-project':
+        // Handle quick import action
+        const quickImportBtn = document.getElementById('quick-import-btn')
+        if (quickImportBtn) {
+          quickImportBtn.click()
+        } else {
+          // Fallback if button isn't found
+          const input = document.createElement('input')
+          input.type = 'file'
+          input.accept = '.json'
+          input.click()
+        }
         break
       default:
         // For storyboard, just close all modals to show the main view
@@ -192,43 +227,80 @@ function AppContent() {
         </main>
       </div>
 
-      {/* Mobile Friendly Floating Action Buttons */}
-      <div className="md:hidden fixed bottom-20 right-4 flex flex-col space-y-3 z-30">
-        {/* AI Assistant FAB - Better touch target */}
+      {/* Mobile Friendly Floating Action Buttons - Collapsible */}
+      <div className="md:hidden fixed bottom-20 right-4 flex flex-col items-center z-30">
+        {/* Toggle button - always visible */}
         <button
-          onClick={() => setIsAIAssistantOpen(true)}
-          className="w-14 h-14 btn-primary rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-110 touch-manipulation"
-          aria-label="Open AI Assistant"
+          onClick={() => setIsFabExpanded(!isFabExpanded)}
+          className="w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 mb-3"
+          style={{
+            backgroundColor: themeState.theme.colors.primary[600],
+            color: '#ffffff'
+          }}
+          aria-label="Toggle menu"
         >
-          <Bot className="w-6 h-6" />
+          {isFabExpanded ? 
+            <ChevronUp className="w-6 h-6" /> : 
+            <MoreHorizontal className="w-6 h-6" />
+          }
         </button>
+        
+        {/* Collapsible buttons */}
+        <div className={`flex flex-col space-y-3 transition-all duration-300 ${
+          isFabExpanded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'
+        }`}>
+          {/* AI Assistant FAB */}
+          <button
+            onClick={() => setIsAIAssistantOpen(true)}
+            className="w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 transform hover:scale-110 touch-manipulation"
+            style={{
+              backgroundColor: themeState.theme.colors.primary[600],
+              color: '#ffffff'
+            }}
+            aria-label="Open AI Assistant"
+          >
+            <Bot className="w-6 h-6" />
+          </button>
 
-        {/* Video Prompts FAB */}
-        <button
-          onClick={() => setIsVideoPromptGeneratorOpen(true)}
-          className="w-14 h-14 btn-success rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-110 touch-manipulation"
-          aria-label="Video Prompts"
-        >
-          <Video className="w-6 h-6" />
-        </button>
+          {/* Video Prompts FAB */}
+          <button
+            onClick={() => setIsVideoPromptGeneratorOpen(true)}
+            className="w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 transform hover:scale-110 touch-manipulation"
+            style={{
+              backgroundColor: themeState.theme.colors.primary[500],
+              color: '#ffffff'
+            }}
+            aria-label="Video Prompts"
+          >
+            <Video className="w-6 h-6" />
+          </button>
 
-        {/* Templates FAB */}
-        <button
-          onClick={() => setIsTemplatesOpen(true)}
-          className="w-14 h-14 btn-primary rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-110 touch-manipulation"
-          aria-label="Templates"
-        >
-          <FileText className="w-6 h-6" />
-        </button>
+          {/* Templates FAB */}
+          <button
+            onClick={() => setIsTemplatesOpen(true)}
+            className="w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 transform hover:scale-110 touch-manipulation"
+            style={{
+              backgroundColor: themeState.theme.colors.primary[400],
+              color: '#ffffff'
+            }}
+            aria-label="Templates"
+          >
+            <FileText className="w-6 h-6" />
+          </button>
 
-        {/* Add Panel FAB - Primary action, larger */}
-        <button
-          onClick={handleNewPanel}
-          className="w-16 h-16 btn-warning rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-110 touch-manipulation"
-          aria-label="Add Panel"
-        >
-          <Plus className="w-8 h-8" />
-        </button>
+          {/* Add Panel FAB - Primary action, larger */}
+          <button
+            onClick={handleNewPanel}
+            className="w-16 h-16 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 transform hover:scale-110 touch-manipulation"
+            style={{
+              backgroundColor: themeState.theme.colors.primary[700],
+              color: '#ffffff'
+            }}
+            aria-label="Add Panel"
+          >
+            <Plus className="w-8 h-8" />
+          </button>
+        </div>
       </div>
 
       {/* Mobile Drawer */}
@@ -310,13 +382,26 @@ function AppContent() {
       />
 
       {/* Modern Status Bar - Mobile Only */}
-      <div className="md:hidden bg-primary text-primary px-4 py-3 flex items-center justify-between border-t border-primary">
+      <div 
+        className="md:hidden px-4 py-3 flex items-center justify-between border-t"
+        style={{
+          backgroundColor: themeState.theme.colors.background.primary,
+          borderColor: themeState.theme.colors.border.primary,
+          color: themeState.theme.colors.text.primary
+        }}
+      >
         <div className="flex items-center space-x-2">
-          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+          <div 
+            className="w-2 h-2 rounded-full animate-pulse"
+            style={{ backgroundColor: themeState.theme.colors.primary[500] }}
+          ></div>
           <span className="text-sm font-medium">Ready to create</span>
         </div>
         <div className="flex items-center space-x-1">
-          <Sparkles className="w-4 h-4" />
+          <Sparkles 
+            className="w-4 h-4" 
+            style={{ color: themeState.theme.colors.primary[500] }}
+          />
           <span className="text-sm">AI Powered</span>
         </div>
       </div>

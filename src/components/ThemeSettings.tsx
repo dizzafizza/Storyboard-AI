@@ -71,10 +71,10 @@ export default function ThemeSettings({ isOpen, onClose }: ThemeSettingsProps) {
       title="Theme Settings"
       subtitle={`Customize your workspace appearance • ${themeEntries.length} themes available`}
       icon={<Palette className="w-5 h-5" />}
-              defaultWidth="min(92vw, 1000px)"
-      defaultHeight="min(85vh, 700px)"
-              maxWidth="98vw"
-        maxHeight="95vh"
+      defaultWidth="min(95vw, 1000px)"
+      defaultHeight="min(90vh, 700px)"
+      maxWidth="98vw"
+      maxHeight="98vh"
       resizable={true}
       minimizable={true}
       maximizable={true}
@@ -83,8 +83,8 @@ export default function ThemeSettings({ isOpen, onClose }: ThemeSettingsProps) {
     >
       <div className="h-full flex flex-col transform-gpu">
         {/* Optimized Theme Mode Indicators */}
-        <div className="flex items-center justify-between p-4 border-b border-primary/20 bg-secondary/30 backdrop-blur-sm">
-          <div className="flex items-center space-x-4">
+        <div className="flex items-center justify-between p-3 sm:p-4 border-b border-primary/20 bg-secondary/30 backdrop-blur-sm">
+          <div className="flex items-center space-x-2 sm:space-x-4">
             <div 
               className="w-8 h-8 rounded-lg flex items-center justify-center shadow-sm transition-all duration-300"
               style={{
@@ -93,14 +93,14 @@ export default function ThemeSettings({ isOpen, onClose }: ThemeSettingsProps) {
             >
               <Palette className="w-4 h-4 text-white" />
             </div>
-            <div className="text-sm text-secondary">
+            <div className="text-xs sm:text-sm text-secondary">
               Choose your preferred theme
             </div>
           </div>
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2 sm:space-x-3">
             {/* Simplified Theme Mode Indicators */}
             <div 
-              className="flex items-center space-x-2 px-3 py-2 rounded-lg border transition-all duration-200"
+              className="hidden sm:flex items-center space-x-2 px-3 py-2 rounded-lg border transition-all duration-200"
               style={{
                 backgroundColor: `${state.theme.colors.background.tertiary}50`,
                 borderColor: `${state.theme.colors.border.primary}40`
@@ -114,7 +114,7 @@ export default function ThemeSettings({ isOpen, onClose }: ThemeSettingsProps) {
             <button
               onClick={handleClose}
               disabled={isChangingTheme}
-              className="p-3 rounded-xl transition-all duration-200 border border-transparent hover:shadow-lg group disabled:opacity-50"
+              className="p-2 sm:p-3 rounded-xl transition-all duration-200 border border-transparent hover:shadow-lg group disabled:opacity-50"
               style={{ color: state.theme.colors.text.secondary }}
               onMouseEnter={(e) => {
                 if (isChangingTheme) return
@@ -135,7 +135,7 @@ export default function ThemeSettings({ isOpen, onClose }: ThemeSettingsProps) {
 
         {/* Enhanced Themes Grid with Optimized Animations */}
         <div 
-          className="p-6 overflow-y-auto flex-1 scrollable"
+          className="p-4 sm:p-6 overflow-y-auto flex-1 scrollable"
           style={{
             backgroundColor: `${state.theme.colors.background.tertiary}20`,
             color: state.theme.colors.text.primary
@@ -143,13 +143,13 @@ export default function ThemeSettings({ isOpen, onClose }: ThemeSettingsProps) {
         >
           {/* Current Theme Banner - Optimized */}
           <div 
-            className="mb-6 p-4 rounded-xl border backdrop-blur-sm transition-all duration-300"
+            className="mb-4 sm:mb-6 p-3 sm:p-4 rounded-xl border backdrop-blur-sm transition-all duration-300"
             style={{
               background: `linear-gradient(to right, ${state.theme.colors.primary[500]}20, ${state.theme.colors.primary[600]}20)`,
               borderColor: `${state.theme.colors.border.primary}60`
             }}
           >
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-3 sm:space-x-4">
               <div 
                 className="w-8 h-8 rounded-full border-2 shadow-lg transition-all duration-500"
                 style={{ 
@@ -160,20 +160,20 @@ export default function ThemeSettings({ isOpen, onClose }: ThemeSettingsProps) {
               />
               <div className="flex-1">
                 <p 
-                  className="text-lg font-semibold transition-colors duration-200"
+                  className="text-base sm:text-lg font-semibold transition-colors duration-200"
                   style={{ color: state.theme.colors.text.primary }}
                 >
                   Current Theme: {state.theme.name}
                 </p>
                 <p 
-                  className="text-sm transition-colors duration-200"
+                  className="text-xs sm:text-sm transition-colors duration-200"
                   style={{ color: state.theme.colors.text.secondary }}
                 >
                   {isChangingTheme ? 'Applying theme changes...' : 'Theme changes are saved automatically and persist across sessions'}
                 </p>
               </div>
               <Sparkles 
-                className="w-6 h-6 transition-all duration-300" 
+                className="w-5 h-5 sm:w-6 sm:h-6 transition-all duration-300" 
                 style={{ 
                   color: state.theme.colors.text.primary,
                   animation: isChangingTheme ? 'spin 1s linear infinite' : 'none'
@@ -184,7 +184,7 @@ export default function ThemeSettings({ isOpen, onClose }: ThemeSettingsProps) {
 
           <div 
             ref={gridRef}
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6"
           >
             {themeEntries.map((theme) => {
               const isSelected = selectedThemeId === theme.id

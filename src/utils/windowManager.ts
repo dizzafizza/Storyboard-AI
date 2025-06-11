@@ -277,14 +277,22 @@ export const ResponsiveScaling = {
     // Adjust for high-DPI displays
     const dpiScale = pixelRatio > 1.5 ? 1.1 : 1
 
-    // More sophisticated responsive constraints
+    // Mobile devices detection
+    const isMobile = viewportWidth < 768
+    const isSmallMobile = viewportWidth < 480
+
+    // Responsive scaling thresholds
     let maxWidthPercent: number
     let maxHeightPercent: number
 
-    if (viewportWidth <= 768) {
-      // Mobile/tablet - more aggressive scaling
+    if (isSmallMobile) {
+      // Small mobile devices - near fullscreen
       maxWidthPercent = 0.98
-      maxHeightPercent = 0.95
+      maxHeightPercent = 0.98
+    } else if (isMobile) {
+      // Standard mobile - near fullscreen but with minimal margins
+      maxWidthPercent = 0.96
+      maxHeightPercent = 0.96
     } else if (viewportWidth <= 1024) {
       // Small laptops
       maxWidthPercent = 0.95
@@ -306,9 +314,17 @@ export const ResponsiveScaling = {
     const maxWidth = Math.floor(viewportWidth * maxWidthPercent * dpiScale)
     const maxHeight = Math.floor(viewportHeight * maxHeightPercent * dpiScale)
 
-    // Ensure minimum usable size
-    const minWidth = Math.min(320, viewportWidth * 0.5)
-    const minHeight = Math.min(240, viewportHeight * 0.4)
+    // Ensure minimum usable size with better mobile support
+    const minWidth = Math.min(isSmallMobile ? viewportWidth * 0.95 : 320, viewportWidth * 0.9)
+    const minHeight = Math.min(isSmallMobile ? viewportHeight * 0.95 : 240, viewportHeight * 0.85)
+
+    // On very small mobile devices, prioritize maximizing the available space
+    if (isSmallMobile) {
+      return {
+        width: maxWidth,
+        height: maxHeight
+      }
+    }
 
     return {
       width: Math.max(minWidth, Math.min(requestedWidth, maxWidth)),

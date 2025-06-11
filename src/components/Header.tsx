@@ -302,18 +302,18 @@ export default function Header({
 
   return (
     <header 
-      className="h-16 border-b flex items-center justify-between px-6 animate-slide-in"
+      className="h-14 sm:h-16 border-b flex items-center justify-between px-3 sm:px-6 animate-slide-in"
       style={{
         backgroundColor: themeState.theme.colors.background.primary,
         borderColor: themeState.theme.colors.border.primary
       }}
     >
-      <div className="flex items-center space-x-6">
+      <div className="flex items-center space-x-2 sm:space-x-6">
         {/* Logo and Brand - Enhanced */}
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-2 sm:space-x-3">
           <button
             onClick={handleHamburgerClick}
-            className={`hamburger-menu-button w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-300 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-2 transform-gpu ${
+            className={`hamburger-menu-button w-9 sm:w-10 h-9 sm:h-10 rounded-lg flex items-center justify-center transition-all duration-300 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-2 transform-gpu ${
               isDesktopNavOpen || isMobileDrawerOpen
                 ? 'active bg-primary-500 text-white shadow-lg animate-hamburger-active-glow'
                 : 'hover:bg-secondary text-secondary-theme hover:shadow-md'
@@ -331,16 +331,16 @@ export default function Header({
             aria-expanded={isDesktopNavOpen || isMobileDrawerOpen}
           >
             <Menu 
-              className={`w-6 h-6 transition-all duration-300 transform-gpu ${
+              className={`w-5 sm:w-6 h-5 sm:h-6 transition-all duration-300 transform-gpu ${
                 isDesktopNavOpen || isMobileDrawerOpen ? 'rotate-90 scale-110' : 'rotate-0 scale-100'
               }`} 
             />
           </button>
-          <div className="flex items-center space-x-2">
-            <h1 className="text-xl font-bold text-high-contrast hover:text-secondary-theme transition-colors duration-300">
-              Storyboard AI
+          <div className="flex items-center space-x-1 sm:space-x-2">
+            <h1 className="text-base sm:text-xl font-bold text-high-contrast hover:text-secondary-theme transition-colors duration-300" style={{ color: themeState.theme.colors.text.primary }}>
+              <span className="hidden xs:inline">Storyboard</span> AI
             </h1>
-            <Sparkles className="w-5 h-5 animate-pulse" style={{ color: themeState.theme.colors.primary[500] }} />
+            <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 animate-pulse" style={{ color: themeState.theme.colors.primary[500] }} />
             
             {/* Navigation Status Indicator */}
             {(isDesktopNavOpen || isMobileDrawerOpen) && (
@@ -382,24 +382,45 @@ export default function Header({
       </div>
 
       <div className="flex items-center space-x-2">
-        {/* Quick Actions - Simplified */}
-        <div className="hidden sm:flex items-center space-x-1 bg-secondary rounded-lg p-1">
+        {/* Quick Actions - Visible on all devices */}
+        <div className="flex items-center space-x-0.5 sm:space-x-1 bg-secondary rounded-lg p-0.5 sm:p-1">
           <button 
             id="quick-save-btn"
             onClick={handleQuickSave}
-            className="btn-secondary p-2 hover:bg-green-100 hover:text-green-700 transition-all duration-300"
+            className="btn-secondary p-1.5 sm:p-2 hover:bg-green-100 hover:text-green-700 transition-all duration-300"
             title="Quick save"
+            style={{
+              backgroundColor: themeState.theme.colors.background.tertiary,
+              color: themeState.theme.colors.text.secondary
+            }}
           >
-            <Save className="w-5 h-5" />
+            <Save className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
           
           <button 
             id="quick-import-btn"
             onClick={handleQuickImport}
-            className="btn-secondary p-2 hover:bg-purple-100 hover:text-purple-700 transition-all duration-300"
+            className="btn-secondary p-1.5 sm:p-2 hover:bg-purple-100 hover:text-purple-700 transition-all duration-300"
             title="Import project"
+            style={{
+              backgroundColor: themeState.theme.colors.background.tertiary,
+              color: themeState.theme.colors.text.secondary
+            }}
           >
-            <Upload className="w-5 h-5" />
+            <Upload className="w-4 h-4 sm:w-5 sm:h-5" />
+          </button>
+          
+          <button 
+            id="quick-export-btn"
+            onClick={onOpenExportDialog}
+            className="btn-secondary p-1.5 sm:p-2 hover:bg-blue-100 hover:text-blue-700 transition-all duration-300"
+            title="Export project"
+            style={{
+              backgroundColor: themeState.theme.colors.background.tertiary,
+              color: themeState.theme.colors.text.secondary
+            }}
+          >
+            <Download className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
         </div>
 
@@ -409,6 +430,10 @@ export default function Header({
             onClick={onOpenProjectManager}
             className="btn-secondary p-2 hover:bg-blue-100 hover:text-blue-700 transition-all duration-300"
             title="Project Manager"
+            style={{
+              backgroundColor: themeState.theme.colors.background.tertiary,
+              color: themeState.theme.colors.text.secondary
+            }}
           >
             <FolderOpen className="w-5 h-5" />
           </button>
@@ -417,6 +442,10 @@ export default function Header({
             onClick={onOpenTemplates}
             className="btn-secondary p-2 hover:bg-purple-100 hover:text-purple-700 transition-all duration-300"
             title="Templates"
+            style={{
+              backgroundColor: themeState.theme.colors.background.tertiary,
+              color: themeState.theme.colors.text.secondary
+            }}
           >
             <Layers className="w-5 h-5" />
           </button>
@@ -425,6 +454,10 @@ export default function Header({
             onClick={handleNewProject}
             className="btn-secondary p-2 hover:bg-green-100 hover:text-green-700 transition-all duration-300"
             title="New Project"
+            style={{
+              backgroundColor: themeState.theme.colors.background.tertiary,
+              color: themeState.theme.colors.text.secondary
+            }}
           >
             <Plus className="w-5 h-5" />
           </button>
@@ -433,6 +466,10 @@ export default function Header({
             onClick={onOpenUserGuide}
             className="btn-secondary p-2 hover:bg-indigo-100 hover:text-indigo-700 transition-all duration-300"
             title="User Guide"
+            style={{
+              backgroundColor: themeState.theme.colors.background.tertiary,
+              color: themeState.theme.colors.text.secondary
+            }}
           >
             <HelpCircle className="w-5 h-5" />
           </button>
@@ -441,21 +478,21 @@ export default function Header({
             onClick={onOpenThemeSettings}
             className="btn-secondary p-2 hover:bg-pink-100 hover:text-pink-700 transition-all duration-300"
             title="Theme Settings"
+            style={{
+              backgroundColor: themeState.theme.colors.background.tertiary,
+              color: themeState.theme.colors.text.secondary
+            }}
           >
             <Palette className="w-5 h-5" />
           </button>
           <button
-            onClick={onOpenExportDialog}
-            className="btn-secondary p-2 hover:bg-blue-100 hover:text-blue-700 transition-all duration-300"
-            title="Advanced Export"
-          >
-            <Download className="w-5 h-5" />
-          </button>
-
-          <button
             onClick={onOpenSettings}
             className="btn-secondary p-2 hover:bg-gray-100 hover:text-gray-700 transition-all duration-300"
             title="Settings"
+            style={{
+              backgroundColor: themeState.theme.colors.background.tertiary,
+              color: themeState.theme.colors.text.secondary
+            }}
           >
             <Settings className="w-5 h-5" />
           </button>
@@ -464,18 +501,24 @@ export default function Header({
         {/* AI Toggle - Always Visible and Responsive */}
         <button
           onClick={onToggleAI}
-          className={`relative flex items-center space-x-2 px-3 sm:px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
+          className={`relative flex items-center space-x-1 sm:space-x-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg font-medium transition-all duration-300 ${
             isAIOpen
               ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg'
               : 'bg-secondary text-secondary hover:bg-tertiary hover:text-primary'
           }`}
+          style={{
+            background: isAIOpen 
+              ? `linear-gradient(to right, ${themeState.theme.colors.primary[600]}, ${themeState.theme.colors.primary[700]})`
+              : themeState.theme.colors.background.tertiary,
+            color: isAIOpen ? '#ffffff' : themeState.theme.colors.text.secondary
+          }}
         >
-          <Zap className="w-5 h-5" />
-          <Bot className="w-5 h-5" />
+          <Zap className="w-4 h-4 sm:w-5 sm:h-5" />
+          <Bot className="w-4 h-4 sm:w-5 sm:h-5" />
           <span className="hidden sm:inline">AI Assistant</span>
-          <span className="sm:hidden">AI</span>
+          <span className="text-xs sm:hidden">AI</span>
           {isAIOpen && (
-            <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-ping"></div>
+            <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-ping" style={{ backgroundColor: themeState.theme.colors.primary[400] }}></div>
           )}
         </button>
       </div>

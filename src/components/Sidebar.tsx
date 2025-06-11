@@ -201,257 +201,255 @@ export default function Sidebar({
           </div>
         </div>
         
-        {/* Quick Actions */}
-        <div className="flex space-x-2">
-          <button
-            onClick={onOpenProjectManager}
-            className="flex-1 flex items-center justify-center space-x-2 btn-primary text-sm py-2"
-          >
-            <FolderOpen className="w-5 h-5" />
-            <span>Projects</span>
-          </button>
+        {/* Main Actions - Enhanced */}
+        <div className="px-4 py-4 flex flex-wrap gap-2">
           <button
             onClick={onNewProject}
-            className="flex-1 flex items-center justify-center space-x-2 btn-secondary text-sm py-2"
+            className="flex-1 flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-300 transform hover:scale-105"
+            style={{
+              backgroundColor: themeState.theme.colors.background.secondary,
+              color: themeState.theme.colors.text.primary,
+              borderWidth: '1px',
+              borderStyle: 'solid',
+              borderColor: themeState.theme.colors.border.primary,
+            }}
           >
-            <Plus className="w-5 h-5" />
-            <span>New</span>
+            <Plus className="w-6 h-6 mb-1" style={{ color: themeState.theme.colors.primary[500] }} />
+            <span className="text-xs font-medium">New</span>
+          </button>
+          
+          <button
+            onClick={onOpenTemplates}
+            className="flex-1 flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-300 transform hover:scale-105"
+            style={{
+              backgroundColor: themeState.theme.colors.background.secondary,
+              color: themeState.theme.colors.text.primary,
+              borderWidth: '1px',
+              borderStyle: 'solid',
+              borderColor: themeState.theme.colors.border.primary,
+            }}
+          >
+            <Layers className="w-6 h-6 mb-1" style={{ color: themeState.theme.colors.primary[500] }} />
+            <span className="text-xs font-medium">Templates</span>
+          </button>
+          
+          <button
+            onClick={onToggleAI}
+            className="flex-1 flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-300 transform hover:scale-105"
+            style={{
+              backgroundColor: themeState.theme.colors.background.secondary,
+              color: themeState.theme.colors.text.primary,
+              borderWidth: '1px',
+              borderStyle: 'solid',
+              borderColor: themeState.theme.colors.border.primary,
+            }}
+          >
+            <Sparkles className="w-6 h-6 mb-1" style={{ color: themeState.theme.colors.primary[500] }} />
+            <span className="text-xs font-medium">AI Help</span>
+          </button>
+          
+          <button
+            onClick={onGenerateVideoPrompts}
+            className="flex-1 flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-300 transform hover:scale-105"
+            style={{
+              backgroundColor: themeState.theme.colors.background.secondary,
+              color: themeState.theme.colors.text.primary,
+              borderWidth: '1px',
+              borderStyle: 'solid',
+              borderColor: themeState.theme.colors.border.primary,
+            }}
+          >
+            <Play className="w-6 h-6 mb-1" style={{ color: themeState.theme.colors.primary[500] }} />
+            <span className="text-xs font-medium">Video</span>
           </button>
         </div>
       </div>
 
-      {/* Current Project - Enhanced */}
-      <div className="flex-1 overflow-y-auto scrollable min-h-0">
-        {state.currentProject && (
-          <div 
-            className="p-4 border-b animate-fade-in"
-            style={{ borderColor: themeState.theme.colors.border.primary }}
+      {/* Sections */}
+      <div className="flex-1 overflow-y-auto scrollable p-4">
+        {/* Current Project Section */}
+        <div className="mb-4">
+          <button
+            onClick={() => toggleSection('current')}
+            className="w-full flex items-center justify-between p-3 rounded-lg mb-2"
+            style={{
+              backgroundColor: activeSection === 'current' ? themeState.theme.colors.primary[100] : 'transparent',
+              color: activeSection === 'current' ? themeState.theme.colors.primary[700] : themeState.theme.colors.text.primary
+            }}
           >
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-primary-theme">Current Project</h3>
-              <div className="status-indicator status-online animate-pulse-soft">
-                <Sparkles className="w-3 h-3" />
-                <span>Active</span>
-              </div>
+            <div className="flex items-center space-x-3">
+              <Clapperboard className="w-5 h-5" style={{ 
+                color: activeSection === 'current' ? themeState.theme.colors.primary[600] : themeState.theme.colors.text.secondary 
+              }} />
+              <span className="font-medium">Current Project</span>
             </div>
-            
+            {activeSection === 'current' ? (
+              <ChevronUp className="w-5 h-5" style={{ color: themeState.theme.colors.primary[500] }} />
+            ) : (
+              <ChevronDown className="w-5 h-5" style={{ color: themeState.theme.colors.text.secondary }} />
+            )}
+          </button>
+          
+          {activeSection === 'current' && state.currentProject && (
             <div 
-              className="glass-subtle rounded-lg p-4 mb-4 animate-slide-in-bottom"
+              className="p-4 rounded-xl border mb-2 transition-all duration-300"
               style={{
-                background: `linear-gradient(135deg, ${themeState.theme.colors.background.secondary}, ${themeState.theme.colors.background.tertiary})`
+                backgroundColor: themeState.theme.colors.background.secondary,
+                borderColor: themeState.theme.colors.border.primary
               }}
             >
-              <h4 className="font-medium text-high-contrast mb-2">{state.currentProject.title}</h4>
-              <p className="text-sm text-secondary-theme mb-3">{state.currentProject.description}</p>
-              
-              {/* Enhanced Project Stats Grid */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-primary/50 rounded-lg p-3 text-center">
-                  <div className="text-lg font-bold text-primary">{state.panels.length}</div>
-                  <div className="text-xs text-secondary">Total Panels</div>
-                </div>
-                <div className="bg-primary/50 rounded-lg p-3 text-center">
-                  <div className="text-lg font-bold text-primary">{state.panels.filter(panel => panel.imageUrl).length}</div>
-                  <div className="text-xs text-secondary">With Images</div>
-                </div>
-                <div className="bg-primary/50 rounded-lg p-3 text-center">
-                  <div className="text-lg font-bold text-primary">
-                    {Math.round(state.panels.reduce((total, panel) => total + (panel.description?.split(' ').length || 0), 0))}
-                  </div>
-                  <div className="text-xs text-secondary">Word Count</div>
-                </div>
-                <div className="bg-primary/50 rounded-lg p-3 text-center">
-                  <div className="text-lg font-bold text-primary">
-                    {Math.round(state.panels.reduce((total, panel) => total + (panel.duration || 0), 0))}s
-                  </div>
-                  <div className="text-xs text-secondary">Duration</div>
-                </div>
-              </div>
-              
-              {/* Progress Indicator */}
-              <div className="mt-3 pt-3 border-t border-primary/20">
-                <div className="flex items-center justify-between text-xs text-secondary-theme mb-1">
-                  <span>Project Completion</span>
-                  <span>{Math.round((state.panels.filter(panel => panel.imageUrl).length / Math.max(state.panels.length, 1)) * 100)}%</span>
-                </div>
-                <div className="w-full bg-tertiary/50 rounded-full h-2 overflow-hidden">
-                  <div 
-                    className="h-full transition-all duration-1000 ease-out animate-shimmer"
-                    style={{
-                      width: `${(state.panels.filter(panel => panel.imageUrl).length / Math.max(state.panels.length, 1)) * 100}%`,
-                      background: `linear-gradient(90deg, ${themeState.theme.colors.primary[500]}, ${themeState.theme.colors.primary[400]})`
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Enhanced Director Notes */}
-            <div className="space-y-4">
-              <button
-                onClick={() => setShowDirectorNotes(!showDirectorNotes)}
-                className="w-full flex items-center justify-between text-sm font-medium text-primary-theme hover:text-secondary-theme transition-all duration-300 p-2 rounded-lg hover:bg-tertiary/50"
-              >
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-primary-500 rounded-full animate-pulse"></div>
-                  <span>Director's Notes</span>
-                </div>
-                {showDirectorNotes ? (
-                  <ChevronUp className="w-5 h-5 transition-transform duration-300" />
-                ) : (
-                  <ChevronDown className="w-5 h-5 transition-transform duration-300" />
-                )}
-              </button>
-              
-              {showDirectorNotes && (
-                <div className="space-y-4 animate-slide-in-bottom">
-                  <div className="space-y-3">
-                    <label className="text-xs font-medium text-secondary-theme uppercase tracking-wide">
-                      Story Notes
-                    </label>
-                    <textarea
-                      value={directorNotes}
-                      onChange={(e) => setDirectorNotes(e.target.value)}
-                      placeholder="Add your director's notes, character details, or story guidelines..."
-                      className="textarea-modern w-full h-24 text-sm"
-                      style={{
-                        backgroundColor: themeState.theme.colors.background.primary,
-                        borderColor: themeState.theme.colors.border.primary,
-                        color: themeState.theme.colors.text.primary
-                      }}
-                    />
-                  </div>
-                  
-                  {/* Enhanced Video Style Inputs */}
-                  <div className="space-y-3">
-                    <label className="text-xs font-medium text-secondary-theme uppercase tracking-wide">
-                      Video Style
-                    </label>
-                    <div className="grid grid-cols-1 gap-3">
-                      <input
-                        type="text"
-                        value={videoStyle.lightingMood || ''}
-                        onChange={(e) => setVideoStyle(prev => ({ ...prev, lightingMood: e.target.value }))}
-                        placeholder="Lighting Mood (e.g., cinematic, natural, dramatic)"
-                        className="input-modern text-sm"
-                        style={{
-                          backgroundColor: themeState.theme.colors.background.primary,
-                          borderColor: themeState.theme.colors.border.primary,
-                          color: themeState.theme.colors.text.primary
-                        }}
-                      />
-                      <input
-                        type="text"
-                        value={videoStyle.pacing || ''}
-                        onChange={(e) => setVideoStyle(prev => ({ ...prev, pacing: e.target.value }))}
-                        placeholder="Pacing (e.g., fast, slow, dynamic)"
-                        className="input-modern text-sm"
-                        style={{
-                          backgroundColor: themeState.theme.colors.background.primary,
-                          borderColor: themeState.theme.colors.border.primary,
-                          color: themeState.theme.colors.text.primary
-                        }}
-                      />
-                    </div>
-                  </div>
-                  
+              <h3 className="font-medium mb-1" style={{ color: themeState.theme.colors.text.primary }}>{state.currentProject.title}</h3>
+              <p className="text-sm mb-3" style={{ color: themeState.theme.colors.text.secondary }}>
+                {state.currentProject.description || 'No description provided'}
+              </p>
+              <div className="flex justify-between items-center">
+                <span className="text-xs" style={{ color: themeState.theme.colors.text.tertiary }}>
+                  {state.panels.length} panel{state.panels.length !== 1 ? 's' : ''}
+                </span>
+                <div className="flex space-x-2">
                   <button
-                    onClick={saveDirectorNotes}
-                    data-save-notes
-                    className="btn-primary w-full text-sm py-3 flex items-center justify-center space-x-2 animate-bounce-in"
+                    onClick={onOpenProjectManager}
+                    className="flex items-center justify-center p-2 rounded-lg transition-all duration-300"
+                    style={{
+                      backgroundColor: themeState.theme.colors.background.tertiary,
+                      color: themeState.theme.colors.text.secondary
+                    }}
                   >
-                    <Save className="w-4 h-4" />
-                    <span>Save Notes & Style</span>
+                    <FolderOpen className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setShowDirectorNotes(!showDirectorNotes)}
+                    className="flex items-center justify-center p-2 rounded-lg transition-all duration-300"
+                    style={{
+                      backgroundColor: showDirectorNotes ? themeState.theme.colors.primary[100] : themeState.theme.colors.background.tertiary,
+                      color: showDirectorNotes ? themeState.theme.colors.primary[600] : themeState.theme.colors.text.secondary
+                    }}
+                  >
+                    <BookOpen className="w-4 h-4" />
                   </button>
                 </div>
-              )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
-        {/* Enhanced Recent Projects */}
-        {recentProjects.length > 0 && (
-          <div 
-            className="p-4 border-b animate-fade-in animate-delay-200"
-            style={{ borderColor: themeState.theme.colors.border.primary }}
+        {/* Recent Projects Section */}
+        <div className="mb-4">
+          <button
+            onClick={() => toggleSection('recent')}
+            className="w-full flex items-center justify-between p-3 rounded-lg mb-2"
+            style={{
+              backgroundColor: activeSection === 'recent' ? themeState.theme.colors.primary[100] : 'transparent',
+              color: activeSection === 'recent' ? themeState.theme.colors.primary[700] : themeState.theme.colors.text.primary
+            }}
           >
+            <div className="flex items-center space-x-3">
+              <Clock className="w-5 h-5" style={{ 
+                color: activeSection === 'recent' ? themeState.theme.colors.primary[600] : themeState.theme.colors.text.secondary 
+              }} />
+              <span className="font-medium">Recent Projects</span>
+            </div>
+            {activeSection === 'recent' ? (
+              <ChevronUp className="w-5 h-5" style={{ color: themeState.theme.colors.primary[500] }} />
+            ) : (
+              <ChevronDown className="w-5 h-5" style={{ color: themeState.theme.colors.text.secondary }} />
+            )}
+          </button>
+          
+          {activeSection === 'recent' && recentProjects.length > 0 && (
+            <div className="space-y-2">
+              {recentProjects.map(project => (
+                <div 
+                  key={project.id}
+                  className="p-3 rounded-lg flex items-center justify-between cursor-pointer hover:shadow-sm transition-all duration-300"
+                  style={{
+                    backgroundColor: state.currentProject?.id === project.id 
+                      ? themeState.theme.colors.primary[50] 
+                      : themeState.theme.colors.background.secondary,
+                    borderLeft: `3px solid ${state.currentProject?.id === project.id 
+                      ? themeState.theme.colors.primary[500]
+                      : 'transparent'}`
+                  }}
+                  onClick={() => loadProject(project)}
+                  onMouseEnter={() => setHoveredProject(project.id)}
+                  onMouseLeave={() => setHoveredProject(null)}
+                >
+                  <div className="flex-1 overflow-hidden">
+                    <h4 className="font-medium truncate" style={{ color: themeState.theme.colors.text.primary }}>{project.title}</h4>
+                    <p className="text-xs truncate" style={{ color: themeState.theme.colors.text.tertiary }}>
+                      {project.panels?.length || 0} panel{(project.panels?.length || 0) !== 1 ? 's' : ''} • Last modified {new Date(project.updatedAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                  
+                  {/* Delete action - only show on hover */}
+                  {hoveredProject === project.id && state.currentProject?.id !== project.id && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteProject(project.id);
+                      }}
+                      className="p-2 rounded-full opacity-70 hover:opacity-100 transition-opacity"
+                      style={{ color: themeState.theme.colors.text.secondary }}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        
+        {/* Director Notes Section - Collapsed by default */}
+        {state.currentProject && (
+          <div className="mb-4">
             <button
-              onClick={() => toggleSection('recent')}
-              className="w-full flex items-center justify-between mb-4 text-primary-theme hover:text-secondary-theme transition-all duration-300 p-2 rounded-lg hover:bg-tertiary/50"
+              onClick={() => toggleSection('notes')}
+              className="w-full flex items-center justify-between p-3 rounded-lg mb-2"
+              style={{
+                backgroundColor: activeSection === 'notes' ? themeState.theme.colors.primary[100] : 'transparent',
+                color: activeSection === 'notes' ? themeState.theme.colors.primary[700] : themeState.theme.colors.text.primary
+              }}
             >
               <div className="flex items-center space-x-3">
-                <div 
-                  className="w-8 h-8 rounded-lg flex items-center justify-center shadow-md"
-                  style={{
-                    background: `linear-gradient(135deg, ${themeState.theme.colors.primary[400]}, ${themeState.theme.colors.primary[600]})`
-                  }}
-                >
-                  <Clock className="w-4 h-4 text-white" />
-                </div>
-                <div>
-                  <span className="font-semibold text-sm">Recent Projects</span>
-                  <p className="text-xs text-secondary-theme">{recentProjects.length} available</p>
-                </div>
+                <BookOpen className="w-5 h-5" style={{ 
+                  color: activeSection === 'notes' ? themeState.theme.colors.primary[600] : themeState.theme.colors.text.secondary 
+                }} />
+                <span className="font-medium">Director's Notes</span>
               </div>
-              {activeSection === 'recent' ? (
-                <ChevronUp className="w-5 h-5 transition-transform duration-300" />
+              {activeSection === 'notes' ? (
+                <ChevronUp className="w-5 h-5" style={{ color: themeState.theme.colors.primary[500] }} />
               ) : (
-                <ChevronDown className="w-5 h-5 transition-transform duration-300" />
+                <ChevronDown className="w-5 h-5" style={{ color: themeState.theme.colors.text.secondary }} />
               )}
             </button>
             
-            {activeSection === 'recent' && (
-              <div className="space-y-3 animate-slide-in-bottom">
-                {recentProjects.map((project, index) => (
-                  <div
-                    key={project.id}
-                    className={`group card-interactive p-3 cursor-pointer animate-fade-in animate-delay-${(index + 1) * 100}`}
-                    onMouseEnter={() => setHoveredProject(project.id)}
-                    onMouseLeave={() => setHoveredProject(null)}
-                    onClick={() => loadProject(project)}
-                    style={{
-                      backgroundColor: hoveredProject === project.id 
-                        ? themeState.theme.colors.background.tertiary
-                        : themeState.theme.colors.background.secondary,
-                      borderColor: themeState.theme.colors.border.primary
-                    }}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-2 mb-1">
-                          <h4 className="font-medium text-primary-theme text-sm">{project.title}</h4>
-                          {hoveredProject === project.id && (
-                            <div className="w-2 h-2 bg-green-400 rounded-full animate-heartbeat"></div>
-                          )}
-                        </div>
-                        <div className="flex items-center space-x-4 text-xs text-secondary-theme">
-                          <span className="flex items-center space-x-1">
-                            <span>{project.panels?.length || 0}</span>
-                            <span>panels</span>
-                          </span>
-                          <span className="flex items-center space-x-1">
-                            <span>{project.panels?.filter(p => p.imageUrl)?.length || 0}</span>
-                            <span>images</span>
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <div className="text-xs text-tertiary-theme">
-                          {new Date(project.lastOpened || project.updatedAt).toLocaleDateString()}
-                        </div>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            deleteProject(project.id)
-                          }}
-                          className="opacity-0 group-hover:opacity-100 transition-all duration-300 p-1.5 hover:bg-red-100 rounded-lg transform hover:scale-110"
-                        >
-                          <Trash2 className="w-3.5 h-3.5 text-red-500" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+            {activeSection === 'notes' && (
+              <div className="space-y-3 p-3 rounded-lg" style={{ backgroundColor: themeState.theme.colors.background.secondary }}>
+                <textarea
+                  value={directorNotes}
+                  onChange={(e) => setDirectorNotes(e.target.value)}
+                  placeholder="Add director's notes, character details, or story guidelines..."
+                  className="w-full h-20 rounded-lg p-2 text-sm"
+                  style={{
+                    backgroundColor: themeState.theme.colors.background.primary,
+                    borderColor: themeState.theme.colors.border.primary,
+                    color: themeState.theme.colors.text.primary
+                  }}
+                />
+                
+                <button
+                  onClick={saveDirectorNotes}
+                  data-save-notes
+                  className="w-full py-2 rounded-lg text-sm font-medium flex items-center justify-center space-x-2"
+                  style={{
+                    backgroundColor: themeState.theme.colors.primary[500],
+                    color: '#ffffff'
+                  }}
+                >
+                  <Save className="w-4 h-4" />
+                  <span>Save Notes</span>
+                </button>
               </div>
             )}
           </div>

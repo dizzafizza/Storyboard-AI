@@ -221,10 +221,10 @@ export default function ExportDialog({ isOpen, onClose }: ExportDialogProps) {
       title="Export Project"
       subtitle={`Export "${state.currentProject?.title || 'Untitled'}" in various formats`}
       icon={<Download className="w-5 h-5" />}
-      defaultWidth="min(90vw, 800px)"
-      defaultHeight="min(85vh, 700px)"
-      maxWidth="95vw"
-      maxHeight="95vh"
+      defaultWidth="min(95vw, 800px)"
+      defaultHeight="min(90vh, 700px)"
+      maxWidth="98vw"
+      maxHeight="98vh"
       resizable={true}
       minimizable={true}
       maximizable={true}
@@ -234,13 +234,13 @@ export default function ExportDialog({ isOpen, onClose }: ExportDialogProps) {
       <div className="flex flex-col h-full">
         {/* Header */}
         <div 
-          className="p-6 border-b"
+          className="p-4 sm:p-6 border-b"
           style={{ 
             backgroundColor: theme.colors.background.secondary,
             borderColor: theme.colors.border.primary
           }}
         >
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h3 className="text-lg font-semibold" style={{ color: theme.colors.text.primary }}>
                 Choose Export Format
@@ -264,54 +264,62 @@ export default function ExportDialog({ isOpen, onClose }: ExportDialogProps) {
         </div>
 
         {/* Content */}
-        <div className="flex-1 p-6 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6" style={{ backgroundColor: theme.colors.background.tertiary }}>
           {/* Format Selection */}
-          <div className="space-y-4 mb-8">
-            <h4 className="font-medium" style={{ color: theme.colors.text.primary }}>
-              Export Format
-            </h4>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {formatOptions.map((format) => {
-                const Icon = format.icon
-                const isSelected = exportFormat === format.value
-                
-                return (
-                  <button
-                    key={format.value}
-                    onClick={() => setExportFormat(format.value)}
-                    className="p-4 rounded-xl border-2 transition-all duration-200 text-left"
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+            {formatOptions.map((format) => (
+              <button
+                key={format.value}
+                onClick={() => setExportFormat(format.value)}
+                className={`p-4 rounded-xl transition-all duration-300 ${
+                  exportFormat === format.value 
+                    ? 'shadow-lg scale-105 transform-gpu'
+                    : 'hover:shadow-md hover:scale-102 transform-gpu'
+                }`}
+                style={{
+                  backgroundColor: exportFormat === format.value 
+                    ? `${theme.colors.primary[100]}` 
+                    : theme.colors.background.secondary,
+                  borderWidth: '2px',
+                  borderStyle: 'solid',
+                  borderColor: exportFormat === format.value 
+                    ? theme.colors.primary[300]
+                    : theme.colors.border.primary
+                }}
+              >
+                <div className="flex flex-col sm:flex-row items-center text-left">
+                  <div 
+                    className="w-12 h-12 rounded-lg flex items-center justify-center mb-3 sm:mb-0 sm:mr-4"
                     style={{
-                      backgroundColor: isSelected 
-                        ? `${theme.colors.primary[500]}20`
-                        : theme.colors.background.tertiary,
-                      borderColor: isSelected 
-                        ? theme.colors.primary[500]
-                        : theme.colors.border.primary,
-                      color: theme.colors.text.primary
+                      backgroundColor: theme.colors.primary[600],
+                      color: 'white'
                     }}
                   >
-                    <div className="flex items-start space-x-3">
-                      <div 
-                        className="p-2 rounded-lg"
-                        style={{ backgroundColor: `${theme.colors.primary[500]}20` }}
-                      >
-                        <Icon className="w-5 h-5" style={{ color: theme.colors.primary[500] }} />
-                      </div>
-                      <div className="flex-1">
-                        <div className="font-medium">{format.label}</div>
-                        <div className="text-sm mt-1" style={{ color: theme.colors.text.secondary }}>
-                          {format.description}
-                        </div>
-                      </div>
-                      {isSelected && (
-                        <CheckCircle className="w-5 h-5" style={{ color: theme.colors.primary[500] }} />
-                      )}
-                    </div>
-                  </button>
-                )
-              })}
-            </div>
+                    <format.icon className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h4 
+                      className="font-semibold text-center sm:text-left mb-1"
+                      style={{
+                        color: exportFormat === format.value 
+                          ? theme.colors.primary[700]
+                          : theme.colors.text.primary
+                      }}
+                    >
+                      {format.label}
+                    </h4>
+                    <p 
+                      className="text-sm text-center sm:text-left"
+                      style={{
+                        color: theme.colors.text.secondary
+                      }}
+                    >
+                      {format.description}
+                    </p>
+                  </div>
+                </div>
+              </button>
+            ))}
           </div>
 
           {/* Export Options */}
