@@ -587,17 +587,41 @@ interface ThemeState {
 type ThemeAction = 
   | { type: 'SET_THEME'; payload: ThemeVariant }
 
-const initialState: ThemeState = {
-  currentTheme: 'light',
-  theme: themes.light,
-}
+// This function runs once to determine the initial state,
+// ensuring it's in sync with the pre-loader script in index.html.
+const getInitialState = (): ThemeState => {
+  let initialTheme: ThemeVariant = 'light';
+  if (typeof window !== 'undefined') {
+    try {
+      const savedTheme = localStorage.getItem('storyboard-theme') as ThemeVariant;
+      // We only care about light/dark for the initial state.
+      // Other themes are variations of light and are applied by user action.
+      if (savedTheme && themes[savedTheme]) {
+        initialTheme = savedTheme;
+      }
+    } catch (e) {
+      console.warn('Could not access localStorage to get initial theme.');
+    }
+  }
+  return {
+    currentTheme: initialTheme,
+    theme: themes[initialTheme] || themes.light,
+  };
+};
 
 function themeReducer(state: ThemeState, action: ThemeAction): ThemeState {
   switch (action.type) {
     case 'SET_THEME':
       const newTheme = themes[action.payload]
-      // Save to localStorage
-      localStorage.setItem('storyboard-theme', action.payload)
+      if (!newTheme) return state; // Safety check
+
+      // Save to localStorage for the next page load
+      try {
+        localStorage.setItem('storyboard-theme', action.payload)
+      } catch (e) {
+        console.warn('Could not save theme to localStorage.');
+      }
+
       return {
         currentTheme: action.payload,
         theme: newTheme,
@@ -659,17 +683,13 @@ function updateCSSVariables(theme: Theme) {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(themeReducer, initialState)
+  // The third argument to useReducer is an initializer function.
+  // It runs only once, before the component mounts, ensuring no flicker.
+  const [state, dispatch] = useReducer(themeReducer, undefined, getInitialState)
 
-  // Load theme from localStorage on mount
-  useEffect(() => {
-    const savedTheme = localStorage.getItem('storyboard-theme') as ThemeVariant
-    if (savedTheme && themes[savedTheme]) {
-      dispatch({ type: 'SET_THEME', payload: savedTheme })
-    }
-  }, [])
-
-  // Apply CSS custom properties whenever theme changes
+  // This useEffect now only runs when the theme is changed by the user in the app.
+  // The initial theme setting is handled by the script in index.html and the
+  // useReducer initializer, which are synchronous.
   useEffect(() => {
     updateCSSVariables(state.theme)
     setThemeCustomProperties(state.theme)

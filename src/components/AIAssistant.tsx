@@ -1640,21 +1640,26 @@ Your storyboard now has improved panels with the requested modifications!`,
           const suggestedAngle = cameraAngles[i % cameraAngles.length]
           
           const cinematographyPrompt = `Enhance the cinematography: ${panel.description}. ${instructions}`
-          const enhancedData = await aiService.generateScene(cinematographyPrompt, suggestedShot, suggestedAngle, 'cinematic')
+          const enhancedData = await aiService.analyzeCinematography(cinematographyPrompt)
           
-          if (enhancedData && enhancedData.description) {
+          if (enhancedData && typeof enhancedData === 'object') {
+            // Ensure the description is a string, not an object.
+            const descriptionString = `Lighting: ${enhancedData.lighting || 'N/A'}. Performance: ${enhancedData.performance || 'N/A'}. Camera Movement: ${enhancedData.cameraMovement || 'N/A'}. Composition: ${enhancedData.composition || 'N/A'}. Sound: ${enhancedData.sound || 'N/A'}.`;
+            
+            const updates = {
+              title: panel.title, // Keep original title unless specified
+              description: descriptionString,
+              notes: `Enhanced cinematography: ${instructions}`,
+              shotType: (suggestedShot) as ShotType,
+              cameraAngle: (suggestedAngle) as CameraAngle,
+              updatedAt: new Date()
+            }
+
             dispatch({
               type: 'UPDATE_PANEL',
               payload: {
                 id: panel.id,
-                updates: {
-                  title: enhancedData.title || panel.title,
-                  description: enhancedData.description,
-                  notes: `Enhanced cinematography: ${enhancedData.notes || panel.notes}`,
-                  shotType: (enhancedData.shotType || suggestedShot) as ShotType,
-                  cameraAngle: (enhancedData.cameraAngle || suggestedAngle) as CameraAngle,
-                  updatedAt: new Date()
-                }
+                updates: updates
               }
             })
             successCount++

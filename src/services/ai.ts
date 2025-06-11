@@ -516,6 +516,73 @@ Return as valid JSON only with keys: title, description, notes, videoPrompt. Do 
     }
   }
 
+  public async analyzeCinematography(prompt: string): Promise<any> {
+    if (!this.isReady()) {
+      // Return a structured, empty-state object if AI is not available
+      return {
+        lighting: 'AI not configured',
+        performance: 'AI not configured',
+        cameraMovement: 'AI not configured',
+        composition: 'AI not configured',
+        sound: 'AI not configured'
+      }
+    }
+  
+    try {
+      // Enhanced prompt for better JSON formatting and reliability
+      const analysisPrompt = `Analyze the cinematography for the following scene and provide feedback as a valid JSON object. The JSON object must contain these exact keys: "lighting", "performance", "cameraMovement", "composition", and "sound".
+
+Scene: "${prompt}"
+
+Return ONLY the raw JSON object, without any markdown formatting, comments, or other text.`
+  
+      const response = await this.openai!.chat.completions.create({
+        model: 'gpt-4o-mini', // Using a more cost-effective and faster model for this task
+        messages: [{ role: 'user', content: analysisPrompt }],
+        temperature: 0.6,
+        max_tokens: 250,
+        response_format: { type: 'json_object' }, // Enforce JSON output
+      })
+  
+      const content = response.choices[0].message.content
+      if (content) {
+        try {
+          const result = JSON.parse(content)
+          // Validate that all expected keys are present and are strings
+          const requiredKeys = ['lighting', 'performance', 'cameraMovement', 'composition', 'sound']
+          for (const key of requiredKeys) {
+            if (typeof result[key] !== 'string') {
+              result[key] = 'Analysis incomplete'
+            }
+          }
+          return result
+        } catch (parseError) {
+          console.error('Failed to parse cinematography analysis JSON:', parseError, 'Raw content:', content)
+          // Fallback to a structured error object if parsing fails
+          return {
+            lighting: 'Error processing AI response',
+            performance: 'Error processing AI response',
+            cameraMovement: 'Error processing AI response',
+            composition: 'Error processing AI response',
+            sound: 'Error processing AI response'
+          }
+        }
+      }
+  
+      // Fallback for empty response content
+      return {
+        lighting: 'No analysis returned',
+        performance: 'No analysis returned',
+        cameraMovement: 'No analysis returned',
+        composition: 'No analysis returned',
+        sound: 'No analysis returned'
+      }
+    } catch (error: any) {
+      console.error('Error analyzing cinematography:', error)
+      throw new Error(`Failed to analyze cinematography: ${error.message || 'Unknown error'}`)
+    }
+  }
+
   public async generatePanelImage(
     panel: StoryboardPanel,
     options: ImageGenerationOptions = {}

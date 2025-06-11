@@ -230,6 +230,14 @@ export class StoryboardStorage {
               updatedAt: new Date(panel.updatedAt)
             }
             
+            // --- DATA SANITIZATION ---
+            // This is a critical fix for a bug where the description could be an object.
+            if (typeof restoredPanel.description === 'object' && restoredPanel.description !== null) {
+              console.warn(`🩹 Fixing corrupted panel description for panel ID: ${restoredPanel.id}`);
+              const obj = restoredPanel.description;
+              restoredPanel.description = `Lighting: ${obj.lighting || 'N/A'}. Performance: ${obj.performance || 'N/A'}. Camera Movement: ${obj.cameraMovement || 'N/A'}. Composition: ${obj.composition || 'N/A'}. Sound: ${obj.sound || 'N/A'}.`;
+            }
+
             // Restore image if it was stored separately
             if (panel.imageUrl && panel.imageUrl.startsWith('stored:')) {
               const imageId = panel.imageUrl.replace('stored:', '')

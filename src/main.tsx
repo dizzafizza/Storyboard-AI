@@ -12,7 +12,31 @@ if (isSafari || isIOS) {
   console.log('🍎 Safari/iOS detected - using compatibility mode')
 }
 
+// Ensure CSS variables are set before rendering
+function ensureCSSVariables() {
+  const root = document.documentElement
+  const bgPrimary = getComputedStyle(root).getPropertyValue('--bg-primary')
+  
+  // If CSS variables are not set, we have a problem
+  if (!bgPrimary || bgPrimary.trim() === '') {
+    console.warn('⚠️ CSS variables not found, initializing defaults')
+    
+    // Set critical CSS variables if missing
+    root.style.setProperty('--bg-primary', '#ffffff')
+    root.style.setProperty('--bg-secondary', '#f9fafb')
+    root.style.setProperty('--bg-tertiary', '#f3f4f6')
+    root.style.setProperty('--text-primary', '#111827')
+    root.style.setProperty('--text-secondary', '#4b5563')
+    root.style.setProperty('--text-tertiary', '#6b7280')
+    root.style.setProperty('--border-primary', '#e5e7eb')
+    root.style.setProperty('--border-secondary', '#d1d5db')
+  }
+}
+
 try {
+  // Ensure CSS variables before rendering
+  ensureCSSVariables()
+  
   const rootElement = document.getElementById('root')
   console.log('📍 Root element:', rootElement)
   

@@ -68,10 +68,62 @@
     
     <!-- Enhanced Safari Compatibility Script -->
     <script>
-      // Enhanced Safari compatibility checks and polyfills
+      // Enhanced Safari compatibility checks, theme initialization, and polyfills.
+      // This script runs before React to prevent a flash of unstyled content (FOUC)
+      // and to fix the black screen issue in Safari.
       (function() {
         'use strict';
         
+        // ===== START: THEME INITIALIZATION =====
+        const themes = {
+          light: {
+            '--primary-50': '#f0f9ff', '--primary-100': '#e0f2fe', '--primary-200': '#bae6fd',
+            '--primary-300': '#7dd3fc', '--primary-400': '#38bdf8', '--primary-500': '#0ea5e9',
+            '--primary-600': '#0284c7', '--primary-700': '#0369a1', '--primary-800': '#075985',
+            '--primary-900': '#0c4a6e', '--bg-primary': '#ffffff', '--bg-secondary': '#f9fafb',
+            '--bg-tertiary': '#f3f4f6', '--text-primary': '#111827', '--text-secondary': '#4b5563',
+            '--text-tertiary': '#6b7280', '--border-primary': '#e5e7eb', '--border-secondary': '#d1d5db',
+            '--scrollbar-track': 'rgba(0, 0, 0, 0.05)', '--scrollbar-thumb': 'rgba(0, 0, 0, 0.2)',
+            '--scrollbar-thumb-hover': 'rgba(0, 0, 0, 0.3)', '--glass-bg': 'rgba(255, 255, 255, 0.8)',
+            '--glass-border': 'rgba(255, 255, 255, 0.2)', '--glass-shadow': '0 8px 32px rgba(0, 0, 0, 0.1)',
+            '--blur-amount': '12px',
+          },
+          dark: {
+            '--primary-50': '#1e293b', '--primary-100': '#334155', '--primary-200': '#475569',
+            '--primary-300': '#64748b', '--primary-400': '#94a3b8', '--primary-500': '#cbd5e1',
+            '--primary-600': '#e2e8f0', '--primary-700': '#f1f5f9', '--primary-800': '#f8fafc',
+            '--primary-900': '#ffffff', '--bg-primary': '#0f172a', '--bg-secondary': '#1e293b',
+            '--bg-tertiary': '#334155', '--text-primary': '#f8fafc', '--text-secondary': '#cbd5e1',
+            '--text-tertiary': '#94a3b8', '--border-primary': '#334155', '--border-secondary': '#475569',
+            '--scrollbar-track': 'rgba(255, 255, 255, 0.05)', '--scrollbar-thumb': 'rgba(255, 255, 255, 0.2)',
+            '--scrollbar-thumb-hover': 'rgba(255, 255, 255, 0.3)', '--glass-bg': 'rgba(0, 0, 0, 0.7)',
+            '--glass-border': 'rgba(255, 255, 255, 0.1)', '--glass-shadow': '0 8px 32px rgba(0, 0, 0, 0.3)',
+            '--blur-amount': '12px',
+          }
+        };
+
+        function applyTheme(theme) {
+          const root = document.documentElement;
+          for (const key in theme) {
+            root.style.setProperty(key, theme[key]);
+          }
+        }
+
+        let themeName = 'light';
+        try {
+          const savedTheme = localStorage.getItem('storyboard-theme');
+          if (savedTheme === 'dark') {
+            themeName = 'dark';
+          }
+        } catch (e) {
+          console.warn('Could not access localStorage for theme initialization.');
+        }
+        
+        document.documentElement.setAttribute('data-theme', themeName);
+        applyTheme(themes[themeName]);
+        console.log(`🎨 Initial theme set to "${themeName}" before React loads.`);
+        // ===== END: THEME INITIALIZATION =====
+
         // Global polyfills for Safari
         if (typeof globalThis === 'undefined') {
           window.globalThis = window;
