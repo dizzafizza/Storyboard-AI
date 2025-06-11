@@ -25,6 +25,7 @@ export default function StoryboardGrid({
   const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null)
   const [touchStartPos, setTouchStartPos] = useState<{ x: number; y: number } | null>(null)
   const gridRef = useRef<HTMLDivElement>(null)
+  const [showMobileActions, setShowMobileActions] = useState<string | null>(null)
 
   // Detect mobile device - improved detection
   useEffect(() => {
@@ -107,6 +108,18 @@ export default function StoryboardGrid({
     }
   }, [contextMenu])
 
+  // Hide mobile actions when tapping elsewhere
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (showMobileActions && gridRef.current && !gridRef.current.contains(e.target as Node)) {
+        setShowMobileActions(null)
+      }
+    }
+    
+    document.addEventListener('click', handleClickOutside)
+    return () => document.removeEventListener('click', handleClickOutside)
+  }, [showMobileActions])
+
   const handleArrowNavigation = (key: string) => {
     const currentIndex = selectedPanel ? state.panels.findIndex(p => p.id === selectedPanel) : 0
     let newIndex = currentIndex
@@ -153,7 +166,13 @@ export default function StoryboardGrid({
   }
 
   const handleMobilePanelClick = (panelId: string) => {
-    handlePanelClick(panelId)
+    if (selectedPanel === panelId) {
+      // If already selected, show context menu
+      setShowMobileActions(panelId)
+    } else {
+      // If not selected, select it
+      onSelectPanel(panelId)
+    }
   }
 
   const handleContextMenu = (e: React.MouseEvent, panelId: string) => {
@@ -209,12 +228,8 @@ export default function StoryboardGrid({
   }
 
   const handleDeletePanel = (panelId: string) => {
-    if (confirm('Are you sure you want to delete this panel?')) {
-      dispatch({
-        type: 'DELETE_PANEL',
-        payload: panelId,
-      })
-      
+    if (confirm(`Are you sure you want to delete this panel?`)) {
+      dispatch({ type: 'DELETE_PANEL', payload: panelId })
       if (selectedPanel === panelId) {
         onSelectPanel(null)
       }
@@ -499,6 +514,7 @@ export default function StoryboardGrid({
                   onTouchMove={handleTouchMove}
                   onTouchEnd={handleTouchEnd}
                   isMobile={isMobile}
+                  showActions={isMobile ? showMobileActions === panel.id || selectedPanel === panel.id : undefined}
                 />
               </div>
             ))}

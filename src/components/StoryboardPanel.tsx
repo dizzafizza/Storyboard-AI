@@ -23,6 +23,7 @@ interface StoryboardPanelProps {
   onTouchMove?: (e: React.TouchEvent) => void
   onTouchEnd?: () => void
   isMobile?: boolean
+  showActions?: boolean
 }
 
 export default function StoryboardPanel({ 
@@ -41,7 +42,8 @@ export default function StoryboardPanel({
   onTouchStart,
   onTouchMove,
   onTouchEnd,
-  isMobile = false
+  isMobile = false,
+  showActions = false
 }: StoryboardPanelProps) {
   
 
@@ -52,7 +54,6 @@ export default function StoryboardPanel({
   const [editedTitle, setEditedTitle] = useState(panel.title)
   const [editedDescription, setEditedDescription] = useState(panel.description)
   const [isHovered, setIsHovered] = useState(false)
-  const [showActions, setShowActions] = useState(false)
   const [isGeneratingImage, setIsGeneratingImage] = useState(false)
   const [imageLoaded, setImageLoaded] = useState(false)
   const [downloadStatus, setDownloadStatus] = useState<string | null>(null)
@@ -100,7 +101,7 @@ export default function StoryboardPanel({
     }
   }
 
-  const handleDelete = (e: React.MouseEvent) => {
+  const handleDelete = (e: React.MouseEvent | React.TouchEvent) => {
     e.stopPropagation()
     e.preventDefault()
     if (onDelete) {
@@ -234,13 +235,11 @@ export default function StoryboardPanel({
       onMouseEnter={() => {
         if (!isMobile) {
           setIsHovered(true)
-          setShowActions(true)
         }
       }}
       onMouseLeave={() => {
         if (!isMobile) {
           setIsHovered(false)
-          setShowActions(false)
         }
       }}
       draggable={!isMobile}
@@ -367,7 +366,8 @@ export default function StoryboardPanel({
           {/* Delete Button */}
           <button
             onClick={handleDelete}
-            className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition-all duration-150 hover:scale-105 shadow-sm hover:shadow-md touch-manipulation"
+            onTouchEnd={handleDelete}
+            className="w-9 h-9 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition-all duration-150 hover:scale-105 shadow-sm hover:shadow-md touch-manipulation"
             style={{
               backgroundColor: themeColors.status.error.background,
               color: themeColors.status.error.text
@@ -380,7 +380,7 @@ export default function StoryboardPanel({
             }}
             title="Delete Panel"
           >
-            <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
+            <Trash2 className="w-4 h-4 sm:w-4 sm:h-4" />
           </button>
         </div>
 

@@ -313,7 +313,7 @@ export default function Header({
         <div className="flex items-center space-x-2 sm:space-x-3">
           <button
             onClick={handleHamburgerClick}
-            className={`hamburger-menu-button w-9 sm:w-10 h-9 sm:h-10 rounded-lg flex items-center justify-center transition-all duration-300 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-2 transform-gpu ${
+            className={`hamburger-menu-button w-10 h-10 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center transition-all duration-300 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-2 transform-gpu ${
               isDesktopNavOpen || isMobileDrawerOpen
                 ? 'active bg-primary-500 text-white shadow-lg animate-hamburger-active-glow'
                 : 'hover:bg-secondary text-secondary-theme hover:shadow-md'
@@ -383,11 +383,11 @@ export default function Header({
 
       <div className="flex items-center space-x-2">
         {/* Quick Actions - Visible on all devices */}
-        <div className="flex items-center space-x-0.5 sm:space-x-1 bg-secondary rounded-lg p-0.5 sm:p-1">
+        <div className="flex items-center space-x-1 sm:space-x-1 bg-secondary rounded-lg p-1 sm:p-1">
           <button 
             id="quick-save-btn"
             onClick={handleQuickSave}
-            className="btn-secondary p-1.5 sm:p-2 hover:bg-green-100 hover:text-green-700 transition-all duration-300"
+            className="btn-secondary p-2 sm:p-2 hover:bg-green-100 hover:text-green-700 transition-all duration-300"
             title="Quick save"
             style={{
               backgroundColor: themeState.theme.colors.background.tertiary,
@@ -400,7 +400,7 @@ export default function Header({
           <button 
             id="quick-import-btn"
             onClick={handleQuickImport}
-            className="btn-secondary p-1.5 sm:p-2 hover:bg-purple-100 hover:text-purple-700 transition-all duration-300"
+            className="btn-secondary p-2 sm:p-2 hover:bg-purple-100 hover:text-purple-700 transition-all duration-300"
             title="Import project"
             style={{
               backgroundColor: themeState.theme.colors.background.tertiary,
@@ -413,7 +413,7 @@ export default function Header({
           <button 
             id="quick-export-btn"
             onClick={onOpenExportDialog}
-            className="btn-secondary p-1.5 sm:p-2 hover:bg-blue-100 hover:text-blue-700 transition-all duration-300"
+            className="btn-secondary p-2 sm:p-2 hover:bg-blue-100 hover:text-blue-700 transition-all duration-300"
             title="Export project"
             style={{
               backgroundColor: themeState.theme.colors.background.tertiary,
@@ -501,7 +501,7 @@ export default function Header({
         {/* AI Toggle - Always Visible and Responsive */}
         <button
           onClick={onToggleAI}
-          className={`relative flex items-center space-x-1 sm:space-x-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg font-medium transition-all duration-300 ${
+          className={`relative flex items-center space-x-1 sm:space-x-2 px-3 sm:px-4 py-2 sm:py-2 rounded-lg font-medium transition-all duration-300 ${
             isAIOpen
               ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg'
               : 'bg-secondary text-secondary hover:bg-tertiary hover:text-primary'

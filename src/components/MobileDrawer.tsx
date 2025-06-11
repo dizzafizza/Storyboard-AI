@@ -123,7 +123,7 @@ export default function MobileDrawer({ isOpen, onClose, onNavigate, currentSecti
       
       {/* Drawer */}
       <div 
-        className={`absolute left-0 top-0 h-full w-80 max-w-[85vw] shadow-2xl transform transition-transform duration-300 ease-out ${
+        className={`mobile-drawer absolute left-0 top-0 h-full w-80 max-w-[85vw] shadow-2xl transform transition-transform duration-300 ease-out flex flex-col ${
           isOpen && !isClosing ? 'translate-x-0' : '-translate-x-full'
         }`}
         style={{
@@ -133,7 +133,7 @@ export default function MobileDrawer({ isOpen, onClose, onNavigate, currentSecti
       >
         {/* Header */}
         <div 
-          className="flex items-center justify-between p-4 border-b text-white"
+          className="flex items-center justify-between p-4 border-b text-white flex-shrink-0"
           style={{
             background: `linear-gradient(135deg, ${themeState.theme.colors.primary[600]}, ${themeState.theme.colors.primary[700]})`,
             borderColor: themeState.theme.colors.border.primary
@@ -164,8 +164,8 @@ export default function MobileDrawer({ isOpen, onClose, onNavigate, currentSecti
           </button>
         </div>
 
-        {/* Navigation Items */}
-        <div className="flex-1 overflow-y-auto scrollable">
+        {/* Navigation Items - Updated for better scrolling */}
+        <div className="flex-1 overflow-y-auto scrollable overscroll-contain">
           <div className="p-4 space-y-2">
             {navigationItems.map((item, index) => (
               <button
@@ -233,7 +233,7 @@ export default function MobileDrawer({ isOpen, onClose, onNavigate, currentSecti
 
           {/* Footer Info */}
           <div 
-            className="p-4 mt-8 border-t"
+            className="p-4 mt-4 mb-4 border-t flex-shrink-0"
             style={{
               borderColor: themeState.theme.colors.border.primary
             }}
