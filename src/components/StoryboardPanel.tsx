@@ -50,9 +50,6 @@ export default function StoryboardPanel({
   const { dispatch } = useStoryboard()
   const { state: themeState } = useTheme()
   const themeColors = getThemeColors(themeState.theme)
-  const [isEditing, setIsEditing] = useState(false)
-  const [editedTitle, setEditedTitle] = useState(panel.title)
-  const [editedDescription, setEditedDescription] = useState(panel.description)
   const [isHovered, setIsHovered] = useState(false)
   const [isGeneratingImage, setIsGeneratingImage] = useState(false)
   const [imageLoaded, setImageLoaded] = useState(false)
@@ -84,41 +81,46 @@ export default function StoryboardPanel({
     }
   }, [panel.description, isDescriptionExpanded])
 
-  // Hide mobile popup when clicking outside
   useEffect(() => {
+    // Close mobile popup when clicking outside
     const handleClickOutside = (e: MouseEvent) => {
-      if (showMobilePopup && mobileMenuRef.current && !mobileMenuRef.current.contains(e.target as Node)) {
+      if (mobileMenuRef.current && !mobileMenuRef.current.contains(e.target as Node)) {
         setShowMobilePopup(false)
       }
     }
     
-    document.addEventListener('click', handleClickOutside)
-    return () => document.removeEventListener('click', handleClickOutside)
-  }, [showMobilePopup])
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   const handleGenerateImage = async (e: React.MouseEvent) => {
+    e.preventDefault()
     e.stopPropagation()
     
-    if (isGeneratingImage) return
+    if (!aiService.isReady()) {
+      alert('Please set up your OpenAI API key first in the AI Assistant settings.')
+      return
+    }
+    
     setIsGeneratingImage(true)
     
     try {
-      const result = await aiService.generateImage(panel.description)
+      const imageUrl = await aiService.generateImage(panel.description, { 
+        style: 'cinematic',
+        quality: 'standard' 
+      })
       
-      if (result) {
+      if (imageUrl) {
         dispatch({
           type: 'UPDATE_PANEL',
           payload: {
             id: panel.id,
             updates: {
-              imageUrl: result,
-              updatedAt: new Date()
-            }
-          }
+              imageUrl,
+              updatedAt: new Date(),
+            },
+          },
         })
-      } else {
-        console.error('Failed to generate image')
-        alert('Failed to generate image. Please try again.')
       }
     } catch (error) {
       console.error('Error generating image:', error)
@@ -130,32 +132,10 @@ export default function StoryboardPanel({
 
   const handleEdit = (e?: React.MouseEvent) => {
     e?.stopPropagation()
-    setEditedTitle(panel.title)
-    setEditedDescription(panel.description)
-    setIsEditing(true)
     if (isMobile) {
       setShowMobilePopup(false)
     }
     onEdit?.()
-  }
-
-  const handleSave = () => {
-    dispatch({
-      type: 'UPDATE_PANEL',
-      payload: {
-        id: panel.id,
-        updates: {
-          title: editedTitle,
-          description: editedDescription,
-          updatedAt: new Date()
-        }
-      }
-    })
-    setIsEditing(false)
-  }
-
-  const handleCancel = () => {
-    setIsEditing(false)
   }
 
   const handleDelete = (e?: React.MouseEvent) => {
@@ -168,10 +148,7 @@ export default function StoryboardPanel({
   }
 
   const handleContainerClick = () => {
-    // Prevent selection when in editing mode
-    if (!isEditing) {
-      onSelect()
-    }
+    onSelect()
   }
 
   const handleToggleMobileMenu = (e: React.MouseEvent) => {
@@ -374,63 +351,14 @@ export default function StoryboardPanel({
       )}
 
       {/* Desktop Action Buttons - Only show on desktop */}
-      {!isMobile && (
-        <div className={`absolute top-2 right-2 z-50 transition-all duration-200 ${
-          showActions || isSelected ? 'opacity-100 transform translate-x-0 scale-100' : 'opacity-0 transform translate-x-6 scale-75'
-        }`}>
-          
-          {/* Primary Action Row */}
-          <div className="flex flex-wrap gap-1 mb-2 justify-end">
-            {/* Move Up Button */}
-            {canMoveUp && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  e.preventDefault()
-                  onMoveUp?.()
-                }}
-                className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition-all duration-150 hover:scale-105 shadow-sm hover:shadow-md touch-manipulation"
-                style={{
-                  backgroundColor: themeColors.interactive.primary.background,
-                  color: themeColors.interactive.primary.text
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = themeColors.interactive.primary.hover
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = themeColors.interactive.primary.background
-                }}
-                title="Move Up"
-              >
-                <ArrowUp className="w-3 h-3 sm:w-4 sm:h-4" />
-              </button>
-            )}
-
-            {/* Move Down Button */}
-            {canMoveDown && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  e.preventDefault()
-                  onMoveDown?.()
-                }}
-                className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition-all duration-150 hover:scale-105 shadow-sm hover:shadow-md touch-manipulation"
-                style={{
-                  backgroundColor: themeColors.interactive.primary.background,
-                  color: themeColors.interactive.primary.text
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = themeColors.interactive.primary.hover
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = themeColors.interactive.primary.background
-                }}
-                title="Move Down"
-              >
-                <ArrowDown className="w-3 h-3 sm:w-4 sm:h-4" />
-              </button>
-            )}
-
+      {!isMobile && (isSelected || isHovered || showActions) && (
+        <div 
+          className="absolute top-0 right-0 px-2 py-2 flex flex-col gap-2 z-20"
+          style={{ 
+            background: 'linear-gradient(45deg, transparent, rgba(0,0,0,0.05))'
+          }}
+        >
+          <div className="flex space-x-1">
             {/* Edit Button */}
             <button
               onClick={handleEdit}
@@ -440,16 +368,16 @@ export default function StoryboardPanel({
                 color: themeColors.status.success.text
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = themeColors.status.success.hover
+                e.currentTarget.style.backgroundColor = themeColors.status.success.hover;
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = themeColors.status.success.background
+                e.currentTarget.style.backgroundColor = themeColors.status.success.background;
               }}
               title="Edit Panel"
             >
               <Edit3 className="w-3 h-3 sm:w-4 sm:h-4" />
             </button>
-
+            
             {/* Delete Button */}
             <button
               onClick={handleDelete}
@@ -459,18 +387,63 @@ export default function StoryboardPanel({
                 color: themeColors.status.error.text
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = themeColors.status.error.hover
+                e.currentTarget.style.backgroundColor = themeColors.status.error.hover;
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = themeColors.status.error.background
+                e.currentTarget.style.backgroundColor = themeColors.status.error.background;
               }}
               title="Delete Panel"
             >
               <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
             </button>
           </div>
-
-          {/* Secondary Action Row - Simplified */}
+          
+          {/* Second row of buttons */}
+          {(isSelected || showActions) && (
+            <div className="flex space-x-1">
+              {canMoveUp && (
+                <button
+                  onClick={handleMoveUp}
+                  className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition-all duration-150 hover:scale-105 shadow-sm hover:shadow-md touch-manipulation"
+                  style={{
+                    backgroundColor: themeColors.interactive.primary.background,
+                    color: themeColors.interactive.primary.text
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = themeState.theme.colors.secondary[200];
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = themeColors.interactive.primary.background;
+                  }}
+                  title="Move Up"
+                >
+                  <ArrowUp className="w-3 h-3 sm:w-4 sm:h-4" />
+                </button>
+              )}
+              
+              {canMoveDown && (
+                <button
+                  onClick={handleMoveDown}
+                  className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition-all duration-150 hover:scale-105 shadow-sm hover:shadow-md touch-manipulation"
+                  style={{
+                    backgroundColor: themeColors.interactive.primary.background,
+                    color: themeColors.interactive.primary.text
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = themeState.theme.colors.secondary[200];
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = themeColors.interactive.primary.background;
+                  }}
+                  title="Move Down"
+                >
+                  <ArrowDown className="w-3 h-3 sm:w-4 sm:h-4" />
+                </button>
+              )}
+            </div>
+          )}
+          
+          {/* Bottom row buttons */}
           <div className="flex flex-wrap gap-1 justify-end">
             {/* Generate Image Button */}
             <button
@@ -506,269 +479,202 @@ export default function StoryboardPanel({
       )}
 
       {/* Header - Fixed text alignment and visibility */}
-      {!isEditing ? (
-        <div className="p-4 border-b relative z-10"
-          style={{
-            backgroundColor: isSelected 
-              ? `${themeState.theme.colors.primary[50]}90`
-              : themeState.theme.colors.background.secondary,
-            borderColor: themeState.theme.colors.border.primary
-          }}
-        >
-          <div className="flex items-start justify-between">
-            <div className="flex-1 min-w-0 pl-12 pr-3">
-              <h3 className="text-lg font-semibold leading-tight truncate mb-2"
-                style={{ 
-                  color: themeState.theme.colors.text.primary,
-                  textShadow: isActive ? '0 1px 2px rgba(0,0,0,0.1)' : 'none'
+      <div className="p-4 border-b relative z-10"
+        style={{
+          backgroundColor: isSelected 
+            ? `${themeState.theme.colors.primary[50]}90`
+            : themeState.theme.colors.background.secondary,
+          borderColor: themeState.theme.colors.border.primary
+        }}
+      >
+        <div className="flex items-start justify-between">
+          <div className="flex-1 min-w-0 pl-12 pr-3">
+            <h3 className="text-lg font-semibold leading-tight truncate mb-2"
+              style={{ 
+                color: themeState.theme.colors.text.primary,
+                textShadow: isActive ? '0 1px 2px rgba(0,0,0,0.1)' : 'none'
+              }}
+            >
+              {panel.title}
+            </h3>
+            <div className="flex items-center flex-wrap gap-2">
+              <span 
+                className="px-2 py-1 rounded-full text-xs font-medium border"
+                style={{
+                  backgroundColor: themeColors.status.info.light,
+                  color: themeColors.status.info.background,
+                  borderColor: themeColors.status.info.border
                 }}
               >
-                {panel.title}
-              </h3>
-              <div className="flex items-center flex-wrap gap-2">
-                <span 
-                  className="px-2 py-1 rounded-full text-xs font-medium border"
-                  style={{
-                    backgroundColor: themeColors.status.info.light,
-                    color: themeColors.status.info.background,
-                    borderColor: themeColors.status.info.border
-                  }}
-                >
-                  📽️ {panel.shotType.replace('-', ' ')}
-                </span>
-                <span 
-                  className="px-2 py-1 rounded-full text-xs font-medium border"
-                  style={{
-                    backgroundColor: themeColors.status.success.light,
-                    color: themeColors.status.success.background,
-                    borderColor: themeColors.status.success.border
-                  }}
-                >
-                  📐 {panel.cameraAngle.replace('-', ' ')}
-                </span>
-              </div>
+                📽️ {panel.shotType.replace('-', ' ')}
+              </span>
+              <span 
+                className="px-2 py-1 rounded-full text-xs font-medium border"
+                style={{
+                  backgroundColor: themeColors.status.success.light,
+                  color: themeColors.status.success.background,
+                  borderColor: themeColors.status.success.border
+                }}
+              >
+                📐 {panel.cameraAngle.replace('-', ' ')}
+              </span>
             </div>
           </div>
         </div>
-      ) : (
-        <div className="p-4 border-b"
-          style={{
-            backgroundColor: themeState.theme.colors.background.secondary,
-            borderColor: themeState.theme.colors.border.primary
-          }}
-        >
-          <div className="mb-3">
-            <label 
-              className="block text-sm font-medium mb-1"
-              style={{ color: themeState.theme.colors.text.secondary }}
-              htmlFor={`panel-title-${panel.id}`}
-            >
-              Panel Title
-            </label>
-            <input
-              id={`panel-title-${panel.id}`}
-              type="text"
-              value={editedTitle}
-              onChange={(e) => setEditedTitle(e.target.value)}
-              className="w-full px-4 py-2 border-2 rounded-xl focus:ring-4 transition-all duration-300"
-              style={{
-                backgroundColor: themeState.theme.colors.background.primary,
-                borderColor: themeState.theme.colors.border.primary,
-                color: themeState.theme.colors.text.primary
-              }}
-              placeholder="Panel title..."
-            />
-          </div>
-        </div>
-      )}
+      </div>
 
       {/* Main Content - Image Area / Upload Placeholder */}
       <div className="relative" style={{ minHeight: '160px' }}>
-        {!isEditing ? (
-          <div className="relative">
-            {/* Description area - Appears below image */}
-            <div 
-              className="p-4"
-              style={{
-                backgroundColor: themeState.theme.colors.background.primary,
-                color: themeState.theme.colors.text.primary
-              }}
-            >
-              <div className="relative">
-                <p 
-                  ref={descriptionRef}
-                  className={`text-sm leading-relaxed ${isDescriptionExpanded ? '' : 'line-clamp-3'}`}
-                  style={{ color: themeState.theme.colors.text.secondary }}
-                >
-                  {panel.description}
-                </p>
-                
-                {isContentOverflowing && (
-                  <button
-                    onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
-                    className={`mt-2 flex items-center gap-1 text-xs font-medium transition-all duration-200 hover:scale-105 touch-manipulation ${
-                      isMobile ? 'px-3 py-2' : 'px-2 py-1'
-                    } rounded-full`}
-                    style={{
-                      backgroundColor: `${themeState.theme.colors.primary[500]}20`,
-                      color: themeState.theme.colors.primary[600],
-                      border: `1px solid ${themeState.theme.colors.primary[200]}`
-                    }}
-                  >
-                    {isDescriptionExpanded ? (
-                      <>
-                        <ChevronUp className="w-3 h-3" />
-                        Show Less
-                      </>
-                    ) : (
-                      <>
-                        <ChevronDown className="w-3 h-3" />
-                        Show More
-                      </>
-                    )}
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Image area */}
-            <div className="relative w-full overflow-hidden" style={{ minHeight: '180px', maxHeight: '220px' }}>
-              {panel.imageUrl ? (
-                <>
-                  <img 
-                    src={panel.imageUrl} 
-                    alt={panel.title}
-                    className={`w-full h-full object-cover transition-opacity duration-500 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
-                    onLoad={() => setImageLoaded(true)}
-                    style={{ minHeight: '180px' }}
-                  />
-                  
-                  {!imageLoaded && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-gray-200 dark:bg-gray-800">
-                      <Loader className="w-8 h-8 animate-spin" style={{ color: themeState.theme.colors.primary[500] }} />
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div 
-                  className="absolute inset-0 flex flex-col items-center justify-center"
+        <div className="relative">
+          {/* Description area - Appears below image */}
+          <div 
+            className="p-4"
+            style={{
+              backgroundColor: themeState.theme.colors.background.primary,
+              color: themeState.theme.colors.text.primary
+            }}
+          >
+            <div className="relative">
+              <p 
+                ref={descriptionRef}
+                className={`text-sm leading-relaxed ${isDescriptionExpanded ? '' : 'line-clamp-3'}`}
+                style={{ color: themeState.theme.colors.text.secondary }}
+              >
+                {panel.description}
+              </p>
+              
+              {isContentOverflowing && (
+                <button
+                  onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+                  className={`mt-2 flex items-center gap-1 text-xs font-medium transition-all duration-200 hover:scale-105 touch-manipulation ${
+                    isMobile ? 'px-3 py-2' : 'px-2 py-1'
+                  } rounded-full`}
                   style={{
-                    color: themeState.theme.colors.text.tertiary,
-                    background: `linear-gradient(135deg, ${themeState.theme.colors.background.secondary}, ${themeState.theme.colors.background.primary})`
+                    backgroundColor: `${themeState.theme.colors.primary[500]}20`,
+                    color: themeState.theme.colors.primary[600],
+                    border: `1px solid ${themeState.theme.colors.primary[200]}`
                   }}
                 >
-                  <div 
-                    className="w-24 h-24 rounded-2xl flex items-center justify-center mb-6 animate-float shadow-lg"
-                    style={{
-                      background: `linear-gradient(135deg, ${themeState.theme.colors.primary[200]}, ${themeState.theme.colors.secondary[200]}, ${themeState.theme.colors.primary[200]})`
-                    }}
-                  >
-                    <Camera 
-                      className="w-12 h-12"
-                      style={{ color: themeState.theme.colors.primary[500] }}
-                    />
-                  </div>
-                  <p 
-                    className="text-xl font-bold mb-3"
-                    style={{ color: themeState.theme.colors.text.primary }}
-                  >No Image Yet</p>
-                  <p 
-                    className="text-sm max-w-xs text-center"
-                    style={{ color: themeState.theme.colors.text.tertiary }}
-                  >
-                    Add a detailed description and use the image generation tool to visualize your scene.
-                  </p>
-                </div>
+                  {isDescriptionExpanded ? (
+                    <>
+                      <ChevronUp className="w-3 h-3" />
+                      Show Less
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown className="w-3 h-3" />
+                      Show More
+                    </>
+                  )}
+                </button>
               )}
             </div>
-            
-            {isGeneratingImage && (
-              <div className="absolute inset-0 bg-black bg-opacity-80 flex items-center justify-center">
+          </div>
+
+          {/* Image area */}
+          <div className="relative w-full overflow-hidden" style={{ 
+            minHeight: '180px', 
+            maxHeight: '280px',  /* Increased max height to allow more image space */
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center'
+          }}>
+            {panel.imageUrl ? (
+              <>
+                <img 
+                  src={panel.imageUrl} 
+                  alt={panel.title}
+                  className={`w-full transition-opacity duration-500 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+                  onLoad={() => setImageLoaded(true)}
+                  style={{ 
+                    maxHeight: '280px', /* Match container max height */
+                    objectFit: 'contain', /* Changed from object-cover to object-contain */
+                    maxWidth: '100%'
+                  }}
+                />
+                
+                {!imageLoaded && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-gray-200 dark:bg-gray-800">
+                    <Loader className="w-8 h-8 animate-spin" style={{ color: themeState.theme.colors.primary[500] }} />
+                  </div>
+                )}
+              </>
+            ) : (
+              <div 
+                className="absolute inset-0 flex flex-col items-center justify-center"
+                style={{
+                  color: themeState.theme.colors.text.tertiary,
+                  background: `linear-gradient(135deg, ${themeState.theme.colors.background.secondary}, ${themeState.theme.colors.background.primary})`
+                }}
+              >
                 <div 
-                  className="rounded-2xl p-8 flex flex-col items-center space-y-6 animate-fade-in shadow-2xl"
+                  className="w-24 h-24 rounded-2xl flex items-center justify-center mb-6 animate-float shadow-lg"
                   style={{
-                    backgroundColor: themeState.theme.colors.background.primary
+                    background: `linear-gradient(135deg, ${themeState.theme.colors.primary[200]}, ${themeState.theme.colors.secondary[200]}, ${themeState.theme.colors.primary[200]})`
                   }}
                 >
-                  <div className="relative">
-                    <Sparkles 
-                      className="w-16 h-16 animate-bounce" 
-                      style={{ color: themeState.theme.colors.primary[500] }}
-                    />
-                    <div 
-                      className="absolute inset-0 w-16 h-16 border-4 border-t-transparent rounded-full animate-spin"
-                      style={{ borderColor: themeState.theme.colors.primary[200] }}
-                    ></div>
-                  </div>
-                  <div className="text-center">
-                    <p 
-                      className="font-bold text-lg"
-                      style={{ color: themeState.theme.colors.text.primary }}
-                    >✨ Creating Magic</p>
-                    <p 
-                      className="text-sm"
-                      style={{ color: themeState.theme.colors.text.secondary }}
-                    >AI is painting your vision...</p>
-                    <div 
-                      className="mt-3 w-32 h-2 rounded-full overflow-hidden"
-                      style={{ backgroundColor: themeState.theme.colors.background.tertiary }}
-                    >
-                      <div 
-                        className="h-full rounded-full"
-                        style={{
-                          background: `linear-gradient(90deg, ${themeState.theme.colors.primary[500]}, ${themeState.theme.colors.secondary[500]})`
-                        }}
-                      ></div>
-                    </div>
-                  </div>
+                  <Camera 
+                    className="w-12 h-12"
+                    style={{ color: themeState.theme.colors.primary[500] }}
+                  />
                 </div>
+                <p 
+                  className="text-xl font-bold mb-3"
+                  style={{ color: themeState.theme.colors.text.primary }}
+                >No Image Yet</p>
+                <p 
+                  className="text-sm max-w-xs text-center"
+                  style={{ color: themeState.theme.colors.text.tertiary }}
+                >
+                  Add a detailed description and use the image generation tool to visualize your scene.
+                </p>
               </div>
             )}
           </div>
-        ) : (
-          <div className="space-y-4">
-            <textarea
-              value={editedDescription}
-              onChange={(e) => setEditedDescription(e.target.value)}
-              className="w-full px-4 py-3 border-2 rounded-xl resize-none focus:ring-4 transition-all duration-300"
-              style={{
-                backgroundColor: themeState.theme.colors.background.secondary,
-                borderColor: themeState.theme.colors.border.primary,
-                color: themeState.theme.colors.text.primary
-              }}
-              rows={4}
-              placeholder="Describe your panel in vivid detail..."
-            />
-            <div className="flex space-x-3">
-              <button
-                onClick={handleSave}
-                className="flex-1 font-bold py-3 px-4 rounded-xl transform hover:scale-105 transition-all duration-300 shadow-lg"
+          
+          {isGeneratingImage && (
+            <div className="absolute inset-0 bg-black bg-opacity-80 flex items-center justify-center">
+              <div 
+                className="rounded-2xl p-8 flex flex-col items-center space-y-6 animate-fade-in shadow-2xl"
                 style={{
-                  background: `linear-gradient(135deg, ${themeState.theme.colors.primary[500]}, ${themeState.theme.colors.primary[600]})`,
-                  color: '#ffffff'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = `linear-gradient(135deg, ${themeState.theme.colors.primary[600]}, ${themeState.theme.colors.primary[700]})`
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = `linear-gradient(135deg, ${themeState.theme.colors.primary[500]}, ${themeState.theme.colors.primary[600]})`
+                  backgroundColor: themeState.theme.colors.background.primary
                 }}
               >
-                ✅ Save Changes
-              </button>
-              <button
-                onClick={handleCancel}
-                className="flex-1 font-bold py-3 px-4 rounded-xl transform hover:scale-105 transition-all duration-300"
-                style={{
-                  backgroundColor: themeState.theme.colors.background.tertiary,
-                  color: themeState.theme.colors.text.primary
-                }}
-              >
-                ❌ Cancel
-              </button>
+                <div className="relative">
+                  <Sparkles 
+                    className="w-16 h-16 animate-bounce" 
+                    style={{ color: themeState.theme.colors.primary[500] }}
+                  />
+                  <div 
+                    className="absolute inset-0 w-16 h-16 border-4 border-t-transparent rounded-full animate-spin"
+                    style={{ borderColor: themeState.theme.colors.primary[200] }}
+                  ></div>
+                </div>
+                <div className="text-center">
+                  <p 
+                    className="font-bold text-lg"
+                    style={{ color: themeState.theme.colors.text.primary }}
+                  >✨ Creating Magic</p>
+                  <p 
+                    className="text-sm"
+                    style={{ color: themeState.theme.colors.text.secondary }}
+                  >AI is painting your vision...</p>
+                  <div 
+                    className="mt-3 w-32 h-2 rounded-full overflow-hidden"
+                    style={{ backgroundColor: themeState.theme.colors.background.tertiary }}
+                  >
+                    <div 
+                      className="h-full rounded-full"
+                      style={{
+                        background: `linear-gradient(90deg, ${themeState.theme.colors.primary[500]}, ${themeState.theme.colors.secondary[500]})`
+                      }}
+                    ></div>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   )

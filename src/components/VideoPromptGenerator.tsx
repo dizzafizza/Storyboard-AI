@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Wand2, Play, Download, RefreshCw, AlertCircle, Copy, Check, Sparkles, Zap, FileText, Grid, List, Search, Clock, Video } from 'lucide-react'
 import { useStoryboard } from '../context/StoryboardContext'
 import { useTheme } from '../context/ThemeContext'
 import { aiService } from '../services/ai'
 import type { StoryboardPanel } from '../types'
+import { WindowManager } from '../utils/windowManager'
 
-import WindowFrame from './WindowFrame'
+import WindowFrame, { MinimizedWindowManager } from './WindowFrame'
 
 interface VideoPromptGeneratorProps {
   isOpen: boolean
@@ -33,7 +34,7 @@ export default function VideoPromptGenerator({ isOpen, onClose }: VideoPromptGen
     mood: 'dynamic'
   })
   const [showSettings, setShowSettings] = useState(false)
-
+  
   // Auto-select all panels when opening
   useEffect(() => {
     if (isOpen && state.panels.length > 0) {
@@ -468,12 +469,14 @@ Generate ONLY the video prompt text, no explanations or formatting.`
       title="Video Prompt Generator"
       subtitle="AI-powered prompts for video generation tools"
       icon={<Video className="w-5 h-5" />}
-              defaultWidth="min(88vw, 750px)"
+      defaultWidth="min(88vw, 750px)"
       defaultHeight="650px"
       minWidth={400}
       minHeight={500}
       maxWidth="98vw"
       maxHeight="95vh"
+      windowId="video-prompt-generator"
+      minimizable={true}
       className="flex flex-col"
     >
         
@@ -518,10 +521,10 @@ Generate ONLY the video prompt text, no explanations or formatting.`
           <div className="flex items-center space-x-3">
             <button
               onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
-                              className="p-3 rounded-xl transition-all duration-300 group hover:bg-opacity-20"
-                style={{
-                  backgroundColor: 'rgba(255, 255, 255, 0.1)'
-                }}
+              className="p-3 rounded-xl transition-all duration-300 group hover:bg-opacity-20"
+              style={{
+                backgroundColor: 'rgba(255, 255, 255, 0.1)'
+              }}
               title={`Switch to ${viewMode === 'grid' ? 'list' : 'grid'} view`}
             >
               {viewMode === 'grid' ? (
@@ -533,22 +536,23 @@ Generate ONLY the video prompt text, no explanations or formatting.`
             <button
               onClick={exportPrompts}
               disabled={Object.keys(generatedPrompts).length === 0}
-                              className="p-3 rounded-xl transition-all duration-300 disabled:opacity-50 group hover:bg-opacity-20"
-                style={{
-                  backgroundColor: 'rgba(255, 255, 255, 0.1)'
-                }}
+              className="p-3 rounded-xl transition-all duration-300 disabled:opacity-50 group hover:bg-opacity-20"
+              style={{
+                backgroundColor: 'rgba(255, 255, 255, 0.1)'
+              }}
               title="Export All Prompts"
             >
               <Download className="w-6 h-6 group-hover:scale-110 transition-transform" />
             </button>
             <button
               onClick={onClose}
-                              className="p-3 rounded-xl transition-all duration-300 hover:scale-110 hover:bg-opacity-20"
-                style={{
-                  backgroundColor: 'rgba(255, 255, 255, 0.1)'
-                }}
+              className="p-3 rounded-xl transition-all duration-300 hover:scale-110 hover:bg-opacity-20"
+              style={{
+                backgroundColor: 'rgba(255, 255, 255, 0.1)'
+              }}
+              title="Close Window"
             >
-              ✕
+              X
             </button>
           </div>
         </div>
@@ -558,14 +562,19 @@ Generate ONLY the video prompt text, no explanations or formatting.`
           <div className="flex flex-col lg:flex-row gap-4 mb-4">
             
             {/* Search */}
-            <div className="relative flex-1 group">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-secondary group-focus-within:text-purple-500 transition-colors" />
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-secondary" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search panels by title or description..."
-                className="w-full pl-12 pr-4 py-3 bg-primary border border-primary rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent text-primary placeholder-secondary transition-all duration-300 hover:bg-opacity-80 focus:scale-[1.02]"
+                className="w-full pl-12 pr-4 py-3 border rounded-xl focus:ring-2 focus:border-transparent transition-all duration-300 hover:bg-opacity-80 focus:scale-[1.02]"
+                style={{
+                  backgroundColor: themeState.theme.colors.background.primary,
+                  borderColor: themeState.theme.colors.border.primary,
+                  color: themeState.theme.colors.text.primary,
+                }}
               />
             </div>
 
@@ -573,7 +582,12 @@ Generate ONLY the video prompt text, no explanations or formatting.`
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value as any)}
-              className="px-4 py-3 bg-primary border border-primary rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent text-primary min-w-[200px] transition-all duration-300 hover:bg-opacity-80 focus:scale-[1.02]"
+              className="px-4 py-3 border rounded-xl focus:ring-2 focus:border-transparent min-w-[200px] transition-all duration-300 hover:bg-opacity-80 focus:scale-[1.02]"
+              style={{
+                backgroundColor: themeState.theme.colors.background.primary,
+                borderColor: themeState.theme.colors.border.primary,
+                color: themeState.theme.colors.text.primary,
+              }}
             >
               <option value="all">All Panels ({state.panels.length})</option>
               <option value="generated">Generated ({progressStats.generated})</option>
@@ -586,9 +600,19 @@ Generate ONLY the video prompt text, no explanations or formatting.`
             <button
               onClick={generatePromptsForAll}
               disabled={isGenerating}
-              className={`btn-primary flex items-center space-x-2 transform hover:scale-105 transition-all duration-300 ${
+              className={`flex items-center space-x-2 transform hover:scale-105 transition-all duration-300 px-4 py-2 rounded-xl ${
                 isGenerating ? 'opacity-50 cursor-not-allowed' : ''
               }`}
+              style={{
+                backgroundColor: themeState.theme.colors.primary[500],
+                color: '#ffffff'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = themeState.theme.colors.primary[600]
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = themeState.theme.colors.primary[500]
+              }}
             >
               {isGenerating ? (
                 <>
@@ -638,17 +662,28 @@ Generate ONLY the video prompt text, no explanations or formatting.`
                 return (
                   <div
                     key={panel.id}
-                    className={`bg-primary rounded-2xl border border-primary p-6 transition-all duration-300 transform hover:scale-105 hover:shadow-xl glass-panel group ${
-                      hasPrompt ? 'ring-2 ring-green-200 bg-gradient-to-br from-green-50 to-blue-50' : ''
+                    className={`rounded-2xl border p-6 transition-all duration-300 transform hover:scale-105 hover:shadow-xl glass-panel group ${
+                      hasPrompt ? 'ring-2' : ''
                     }`}
-                    style={{ animationDelay: `${index * 50}ms` }}
+                    style={{ 
+                      animationDelay: `${index * 50}ms`,
+                      backgroundColor: hasPrompt 
+                        ? `${themeState.theme.colors.secondary[50]}` 
+                        : themeState.theme.colors.background.primary,
+                      borderColor: themeState.theme.colors.border.primary,
+                      ...(hasPrompt && { ringColor: themeState.theme.colors.primary[200] })
+                    }}
                   >
                     {/* Panel Header */}
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center space-x-3">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold ${
-                          hasPrompt ? 'bg-gradient-to-r from-green-500 to-blue-500' : 'bg-gradient-to-r from-gray-400 to-gray-500'
-                        }`}>
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold`}
+                          style={{
+                            background: hasPrompt 
+                              ? `linear-gradient(to right, ${themeState.theme.colors.primary[500]}, ${themeState.theme.colors.secondary[500]})` 
+                              : `linear-gradient(to right, ${themeState.theme.colors.text.tertiary}, ${themeState.theme.colors.border.primary})`
+                          }}
+                        >
                           {panel.order + 1}
                         </div>
                         <div>
@@ -656,10 +691,20 @@ Generate ONLY the video prompt text, no explanations or formatting.`
                             {panel.title}
                           </h3>
                           <div className="flex items-center space-x-3 mt-1">
-                            <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">
+                            <span className="px-2 py-1 rounded-full text-xs font-medium"
+                              style={{
+                                backgroundColor: `${themeState.theme.colors.primary[100]}`,
+                                color: themeState.theme.colors.primary[700]
+                              }}
+                            >
                               {panel.shotType}
                             </span>
-                            <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+                            <span className="px-2 py-1 rounded-full text-xs font-medium"
+                              style={{
+                                backgroundColor: `${themeState.theme.colors.secondary[100]}`,
+                                color: themeState.theme.colors.secondary[700]
+                              }}
+                            >
                               {panel.cameraAngle}
                             </span>
                             <div className="flex items-center space-x-1 text-secondary text-xs">
@@ -680,7 +725,20 @@ Generate ONLY the video prompt text, no explanations or formatting.`
                         <button
                           onClick={() => regeneratePrompt(panel)}
                           disabled={isGenerating}
-                          className="w-10 h-10 bg-purple-500 hover:bg-purple-600 text-white rounded-xl flex items-center justify-center transition-all duration-300 transform hover:scale-110 disabled:opacity-50"
+                          className="w-10 h-10 text-white rounded-xl flex items-center justify-center transition-all duration-300 transform hover:scale-110 disabled:opacity-50"
+                          style={{
+                            backgroundColor: themeState.theme.colors.primary[500]
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!isGenerating) {
+                              e.currentTarget.style.backgroundColor = themeState.theme.colors.primary[600]
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!isGenerating) {
+                              e.currentTarget.style.backgroundColor = themeState.theme.colors.primary[500]
+                            }
+                          }}
                           title="Generate/Regenerate Prompt"
                         >
                           {isGenerating ? (
@@ -696,10 +754,15 @@ Generate ONLY the video prompt text, no explanations or formatting.`
                     <div 
             className="mb-4 p-3 rounded-lg"
             style={{
-              backgroundColor: themeState.theme.colors.background.secondary
+              backgroundColor: `${themeState.theme.colors.background.secondary}10`,
+              borderColor: themeState.theme.colors.border.primary
             }}
           >
-                      <p className="text-secondary text-sm leading-relaxed">{panel.description}</p>
+                      <p className="text-secondary text-sm leading-relaxed whitespace-pre-wrap"
+                         style={{ color: themeState.theme.colors.text.primary }}
+                      >
+                        {panel.description}
+                      </p>
                     </div>
 
                     {/* Generated Prompt */}
@@ -713,10 +776,23 @@ Generate ONLY the video prompt text, no explanations or formatting.`
                           <button
                             onClick={() => copyPrompt(generatedPrompts[panel.id], panel.id)}
                             className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-all duration-300 transform hover:scale-105 ${
-                              isCopied
-                                ? 'bg-green-500 text-white'
-                                : 'bg-blue-500 hover:bg-blue-600 text-white'
+                              isCopied ? 'text-white' : 'text-white'
                             }`}
+                            style={{
+                              backgroundColor: isCopied 
+                                ? themeState.theme.colors.secondary[500]
+                                : themeState.theme.colors.primary[500]
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = isCopied
+                                ? themeState.theme.colors.secondary[600]
+                                : themeState.theme.colors.primary[600]
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = isCopied
+                                ? themeState.theme.colors.secondary[500]
+                                : themeState.theme.colors.primary[500]
+                            }}
                           >
                             {isCopied ? (
                               <>
@@ -731,15 +807,26 @@ Generate ONLY the video prompt text, no explanations or formatting.`
                             )}
                           </button>
                         </div>
-                        <div className="p-4 bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg border border-blue-200">
-                          <p className="text-primary text-sm leading-relaxed whitespace-pre-wrap">
+                        <div className="p-4 rounded-lg border"
+                          style={{
+                            backgroundColor: `${themeState.theme.colors.background.secondary}10`,
+                            borderColor: themeState.theme.colors.border.primary
+                          }}
+                        >
+                          <p className="text-sm leading-relaxed whitespace-pre-wrap"
+                             style={{ color: themeState.theme.colors.text.primary }}
+                          >
                             {generatedPrompts[panel.id]}
                           </p>
                         </div>
                       </div>
                     ) : (
                       <div className="flex flex-col items-center justify-center py-8 text-center">
-                        <div className="w-16 h-16 bg-gradient-to-br from-secondary-200 to-secondary-300 rounded-full flex items-center justify-center mb-4 animate-pulse">
+                        <div className="w-16 h-16 rounded-full flex items-center justify-center mb-4 animate-pulse"
+                          style={{
+                            background: `linear-gradient(to bottom right, ${themeState.theme.colors.secondary[200]}, ${themeState.theme.colors.secondary[300]})`
+                          }}
+                        >
                           <Wand2 
                   className="w-8 h-8"
                   style={{

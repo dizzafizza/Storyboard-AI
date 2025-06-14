@@ -42,7 +42,7 @@ interface WindowState {
 }
 
 // Global state for managing minimized windows
-class MinimizedWindowManager {
+export class MinimizedWindowManager {
   private static instance: MinimizedWindowManager
   private minimizedWindows: Map<string, { 
     position: { x: number; y: number }, 
@@ -60,8 +60,10 @@ class MinimizedWindowManager {
   }
 
   addMinimizedWindow(id: string, title: string, icon?: ReactNode, restoreCallback?: () => void) {
+    console.log('MinimizedWindowManager: Adding minimized window:', id, title);
     const position = this.getNextMinimizedPosition()
     this.minimizedWindows.set(id, { position, title, icon, restoreCallback })
+    console.log('MinimizedWindowManager: Current minimized windows:', this.minimizedWindows.size);
     this.notifyListeners()
   }
 
@@ -793,17 +795,19 @@ export default function WindowFrame({
   }
 
   const handleMinimize = () => {
+    if (windowState.isMinimized) return; // Already minimized, do nothing
+    
     if (onMinimize) {
+      console.log('WindowFrame: Using custom onMinimize handler for window:', windowId)
       onMinimize()
     } else {
+      console.log('WindowFrame: Using default minimize behavior for window:', windowId)
       const manager = MinimizedWindowManager.getInstance()
       // Register this window's restore callback
       manager.addMinimizedWindow(windowId, title, icon, handleRestore)
       setWindowState(prev => ({ ...prev, isMinimized: true }))
     }
   }
-
-
 
   const handleMaximize = () => {
     setWindowState(prev => {
