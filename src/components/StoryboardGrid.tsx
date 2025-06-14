@@ -108,17 +108,17 @@ export default function StoryboardGrid({
     }
   }, [contextMenu])
 
-  // Hide mobile actions when tapping elsewhere
+  // Hide mobile actions when scrolling
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (showMobileActions && gridRef.current && !gridRef.current.contains(e.target as Node)) {
-        setShowMobileActions(null)
+    const handleScroll = () => {
+      if (showMobileActions) {
+        setShowMobileActions(null);
       }
-    }
+    };
     
-    document.addEventListener('click', handleClickOutside)
-    return () => document.removeEventListener('click', handleClickOutside)
-  }, [showMobileActions])
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [showMobileActions]);
 
   const handleArrowNavigation = (key: string) => {
     const currentIndex = selectedPanel ? state.panels.findIndex(p => p.id === selectedPanel) : 0
@@ -167,11 +167,14 @@ export default function StoryboardGrid({
 
   const handleMobilePanelClick = (panelId: string) => {
     if (selectedPanel === panelId) {
-      // If already selected, show context menu
-      setShowMobileActions(panelId)
+      // If already selected, clear the selection
+      onSelectPanel(null);
     } else {
       // If not selected, select it
-      onSelectPanel(panelId)
+      onSelectPanel(panelId);
+      
+      // Close any open mobile actions when selecting a new panel
+      setShowMobileActions(null);
     }
   }
 

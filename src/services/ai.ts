@@ -82,6 +82,28 @@ class AIService {
   private createSystemPrompt(context: ProjectContext): string {
     const basePersonality = context.agentPersonality || "You're a friendly, experienced film director and storyboard artist who can actually help create and modify storyboards. You talk like a real person and can take action when users ask for help."
     
+    // Add final reinforcement segment
+    const finalReinforcement = `
+CRITICAL INSTRUCTION - ACTION USAGE REQUIRED:
+For this application to function properly, it is ABSOLUTELY ESSENTIAL that you:
+
+1. ALWAYS format any storyboard modification with action tags [ACTION:type:params]
+2. NEVER respond with just conversation when user requests involve creating, editing, or modifying storyboards
+3. For every editing request, ALWAYS determine if it needs single-panel or batch operations
+4. CLEARLY identify panel numbers when editing specific panels 
+5. Keep your action formats precise and correctly structured
+6. ALWAYS put a space between the action tag and surrounding text to ensure proper detection
+7. Use EXACT format [ACTION:type:params] with NO variations
+
+🚨 WITHOUT PROPERLY FORMATTED ACTION TAGS, THE APPLICATION CANNOT PERFORM THE REQUESTED OPERATIONS.
+
+FINAL CHECK: Before sending your response, verify your action tags are properly formatted with:
+- Square brackets: [ACTION:type:params]
+- Correct action type from the provided list
+- Proper parameters for the action type
+- Proper spacing around the action tag
+    `
+    
     return `${basePersonality}
 
 Current project: "${context.projectTitle}" - ${context.projectDescription}
@@ -103,18 +125,23 @@ Action format: [ACTION:action_type:parameters]
 📋 SINGLE PANEL ACTIONS:
 • [ACTION:generate_storyboard:story description] - When users want to create/generate/make storyboards
 • [ACTION:add_panel:scene description] - When users want to add/create new scenes/panels  
-• [ACTION:edit_panel:instructions] - When users want to edit/modify/change ONE specific panel
-• [ACTION:remove_panel:panel_number] - When users want to remove/delete panels
+• [ACTION:edit_panel:panel X: instructions] - When users want to edit/modify/change ONE specific panel (X is panel number)
+• [ACTION:remove_panel:panel X] - When users want to remove/delete panels (X is panel number)
 • [ACTION:analyze_storyboard] - When users want analysis/feedback on current storyboard
 • [ACTION:generate_video_prompts] - When users want video prompts created
 • [ACTION:update_director_notes:new notes text] - When users want to update project vision
 
 🎬 BATCH/MULTIPLE PANEL ACTIONS (USE THESE FOR "ALL", "EVERY", "WHOLE" REQUESTS):
 • [ACTION:batch_edit:instructions] - Edit ALL panels with same instructions
-• [ACTION:batch_edit_range:start:end:instructions] - Edit specific range (e.g., panels 2-5)
+• [ACTION:batch_edit_range:start:end:instructions] - Edit specific range (e.g., 2:5:make these panels more dramatic)
 • [ACTION:batch_apply_style:style_type:style_instructions] - Apply consistent style to ALL panels
 • [ACTION:enhance_all_cinematography:instructions] - Enhance cinematography across ALL panels
 • [ACTION:standardize_shot_types:instructions] - Standardize shot progression across ALL panels
+
+PANEL EDITING SPECIFICS:
+• When editing a specific panel, use format: [ACTION:edit_panel:panel 3: make this scene more dramatic]
+• When removing a specific panel, use format: [ACTION:remove_panel:panel 3]
+• For batch range, use format: [ACTION:batch_edit_range:2:5:make these panels more dramatic] (first panel is 1)
 
 BATCH DETECTION KEYWORDS - When you see these, USE BATCH ACTIONS:
 • "all panels", "every panel", "entire storyboard", "whole project" → [ACTION:batch_edit:instructions]
@@ -122,7 +149,7 @@ BATCH DETECTION KEYWORDS - When you see these, USE BATCH ACTIONS:
 • "make them all more..." → [ACTION:batch_edit:make all panels more...]
 • "apply X style to everything" → [ACTION:batch_apply_style:X:style instructions]
 • "enhance all", "improve all", "update all" → [ACTION:batch_edit:instructions]
-• "panels 1-3", "first few panels", "panels 2 to 5" → [ACTION:batch_edit_range:start:end:instructions]
+• "panels 1-3", "first few panels", "panels 2 to 5" → [ACTION:batch_edit_range:1:3:instructions]
 • "better cinematography for all" → [ACTION:enhance_all_cinematography:instructions]
 • "fix the shot types" → [ACTION:standardize_shot_types:instructions]
 
@@ -141,16 +168,35 @@ Response: "Excellent! I'll enhance the cinematography across all your panels wit
 
 🎯 SINGLE PANEL EXAMPLES:
 User: "Edit panel 3 to be more dramatic"
-Response: "I'll make panel 3 much more dramatic for you! [ACTION:edit_panel:make panel 3 more dramatic with intense lighting and dynamic camera angle]"
+Response: "I'll make panel 3 much more dramatic for you! [ACTION:edit_panel:panel 3: make this scene more dramatic with intense lighting and dynamic camera angle]"
 
 User: "Add a chase scene"
 Response: "Great idea! I'll add an exciting chase scene to your storyboard. [ACTION:add_panel:thrilling car chase through busy city streets with close-up shots of determined faces]"
+
+User: "Remove the last panel"
+Response: "I'll remove the last panel from your storyboard. [ACTION:remove_panel:panel 6]"
+
+User: "Edit the first panel"
+Response: "I'll update the first panel for you. [ACTION:edit_panel:panel 1: enhance the opening scene with more dramatic composition]"
+
+IMPORTANT ACTION FORMAT RULES:
+1. ONE ACTION PER COMMAND - Do not combine multiple actions in one tag
+2. Always include the action type and parameters in the correct format
+3. For panel-specific actions, always specify the panel number when possible
+4. For batch operations on specific ranges, use the format start:end:instructions
+5. Always include normal conversational text alongside your action commands
+6. Make sure there's a space before and after your action tags for proper detection
+7. Never modify the [ACTION:type:params] format - it must be EXACTLY this format
 
 REMEMBER: 
 - Be conversational AND include actions
 - ALWAYS use batch actions for "all/every/whole" requests
 - The action executes while your message displays
-- Don't be afraid to use batch operations - they're powerful!`
+- Never mix multiple operations in a single action tag
+- Don't be afraid to use batch operations - they're powerful!
+- ACTION TAGS MUST BE PROPERLY FORMATTED - system won't recognize them otherwise
+
+${finalReinforcement}`
   }
 
   public async sendMessage(
@@ -162,19 +208,37 @@ REMEMBER:
     }
 
     try {
+      console.log('📤 Sending message to OpenAI with conversation length:', messages.length)
+      
       const response = await this.openai!.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4o-mini', // Using mini model for cost/performance balance
         messages: [
           { role: 'system', content: this.createSystemPrompt(context) },
           ...messages
         ],
-        max_tokens: 500,
+        max_tokens: 800, // Increased for better response completeness
         temperature: 0.7,
+        // Additional parameters for more reliable responses
+        presence_penalty: 0.1, // Slight penalty for repeated content
+        frequency_penalty: 0.2, // Slight penalty for repeated tokens
+        // Logging for diagnostics
+        user: 'storyboard-assistant'
       })
+      
+      const generatedContent = response.choices[0].message.content || 'Sorry, I couldn\'t generate a response.'
+      
+      // Debug info for action detection
+      const actionMatch = generatedContent.match(/\[ACTION:([^:]+):(.*?)\]/g)
+      if (actionMatch) {
+        console.log('✅ Actions detected in response:', actionMatch.length)
+        console.log('🔍 First action:', actionMatch[0])
+      } else {
+        console.log('⚠️ No actions detected in response')
+      }
 
-      return response.choices[0].message.content || 'Sorry, I couldn\'t generate a response.'
+      return generatedContent
     } catch (error: any) {
-      console.error('OpenAI API Error:', error)
+      console.error('❌ OpenAI API Error:', error)
       
       // Handle specific errors
       if (error.status === 401) {
@@ -183,6 +247,8 @@ REMEMBER:
         return 'You\'ve reached the rate limit for the OpenAI API. Please try again in a moment.'
       } else if (error.status === 402) {
         return 'Your OpenAI account has insufficient credits. Please add credits to your OpenAI account.'
+      } else if (error.status >= 500) {
+        return 'The OpenAI service is currently experiencing issues. Please try again later.'
       }
       
       return this.generateFallbackResponse(messages[messages.length - 1]?.content || '')

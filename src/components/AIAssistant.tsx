@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useContext } from 'react'
 import { X, Send, Users, History, Star, Lightbulb, ChevronDown, ChevronUp, Search, Trash2, Edit3, Clock, User, Settings, Bot, Plus } from 'lucide-react'
 import { useStoryboard } from '../context/StoryboardContext'
 import { useTheme } from '../context/ThemeContext'
@@ -23,25 +23,8 @@ export default function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
   const { state, dispatch } = useStoryboard()
   const { state: themeState } = useTheme()
   
-  // Create dynamic welcome message based on current state and agent
-  const createWelcomeMessage = () => {
-    return `${currentAgent.avatar} **${currentAgent.name} - ${currentAgent.specialty}**
-
-${currentAgent.description}
-
-**🎯 MY SPECIALTIES:**
-${currentAgent.skills.map(skill => `• ${skill}`).join('\n')}
-
-**💡 TRY THESE PROMPTS:**
-${currentAgent.examples.map(example => `• "${example}"`).join('\n')}
-
-Current Project: **${state.currentProject?.title || 'Untitled'}** (${state.panels.length} panels)
-
-I'm ready to help with your ${currentAgent.specialty.toLowerCase()}! What can we create together?`
-  }
-
-  const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState('')
+  const [messages, setMessages] = useState<ChatMessage[]>([])
   const [isTyping, setIsTyping] = useState(false)
   const [showApiKeyInput, setShowApiKeyInput] = useState(false)
   const [apiKeyInput, setApiKeyInput] = useState('')
@@ -75,66 +58,133 @@ I'm ready to help with your ${currentAgent.specialty.toLowerCase()}! What can we
     aspectRatio: '16:9',
     creativity: 7
   })
-
+  // Debug mode for AI actions - NEW
+  const [debugMode, setDebugMode] = useState(false)
+  
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  
+  // Toggle debug mode - NEW
+  const toggleDebugMode = () => {
+    setDebugMode(prev => !prev)
+    console.log('🔧 Debug mode:', !debugMode)
+  }
+  
+  // Helper for loading saved chats
+  const loadSavedChats = () => {
+    // Get saved chats from storage using chatManager
+    const allChats = chatManager.getAllChats()
+    setChats(allChats)
+  }
 
-  // Initialize welcome message when component mounts or agent changes
+  // Helper for loading favorite agents
+  const loadFavoriteAgents = () => {
+    const favorites = localStorage.getItem('ai-agent-favorites')
+    if (favorites) {
+      try {
+        setFavoriteAgents(JSON.parse(favorites))
+      } catch (error) {
+        console.error('Error loading favorite agents:', error)
+        setFavoriteAgents([])
+      }
+    }
+  }
+  
+  // Initial setup
   useEffect(() => {
-    // Only reset messages if we don't have a current chat loaded
-    if (!currentChatId) {
+    // Load chats and potentially restore last active chat
+    loadSavedChats()
+    loadFavoriteAgents()
+
+    // Load chats from chat manager
+    const allChats = chatManager.getAllChats()
+    
+    // Check if there's a saved active chat ID
+    const lastActiveChatId = localStorage.getItem('active-chat-id')
+    
+    if (lastActiveChatId) {
+      // Try to find this chat in the saved chats
+      const lastActiveChat = allChats.find(chat => chat.id === lastActiveChatId)
+      
+      if (lastActiveChat) {
+        // Restore the last active chat
+        loadChat(lastActiveChat)
+      } else if (allChats.length > 0) {
+        // If the saved chat wasn't found but we have other chats, load the most recent one
+        loadChat(allChats[0]) // allChats is already sorted by lastActivity
+      }
+    } else if (allChats.length > 0) {
+      // No active chat ID saved, but we have chats - load the most recent one
+      loadChat(allChats[0])
+    }
+    
+    // Auto-save chat periodically
+    const saveInterval = setInterval(() => {
+      if (messages.length > 1 && currentChatId) {
+        void autoSaveChat()
+      }
+    }, 30000) // Every 30 seconds
+    
+    return () => {
+      clearInterval(saveInterval)
+      // Final save on unmount
+      if (messages.length > 1) {
+        void autoSaveChat()
+      }
+    }
+  }, [])
+  
+  // Show welcome message if no messages exist
+  useEffect(() => {
+    if (messages.length === 0) {
       setMessages([{
         id: '1',
         type: 'assistant',
-        content: createWelcomeMessage(),
+        content: `${currentAgent.avatar} **${currentAgent.name} - ${currentAgent.specialty}**
+
+${currentAgent.description}
+
+**🎯 MY SPECIALTIES:**
+${currentAgent.skills.map(skill => `• ${skill}`).join('\n')}
+
+**💡 TRY THESE PROMPTS:**
+${currentAgent.examples.map(example => `• "${example}"`).join('\n')}
+
+Current Project: **${state.currentProject?.title || 'Untitled'}** (${state.panels.length} panels)
+
+I'm ready to help with your ${currentAgent.specialty.toLowerCase()}! What can we create together?`,
         timestamp: new Date(),
         agentId: currentAgent.id
       }])
-      setSaveState({ status: 'idle' })
     }
-  }, [currentAgent, state.currentProject?.title, state.panels.length])
-
-  // Scroll to bottom when new messages arrive
+  }, [messages.length === 0, currentAgent])
+  
+  // Keep track of favorite agents
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
-
-  // Load API key and favorites from localStorage on mount
-  useEffect(() => {
-    const savedKey = localStorage.getItem('openai-api-key')
-    if (savedKey) {
-      aiService.setApiKey(savedKey)
-    }
-
-    const savedFavorites = localStorage.getItem('ai-agent-favorites')
+    const savedFavorites = localStorage.getItem('favoriteAgents')
     if (savedFavorites) {
       setFavoriteAgents(JSON.parse(savedFavorites))
     }
   }, [])
-
-  // Load chats when history panel opens
+  
+  // Filter chats when search changes
   useEffect(() => {
     if (activePanel === 'history') {
-      const allChats = chatManager.getAllChats()
-      setChats(allChats)
+      loadSavedChats() // Refresh chat list when panel opens
     }
   }, [activePanel])
-
-  // Filter chats based on search
+  
   useEffect(() => {
-    let filtered = chats
-    if (searchQuery) {
-      filtered = filtered.filter(chat =>
-        chat.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        chat.agentName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        chat.projectName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        chat.messages.some(msg => 
-          msg.content.toLowerCase().includes(searchQuery.toLowerCase())
+    if (chats.length > 0 && searchQuery) {
+      setFilteredChats(
+        chats.filter(chat => 
+          chat.name.toLowerCase().includes(searchQuery.toLowerCase())
         )
       )
+    } else {
+      setFilteredChats(chats)
     }
-    setFilteredChats(filtered)
-  }, [chats, searchQuery])
-
+  }, [searchQuery, chats])
+  
   const handleApiKeySubmit = () => {
     if (apiKeyInput.trim()) {
       aiService.setApiKey(apiKeyInput.trim())
@@ -287,20 +337,26 @@ What sounds good to you?`
     setIsTyping(true)
 
     try {
-      // Intelligent routing based on message content
+      // Get user input for basic keyword matching
       const userInput = userMessage.content.toLowerCase()
-      
-      // Check for specific action patterns first
       console.log('🔍 Analyzing user input:', userInput)
       
-      // Handle AI actions (this covers multi-action messages)
-      await handleAIActions(userMessage.content, userMessage.content)
-      
-      // Always continue with regular AI conversation unless specific actions were triggered
-      console.log('💬 No actions detected, sending to AI for conversation')
-      
+      // First get response from AI
       const aiResponse = await sendMessageToAI(userMessage.content)
+      console.log('💬 Received AI response:', aiResponse)
+
+      // Check if the response contains action commands
+      const hasActions = aiResponse.includes('[ACTION:')
       
+      if (hasActions) {
+        // Process actions from AI response
+        console.log('🎬 Actions detected in AI response, processing...')
+        await handleAIActions(aiResponse, userMessage.content)
+        // The handleAIActions function will handle displaying both the action results and clean response
+        return
+      }
+      
+      // For responses without actions, use keyword-based fallback system
       // Determine if we should use batch editing or single actions
       const shouldUseBatch = userInput.includes('all') || userInput.includes('batch') || 
                             userInput.includes('every') || userInput.includes('entire')
@@ -338,14 +394,12 @@ What sounds good to you?`
         return
       }
       
-      // Default to regular AI conversation
+      // Default to showing the AI response (no actions detected and no keywords matched)
       console.log('💬 Showing regular AI response')
-      const response = aiResponse
-      
       const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         type: 'assistant',
-        content: response,
+        content: aiResponse,
         timestamp: new Date(),
         agentId: currentAgent.id
       }
@@ -408,9 +462,25 @@ What sounds good to you?`
 
   const editPanel = async (panelId: string, instructions: string) => {
     const panel = state.panels.find(p => p.id === panelId)
-    if (!panel) return
+    if (!panel) {
+      console.error('❌ Failed to edit panel: Panel not found with ID', panelId)
+      const errorMessage: ChatMessage = {
+        id: Date.now().toString(),
+        type: 'system',
+        content: 'Cannot edit panel - the specified panel was not found. Please try again with a valid panel.',
+        timestamp: new Date(),
+        agentId: currentAgent.id
+      }
+      setMessages(prev => [...prev, errorMessage])
+      return
+    }
+
+    // Find the panel number for user feedback
+    const panelIndex = state.panels.findIndex(p => p.id === panelId)
+    const panelNumber = panelIndex + 1 // 1-indexed for user display
 
     setIsTyping(true)
+    console.log(`🎬 Editing panel ${panelNumber} with instructions:`, instructions)
     
     try {
       // Use AI service if available
@@ -422,9 +492,13 @@ What sounds good to you?`
           'enhanced'
         )
         
+        if (!sceneData || !sceneData.description) {
+          throw new Error('Failed to generate enhanced scene data from AI service')
+        }
+        
         const updates = {
           title: sceneData.title || panel.title,
-          description: sceneData.description || panel.description,
+          description: sceneData.description,
           shotType: sceneData.shotType || panel.shotType,
           cameraAngle: sceneData.cameraAngle || panel.cameraAngle,
           notes: sceneData.notes || panel.notes,
@@ -437,7 +511,7 @@ What sounds good to you?`
         const successMessage: ChatMessage = {
           id: Date.now().toString(),
           type: 'assistant',
-          content: `✅ **Panel Updated!** I've enhanced "${panel.title}" based on your instructions. The panel now features improved cinematography and storytelling elements.`,
+          content: `✅ **Panel ${panelNumber} Updated!** I've enhanced "${panel.title}" based on your instructions. The panel now features improved cinematography and storytelling elements.`,
           timestamp: new Date(),
           agentId: currentAgent.id
         }
@@ -446,7 +520,7 @@ What sounds good to you?`
         // Fallback: Simple text-based update
         const updates = {
           description: `${panel.description} (Updated: ${instructions})`,
-          notes: `${panel.notes} | AI Enhancement: ${instructions}`,
+          notes: `${panel.notes ? `${panel.notes} | ` : ''}AI Enhancement: ${instructions}`,
           updatedAt: new Date()
         }
         
@@ -455,19 +529,20 @@ What sounds good to you?`
         const successMessage: ChatMessage = {
           id: Date.now().toString(),
           type: 'assistant',
-          content: `✅ **Panel Updated!** I've applied your instructions to "${panel.title}". For enhanced AI editing, add your OpenAI API key.`,
+          content: `✅ **Panel ${panelNumber} Updated!** I've applied your instructions to "${panel.title}". For enhanced AI editing, add your OpenAI API key.`,
           timestamp: new Date(),
           agentId: currentAgent.id
         }
         setMessages(prev => [...prev, successMessage])
       }
     } catch (error) {
+      console.error('❌ Error editing panel:', error)
       const errorMessage: ChatMessage = {
         id: Date.now().toString(),
         type: 'system',
-        content: 'Failed to edit panel. Please try again.',
+        content: `Failed to edit panel ${panelNumber}. ${error instanceof Error ? error.message : 'Please check your API key or try again.'}`,
         timestamp: new Date(),
-          agentId: currentAgent.id
+        agentId: currentAgent.id
       }
       setMessages(prev => [...prev, errorMessage])
     } finally {
@@ -635,8 +710,10 @@ This vision will guide all future AI video prompts to keep your project consiste
 
   const handleAIActions = async (response: string, originalUserInput: string) => {
     console.log('🎬 PROCESSING AI ACTIONS:', { response: response.substring(0, 200) + '...', originalUserInput })
+    console.log('🧪 FULL RESPONSE FOR DEBUGGING:', response) // Added for debugging
     
-    // Extract all action commands from the response
+    // Extract all action commands from the response with improved regex
+    // This regex better handles nested colons in the parameters
     const actionRegex = /\[ACTION:([^:]+):([^\]]*)\]/g
     const actions = []
     let match
@@ -652,8 +729,28 @@ This vision will guide all future AI video prompts to keep your project consiste
     
     if (actions.length === 0) {
       console.log('⚠️ No actions found in response, showing as regular message')
+      console.log('🔎 Action debugging info:')
+      console.log('- Response length:', response.length)
+      console.log('- Contains [ACTION keyword:', response.includes('[ACTION'))
+      console.log('- Contains action types:', [
+        'generate_storyboard', 'add_panel', 'edit_panel', 'remove_panel', 'analyze_storyboard',
+        'generate_video_prompts', 'update_director_notes', 'batch_edit', 'batch_edit_range',
+        'batch_apply_style', 'enhance_all_cinematography', 'standardize_shot_types'
+      ].some(type => response.toLowerCase().includes(type.toLowerCase())))
+      
+      // Display the response as a normal message when no actions are found
+      const assistantMessage: ChatMessage = {
+        id: Date.now().toString(),
+        type: 'assistant',
+        content: response,
+        timestamp: new Date(),
+        agentId: currentAgent.id
+      }
+      setMessages(prev => [...prev, assistantMessage])
       return
     }
+    
+    let processedActions = 0
     
     // Process each action
     for (const action of actions) {
@@ -664,38 +761,84 @@ This vision will guide all future AI video prompts to keep your project consiste
           case 'generate_storyboard':
             console.log('📝 Generating storyboard...')
             await generateStoryboard(action.params || originalUserInput)
+            processedActions++
             break
             
           case 'add_panel':
             console.log('➕ Adding panel...')
             await addPanel(action.params || originalUserInput)
+            processedActions++
             break
             
           case 'edit_panel':
             console.log('✏️ Editing panel...')
-            if (state.panels.length > 0) {
+            // Check if the params contain a specific panel number
+            const panelMatch = action.params.match(/^(?:panel\s*)?(\d+)(?:\s*:|:|\s)/i)
+            
+            if (panelMatch) {
+              // Extract panel number and instructions
+              const panelNumber = parseInt(panelMatch[1])
+              const instructions = action.params.substring(action.params.indexOf(panelMatch[0]) + panelMatch[0].length).trim()
+              
+              // Find the panel
+              if (panelNumber > 0 && panelNumber <= state.panels.length) {
+                const panel = state.panels[panelNumber - 1]
+                await editPanel(panel.id, instructions || originalUserInput)
+                console.log(`✅ Edited panel ${panelNumber} with instructions: ${instructions}`)
+                processedActions++
+              } else {
+                throw new Error(`Panel ${panelNumber} does not exist. Current panel count: ${state.panels.length}`)
+              }
+            } else if (state.panels.length > 0) {
+              // Default to last panel if no specific panel is mentioned
               const lastPanel = state.panels[state.panels.length - 1]
               await editPanel(lastPanel.id, action.params || originalUserInput)
+              console.log(`✅ Edited last panel (panel ${state.panels.length}) with instructions: ${action.params}`)
+              processedActions++
+            } else {
+              throw new Error("No panels exist to edit. Add some panels first!")
             }
             break
             
           case 'remove_panel':
             console.log('🗑️ Removing panel...')
-            const panelNumber = parseInt(action.params) || state.panels.length
-            if (panelNumber > 0 && panelNumber <= state.panels.length) {
-              const panelToRemove = state.panels[panelNumber - 1]
-              dispatch({ type: 'DELETE_PANEL', payload: panelToRemove.id })
+            let panelToRemoveId: string | null = null
+            
+            if (action.params) {
+              const panelNumMatch = action.params.match(/^(?:panel\s*)?(\d+)/i)
+              if (panelNumMatch) {
+                const panelNumber = parseInt(panelNumMatch[1])
+                if (panelNumber > 0 && panelNumber <= state.panels.length) {
+                  panelToRemoveId = state.panels[panelNumber - 1].id
+                } else {
+                  throw new Error(`Panel ${panelNumber} does not exist. Current panel count: ${state.panels.length}`)
+                }
+              } 
+            }
+            
+            // Default to last panel if no specific panel is mentioned or found
+            if (!panelToRemoveId && state.panels.length > 0) {
+              panelToRemoveId = state.panels[state.panels.length - 1].id
+            }
+            
+            if (panelToRemoveId) {
+              dispatch({ type: 'DELETE_PANEL', payload: panelToRemoveId })
+              processedActions++
+            } else {
+              throw new Error("No panels exist to remove. Add some panels first!")
             }
             break
             
           case 'analyze_storyboard':
             console.log('🔍 Analyzing storyboard...')
             await analyzeStoryboard()
+            processedActions++
             break
             
           case 'generate_video_prompts':
             console.log('🎥 Generating video prompts...')
             await generateVideoPrompts()
+            processedActions++
             break
             
           case 'update_director_notes':
@@ -708,13 +851,18 @@ This vision will guide all future AI video prompts to keep your project consiste
                   directorNotes: action.params
                 }
               })
+              processedActions++
             }
             break
             
           // BATCH OPERATIONS
           case 'batch_edit':
             console.log('🎬 BATCH EDIT: Processing all panels...')
+            if (state.panels.length === 0) {
+              throw new Error("No panels exist to edit. Add some panels first!")
+            }
             await batchEditPanels(action.params || originalUserInput)
+            processedActions++
             break
             
           case 'batch_edit_range':
@@ -723,33 +871,55 @@ This vision will guide all future AI video prompts to keep your project consiste
             if (rangeParts.length >= 3) {
               const start = parseInt(rangeParts[0]) - 1
               const end = parseInt(rangeParts[1]) - 1
+              
+              if (start < 0 || start >= state.panels.length || end < 0 || end >= state.panels.length) {
+                throw new Error(`Panel range ${start+1}-${end+1} is invalid. Current panel count: ${state.panels.length}`)
+              }
+              
               const instructions = rangeParts.slice(2).join(':')
               await batchEditRangeFunction(start, end, instructions)
+              processedActions++
             } else {
-              await batchEditPanels(action.params || originalUserInput)
+              throw new Error("Invalid batch edit range format. Expected format: start:end:instructions")
             }
             break
             
           case 'batch_apply_style':
             console.log('🎨 BATCH APPLY STYLE: Applying style to all panels...')
+            if (state.panels.length === 0) {
+              throw new Error("No panels exist to style. Add some panels first!")
+            }
+            
             const styleParts = action.params.split(':')
             if (styleParts.length >= 2) {
               const styleType = styleParts[0]
               const styleInstructions = styleParts.slice(1).join(':')
               await batchApplyStyle(styleType, styleInstructions)
+              processedActions++
             } else {
               await batchEditPanels(`apply ${action.params} style to all panels`)
+              processedActions++
             }
             break
             
           case 'enhance_all_cinematography':
             console.log('📸 ENHANCE ALL CINEMATOGRAPHY: Improving all panels...')
+            if (state.panels.length === 0) {
+              throw new Error("No panels exist to enhance. Add some panels first!")
+            }
+            
             await enhanceAllCinematography(action.params || 'enhance cinematography with professional techniques')
+            processedActions++
             break
             
           case 'standardize_shot_types':
             console.log('🎯 STANDARDIZE SHOT TYPES: Optimizing shot progression...')
+            if (state.panels.length === 0) {
+              throw new Error("No panels exist to standardize. Add some panels first!")
+            }
+            
             await standardizeShotTypes(action.params || 'optimize shot types for better visual flow')
+            processedActions++
             break
             
           default:
@@ -758,6 +928,9 @@ This vision will guide all future AI video prompts to keep your project consiste
             if (action.params && (action.params.includes('all') || action.params.includes('every'))) {
               console.log('🔄 Interpreting unknown action as batch edit...')
               await batchEditPanels(`${action.type}: ${action.params}` || originalUserInput)
+              processedActions++
+            } else {
+              throw new Error(`Unknown action type: ${action.type}`)
             }
             break
         }
@@ -778,8 +951,23 @@ This vision will guide all future AI video prompts to keep your project consiste
       }
     }
     
+    // Show a summary message if actions were processed
+    if (processedActions > 0) {
+      const actionSummary: ChatMessage = {
+        id: Date.now().toString(),
+        type: 'system',
+        content: `✅ **Actions Completed** - Successfully processed ${processedActions} out of ${actions.length} actions.`,
+        timestamp: new Date(),
+        agentId: currentAgent.id
+      }
+      setMessages(prev => [...prev, actionSummary])
+    }
+    
     // Show the regular response (without action commands) as well
     const cleanResponse = response.replace(/\[ACTION:[^\]]+\]/g, '').trim()
+      .replace(/\s{2,}/g, ' ') // Replace multiple spaces with single space
+      .replace(/\n\s*\n\s*\n/g, '\n\n') // Replace triple newlines with double newlines
+    
     if (cleanResponse) {
       console.log('💬 Showing cleaned response alongside actions')
       const assistantMessage: ChatMessage = {
@@ -1337,19 +1525,25 @@ Your storyboard now has improved panels with the requested modifications!`,
   const handleAgentSelection = (agent: AIAgent) => {
     setCurrentAgent(agent)
     setShowAgentSelector(false)
-    setShowFavoritesPanel(false) // Close favorites panel when selecting agent
     
-    // Don't save the chat if it's a new empty one
-    if (messages.length > 1 || currentChatId) {
-      autoSaveChat()
-    }
-    
-    // Reset messages for new agent if no current chat ID
+    // Reset messages with new welcome
     if (!currentChatId) {
       setMessages([{
         id: '1',
         type: 'assistant',
-        content: createWelcomeMessage(),
+        content: `${agent.avatar} **${agent.name} - ${agent.specialty}**
+
+${agent.description}
+
+**🎯 MY SPECIALTIES:**
+${agent.skills.map(skill => `• ${skill}`).join('\n')}
+
+**💡 TRY THESE PROMPTS:**
+${agent.examples.map(example => `• "${example}"`).join('\n')}
+
+Current Project: **${state.currentProject?.title || 'Untitled'}** (${state.panels.length} panels)
+
+I'm ready to help with your ${agent.specialty.toLowerCase()}! What can we create together?`,
         timestamp: new Date(),
         agentId: agent.id
       }])
@@ -1390,6 +1584,13 @@ Your storyboard now has improved panels with the requested modifications!`,
   const handleDeleteChat = (chatId: string) => {
     const success = chatManager.deleteChat(chatId)
     if (success) {
+      // If we're deleting the current chat, clear the active chat ID
+      if (chatId === currentChatId) {
+        setCurrentChatId(null)
+        localStorage.removeItem('active-chat-id')
+        setMessages([])
+      }
+      
       const allChats = chatManager.getAllChats()
       setChats(allChats)
     }
@@ -1481,6 +1682,8 @@ Your storyboard now has improved panels with the requested modifications!`,
       
       if (!currentChatId) {
         setCurrentChatId(savedChat.id)
+        // Save the active chat ID to localStorage
+        localStorage.setItem('active-chat-id', savedChat.id)
       }
       
       setSaveState({ 
@@ -1506,6 +1709,9 @@ Your storyboard now has improved panels with the requested modifications!`,
     setMessages(chat.messages)
     setCurrentChatId(chat.id)
     
+    // Save the active chat ID to localStorage
+    localStorage.setItem('active-chat-id', chat.id)
+    
     // Switch to the agent from the loaded chat
     const agent = getAgentById(chat.agentId)
     if (agent) {
@@ -1519,11 +1725,27 @@ Your storyboard now has improved panels with the requested modifications!`,
     setMessages([{
       id: '1',
       type: 'assistant',
-      content: createWelcomeMessage(),
+      content: `${currentAgent.avatar} **${currentAgent.name} - ${currentAgent.specialty}**
+
+${currentAgent.description}
+
+**🎯 MY SPECIALTIES:**
+${currentAgent.skills.map(skill => `• ${skill}`).join('\n')}
+
+**💡 TRY THESE PROMPTS:**
+${currentAgent.examples.map(example => `• "${example}"`).join('\n')}
+
+Current Project: **${state.currentProject?.title || 'Untitled'}** (${state.panels.length} panels)
+
+I'm ready to help with your ${currentAgent.specialty.toLowerCase()}! What can we create together?`,
       timestamp: new Date(),
-          agentId: currentAgent.id
+      agentId: currentAgent.id
     }])
     setCurrentChatId(null)
+    
+    // Clear the active chat ID in localStorage
+    localStorage.removeItem('active-chat-id')
+    
     setSaveState({ status: 'idle' })
   }
 

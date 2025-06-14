@@ -3277,3 +3277,164 @@ button:focus-visible {
     -webkit-transform: translateZ(0) !important;
   }
 }
+
+/* Mobile-specific improvements for StoryboardPanel */
+@media (max-width: 768px) {
+  /* Make mobile action button minimal */
+  .mobile-action-button {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    min-height: 32px !important;
+    padding: 6px !important;
+    margin: 2px !important;
+    background-color: rgba(255, 255, 255, 0.7) !important;
+    backdrop-filter: blur(5px) !important;
+    -webkit-backdrop-filter: blur(5px) !important;
+    color: var(--color-primary) !important;
+    border-radius: 8px !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+    z-index: 60 !important;
+    position: relative !important;
+    border: 1px solid rgba(0, 0, 0, 0.05) !important;
+  }
+
+  .mobile-action-button:active {
+    transform: scale(0.95) !important;
+    background-color: rgba(255, 255, 255, 0.9) !important;
+  }
+
+  /* Mobile popup menu styles */
+  .mobile-popup-menu {
+    width: auto !important;
+    min-width: 180px !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2) !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+    overflow: hidden !important;
+    animation: popIn 0.2s ease-out !important;
+    transform-origin: top right !important;
+    z-index: 100 !important;
+  }
+
+  @keyframes popIn {
+    0% {
+      opacity: 0;
+      transform: scale(0.8) translateY(-5px);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+
+  .mobile-popup-menu button {
+    min-height: 44px !important; /* iOS minimum touch target */
+    width: 100% !important;
+    text-align: left !important;
+    transition: background-color 0.15s ease !important;
+    border-radius: 8px !important;
+    margin: 2px 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    font-size: 14px !important;
+  }
+
+  .mobile-popup-menu button svg {
+    flex-shrink: 0 !important;
+  }
+
+  .mobile-popup-menu button:active {
+    background-color: rgba(0, 0, 0, 0.05) !important;
+  }
+
+  /* Ensure the popup container has proper padding */
+  .mobile-popup-menu > div {
+    padding: 6px !important;
+  }
+
+  /* Optimize panel header spacing for mobile */
+  .storyboard-panel .p-4.border-b .flex-1.min-w-0.pl-12.pr-3 {
+    padding-left: 36px !important; /* Reduced from pl-12 to make more space */
+    padding-right: 36px !important; /* Add padding on right to prevent text from going under action button */
+  }
+  
+  .storyboard-panel .text-lg.font-semibold.leading-tight.truncate.mb-2 {
+    margin-right: 10px !important; /* Ensure title doesn't get too close to action button */
+    font-size: 1rem !important; /* Slightly smaller font for mobile */
+  }
+  
+  /* Make badges more compact on mobile */
+  .storyboard-panel .px-2.py-1.rounded-full.text-xs {
+    padding-top: 0.15rem !important;
+    padding-bottom: 0.15rem !important;
+    font-size: 0.65rem !important;
+  }
+  
+  /* Remove delete button custom styling since we now use popup menu */
+  .storyboard-panel button[title="Delete Panel"] {
+    width: auto !important;
+    height: auto !important;
+    min-width: auto !important;
+    min-height: auto !important;
+    padding: inherit !important;
+    margin: inherit !important;
+    background-color: inherit !important;
+    color: inherit !important;
+    border-radius: inherit !important;
+    box-shadow: inherit !important;
+    z-index: inherit !important;
+    position: inherit !important;
+  }
+  
+  .storyboard-panel button[title="Delete Panel"]:active {
+    transform: inherit !important;
+    background-color: inherit !important;
+  }
+  
+  .storyboard-panel button[title="Delete Panel"] svg {
+    width: inherit !important;
+    height: inherit !important;
+  }
+
+  /* Ensure description is properly displayed on mobile */
+  .storyboard-panel p.text-sm.leading-relaxed {
+    font-size: 0.875rem !important;
+    line-height: 1.5 !important;
+  }
+
+  /* Improve spacing for the show more/less button */
+  .storyboard-panel button.mt-2.flex.items-center.gap-1.text-xs.font-medium {
+    margin-top: 8px !important;
+  }
+
+  /* Make sure cards don't grow too tall on mobile */
+  .storyboard-grid-item {
+    max-height: 450px !important;
+  }
+}
+
+/* Dark mode support for mobile UI elements */
+@media (prefers-color-scheme: dark) and (max-width: 768px) {
+  .mobile-action-button {
+    background-color: rgba(30, 41, 59, 0.7) !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  }
+  
+  .mobile-action-button:active {
+    background-color: rgba(30, 41, 59, 0.9) !important;
+  }
+  
+  .mobile-popup-menu button:active {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+  }
+
+  .mobile-popup-menu {
+    background-color: rgba(30, 41, 59, 0.95) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+  }
+}
