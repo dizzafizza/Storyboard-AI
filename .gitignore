@@ -1,1 +1,17 @@
 node_modules
+
+# Ignore log files and personal workspace directories
+conport.log
+dev.log
+logs/
+.cursor/
+.conport/
+
+# Build output directory
+/dist/
+
+# ConPort vector data (may embed absolute paths)
+context_portal/conport_vector_data/
+
+# Ignore all other log files
+*.log
