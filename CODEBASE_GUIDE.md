@@ -10,7 +10,6 @@ This guide provides a comprehensive roadmap for navigating and understanding the
 1. Start with [README.md](./README.md) - Project overview and setup
 2. Review [ARCHITECTURE.md](./ARCHITECTURE.md) - System design and patterns
 3. Read [CONTEXT_MANAGEMENT.md](./CONTEXT_MANAGEMENT.md) - Context strategies
-4. Study [CONPORT_INTEGRATION.md](./CONPORT_INTEGRATION.md) - AI-powered context system
 5. Explore [DEVELOPMENT_PATTERNS.md](./DEVELOPMENT_PATTERNS.md) - Code patterns
 
 ### For Feature Development

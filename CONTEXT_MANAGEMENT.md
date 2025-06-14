@@ -38,45 +38,6 @@ Break down large codebases into semantically meaningful chunks that preserve log
 
 ## 🏗️ MCP Integration Strategies
 
-### ConPort (Context Portal) Integration
-
-ConPort provides the foundational layer for intelligent context management in large codebases:
-
-#### Core Benefits
-- **Persistent Knowledge Graph**: SQLite database maintains workspace-specific context across sessions
-- **Semantic Search**: Vector embeddings enable intelligent similarity-based context retrieval
-- **Structured Entities**: Organize decisions, patterns, glossary terms with explicit relationships
-- **RAG Workflows**: Retrieval Augmented Generation enhances AI assistant capabilities
-- **Cross-Reference Linking**: Build comprehensive knowledge graphs connecting related concepts
-
-#### Implementation Strategy
-```typescript
-// Example ConPort workflow integration
-const contextualDevelopment = async (feature: string) => {
-  // 1. Query existing context
-  const relevantContext = await getActiveContext({
-    query: feature,
-    includeTypes: ["decisions", "patterns", "glossary"]
-  });
-  
-  // 2. Check architectural constraints
-  const constraints = await getDecisions({
-    category: "architecture",
-    status: "active"
-  });
-  
-  // 3. Find similar patterns
-  const patterns = await semanticSearch({
-    query: `${feature} implementation patterns`,
-    threshold: 0.7
-  });
-  
-  return { relevantContext, constraints, patterns };
-};
-```
-
-For detailed ConPort implementation, see [CONPORT_INTEGRATION.md](./CONPORT_INTEGRATION.md) and [CONPORT_WORKFLOW.md](./CONPORT_WORKFLOW.md).
-
 ### Enhanced MCP Configuration
 
 Our enhanced `mcp.json` configuration implements several context management optimizations:
@@ -86,8 +47,7 @@ Our enhanced `mcp.json` configuration implements several context management opti
 {
   "mcpServers": {
     "filesystem": "Local file system access with intelligent filtering",
-    "git": "Version control context and change tracking", 
-    "conport": "Custom context portal for enhanced analysis",
+    "git": "Version control context and change tracking",
     "brave-search": "External knowledge integration"
   }
 }
