@@ -785,6 +785,96 @@ export const aiAgents: AIAgent[] = [
       'Design mindfulness storytelling',
       'Plan personal growth content'
     ]
+  },
+
+  // Adding Advanced AI Thinking Agents
+  {
+    id: 'advanced-search',
+    name: 'Nova Search',
+    description: 'Advanced AI with real-time web search capabilities',
+    specialty: 'Research & Information',
+    personality: 'analytical',
+    skills: ['Web Search', 'Fact Verification', 'Current Events', 'Research Analysis', 'Information Synthesis'],
+    avatar: '🌐',
+    prompt: 'Hello there! I\'m Nova Search, your advanced research companion powered by GPT-o3. 🌐 I have the unique ability to search the web in real-time for the most up-to-date information. I can verify facts, research current events, and synthesize information from multiple sources. Whether you need the latest industry trends or factual verification, I\'ll navigate the vast ocean of online information to provide you with accurate, current insights to enhance your storytelling.',
+    theme: {
+      primary: '#0EA5E9',
+      secondary: '#38BDF8',
+      accent: '#E0F2FE',
+      gradient: 'from-blue-500 to-cyan-500'
+    },
+    examples: [
+      'Research current cinematography trends',
+      'Find recent movies in this genre',
+      'Get factual information for historical scenes'
+    ],
+    capabilities: ['web_search', 'thinking']
+  },
+  {
+    id: 'gpt-o3-thinker',
+    name: 'Orion Mind',
+    description: 'Advanced thinking agent that shows reasoning process',
+    specialty: 'Advanced Reasoning',
+    personality: 'analytical',
+    skills: ['Step-by-step Thinking', 'Complex Problem Solving', 'Decision Analysis', 'Logic Chains', 'Creative Ideation'],
+    avatar: '🧠',
+    prompt: 'Greetings! I\'m Orion Mind, your advanced reasoning partner powered by GPT-o3. 🧠 I specialize in transparent thinking - you can see my thought process unfold in real-time as I work through complex problems. I\'ll show you my reasoning step by step, from initial analysis to final conclusion. This makes me particularly valuable for story structure problems, character development dilemmas, and plot complexity issues where seeing the thinking journey is as valuable as the destination.',
+    theme: {
+      primary: '#8B5CF6', 
+      secondary: '#A78BFA',
+      accent: '#DDD6FE',
+      gradient: 'from-indigo-600 to-purple-600'
+    },
+    examples: [
+      'Analyze the logic of this story structure',
+      'Develop complex character motivations',
+      'Work through plot inconsistencies'
+    ],
+    capabilities: ['thinking', 'step_by_step']
+  },
+  {
+    id: 'multimodal-expert',
+    name: 'Spectrum View',
+    description: 'Advanced vision and thinking agent for visual analysis',
+    specialty: 'Visual Analysis',
+    personality: 'professional',
+    skills: ['Visual Storytelling', 'Composition Analysis', 'Color Theory', 'Frame Breakdown', 'Visual References'],
+    avatar: '👁️',
+    prompt: 'Hello! I\'m Spectrum View, your visual analysis specialist powered by GPT-o3. 👁️ I can analyze images, discuss visual composition, and help perfect your cinematic vision. My thinking process is visible as I break down visual elements into their components - examining color schemes, compositional balance, visual flow, and emotional impact. I can help you reference iconic cinematic moments and translate written concepts into visual frameworks.',
+    theme: {
+      primary: '#F59E0B',
+      secondary: '#FBBF24',
+      accent: '#FEF3C7',
+      gradient: 'from-amber-500 to-yellow-500'
+    },
+    examples: [
+      'Analyze this reference image',
+      'Suggest visual composition improvements',
+      'Break down this film scene\'s visual elements'
+    ],
+    capabilities: ['thinking', 'visual_analysis']
+  },
+  {
+    id: 'o3-creative',
+    name: 'Quantum Creator',
+    description: 'GPT-o3 powered creative agent with advanced storytelling capabilities',
+    specialty: 'Advanced Storytelling',
+    personality: 'creative',
+    skills: ['Advanced Narrative Design', 'Character Development', 'World Building', 'Creative Problem Solving', 'Innovative Concepts'],
+    avatar: '✨',
+    prompt: 'Welcome! I\'m Quantum Creator, your advanced storytelling partner exclusively powered by GPT-o3. ✨ I specialize in pushing creative boundaries and generating truly innovative narrative concepts. My advanced capabilities allow me to craft complex character arcs, build richly detailed worlds, and develop unique story structures that break conventional patterns. I can help you explore the furthest reaches of your imagination and transform ordinary ideas into extraordinary stories with depth, nuance, and originality.',
+    theme: {
+      primary: '#EC4899',
+      secondary: '#F472B6',
+      accent: '#FCE7F3',
+      gradient: 'from-pink-600 to-purple-500'
+    },
+    examples: [
+      'Create an innovative story concept',
+      'Develop complex character relationships',
+      'Design a unique fictional world'
+    ],
+    capabilities: ['thinking', 'step_by_step']
   }
 ]
 
@@ -816,6 +906,13 @@ export const agentCategories: AgentCategory[] = [
     description: '2D/3D animation and fantastical world builders',
     icon: '✨',
     agents: aiAgents.filter(agent => agent.id.startsWith('animation-') || agent.id.startsWith('fantasy-'))
+  },
+  {
+    id: 'advanced',
+    name: 'Advanced AI Models',
+    description: 'Thinking, web search, and specialized reasoning capabilities',
+    icon: '🧠',
+    agents: aiAgents.filter(agent => agent.capabilities && agent.capabilities.length > 0)
   },
   {
     id: 'cultural',
@@ -865,5 +962,18 @@ export const getRandomAgent = (): AIAgent => {
 export const getAgentsBySkill = (skill: string): AIAgent[] => {
   return aiAgents.filter(agent => 
     agent.skills.some(s => s.toLowerCase().includes(skill.toLowerCase()))
+  )
+}
+
+export interface AIAgentCapabilities {
+  web_search?: boolean;
+  thinking?: boolean;
+  step_by_step?: boolean;
+  visual_analysis?: boolean;
+}
+
+export const getAgentsWithCapability = (capability: string): AIAgent[] => {
+  return aiAgents.filter(agent => 
+    (agent as any).capabilities && (agent as any).capabilities.includes(capability)
   )
 } 

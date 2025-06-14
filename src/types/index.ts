@@ -94,6 +94,7 @@ export interface AIAgent {
     gradient: string
   }
   examples: string[] // Example prompts they're good at handling
+  capabilities?: string[] // Special capabilities like web_search, thinking, step_by_step, visual_analysis
 }
 
 export interface AgentCategory {

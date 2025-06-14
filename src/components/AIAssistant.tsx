@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useContext } from 'react'
 import { X, Send, Users, History, Star, Lightbulb, ChevronDown, ChevronUp, Search, Trash2, Edit3, Clock, User, Settings, Bot, Plus } from 'lucide-react'
 import { useStoryboard } from '../context/StoryboardContext'
 import { useTheme } from '../context/ThemeContext'
-import { aiService, type ProjectContext } from '../services/ai'
+import { aiService, type ProjectContext, ThinkingState } from '../services/ai'
 import AIImageSettings, { type AIImageSettings as ImageSettings } from './AIImageSettings'
 import AIAgentSelector from './AIAgentSelector'
 import ChatHistoryManager from './ChatHistoryManager'
@@ -10,8 +10,9 @@ import SaveStatusIndicator from './SaveStatusIndicator'
 import MarkdownRenderer from './MarkdownRenderer'
 import ContextualTips from './ContextualTips'
 import WindowFrame from './WindowFrame'
+import AIThinking from './AIThinking' // Import the new AIThinking component
 import { AIAgent, ChatMessage, SavedChat, ChatSaveState, ShotType, CameraAngle } from '../types'
-import { aiAgents, getAgentById } from '../services/aiAgents'
+import { aiAgents, getAgentById, getAgentsWithCapability } from '../services/aiAgents'
 import { chatManager } from '../services/chatManager'
 
 interface AIAssistantProps {
@@ -28,6 +29,8 @@ export default function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
   const [isTyping, setIsTyping] = useState(false)
   const [showApiKeyInput, setShowApiKeyInput] = useState(false)
   const [apiKeyInput, setApiKeyInput] = useState('')
+  const [showSearchApiKeyInput, setShowSearchApiKeyInput] = useState(false)
+  const [searchApiKeyInput, setSearchApiKeyInput] = useState('')
   const [showImageSettings, setShowImageSettings] = useState(false)
   const [showAgentSelector, setShowAgentSelector] = useState(false)
   const [showChatHistory, setShowChatHistory] = useState(false)
@@ -58,12 +61,20 @@ export default function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
     aspectRatio: '16:9',
     creativity: 7
   })
-  // Debug mode for AI actions - NEW
+  
+  // AI thinking state
+  const [thinkingState, setThinkingState] = useState<ThinkingState>({
+    active: false,
+    content: '',
+    stages: []
+  })
+  
+  // Debug mode for AI actions
   const [debugMode, setDebugMode] = useState(false)
   
   const messagesEndRef = useRef<HTMLDivElement>(null)
   
-  // Toggle debug mode - NEW
+  // Toggle debug mode
   const toggleDebugMode = () => {
     setDebugMode(prev => !prev)
     console.log('🔧 Debug mode:', !debugMode)
@@ -88,6 +99,19 @@ export default function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
       }
     }
   }
+  
+  // Set up thinking state listener
+  useEffect(() => {
+    const handleThinkingUpdate = (state: ThinkingState) => {
+      setThinkingState(state)
+    }
+    
+    aiService.addThinkingStateListener(handleThinkingUpdate)
+    
+    return () => {
+      aiService.removeThinkingStateListener(handleThinkingUpdate)
+    }
+  }, [])
   
   // Initial setup
   useEffect(() => {
@@ -202,6 +226,23 @@ I'm ready to help with your ${currentAgent.specialty.toLowerCase()}! What can we
       setMessages(prev => [...prev, successMessage])
     }
   }
+  
+  const handleSearchApiKeySubmit = () => {
+    if (searchApiKeyInput.trim()) {
+      aiService.setSearchApiKey(searchApiKeyInput.trim())
+      setSearchApiKeyInput('')
+      setShowSearchApiKeyInput(false)
+      
+      const successMessage: ChatMessage = {
+        id: Date.now().toString(),
+        type: 'assistant',
+        content: '🌐 **Search API Key Saved!** I can now search the web for real-time information when using agents with web search capability.',
+        timestamp: new Date(),
+        agentId: currentAgent.id
+      }
+      setMessages(prev => [...prev, successMessage])
+    }
+  }
 
   const handleImageSettingsSave = (settings: ImageSettings) => {
     setImageSettings(settings)
@@ -252,7 +293,7 @@ I'm ready to help with your ${currentAgent.specialty.toLowerCase()}! What can we
         agentPersonality: currentAgent.prompt
       }
 
-      return await aiService.sendMessage(recentMessages, agentContext)
+      return await aiService.sendMessage(recentMessages, agentContext, currentAgent)
     } catch (error) {
       console.error('AI service error:', error)
       return generateIntelligentLocalResponse(userMessage)
@@ -320,6 +361,26 @@ Once I'm back online, just tell me your story ideas and I'll help bring them to 
 
 What sounds good to you?`
   }
+
+  // Determine if current agent has thinking capability
+  const hasThinkingCapability = Boolean(
+    currentAgent?.capabilities?.includes('thinking')
+  )
+
+  // Determine if current agent has web search capability
+  const hasWebSearchCapability = Boolean(
+    currentAgent?.capabilities?.includes('web_search')
+  )
+
+  // When scrolling to bottom, add a small delay to ensure all content is rendered
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      const timer = setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+      }, 100)
+      return () => clearTimeout(timer)
+    }
+  }, [messages, thinkingState.content])
 
   const handleSendMessage = async () => {
     if (!input.trim() || isTyping) return
@@ -2674,7 +2735,7 @@ All panels have now been updated with the environmental effects you requested!`,
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <h4 className="font-semibold text-xs" style={{ color: themeState.theme.colors.text.primary }}>
-                      🎨 Image Settings
+                      ⚙️ Advanced Settings
                     </h4>
                     <button
                       onClick={() => setActivePanel(null)}
@@ -2685,7 +2746,55 @@ All panels have now been updated with the environmental effects you requested!`,
                     </button>
                   </div>
                   
-                  <div className="space-y-2">
+                  {/* API Settings Section */}
+                  <div className="space-y-2 border-b border-gray-200 dark:border-gray-800 pb-2">
+                    <h5 className="text-xs font-semibold" style={{ color: themeState.theme.colors.text.primary }}>
+                      🔑 API Keys
+                    </h5>
+                    
+                    {/* OpenAI API Key */}
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-xs font-medium" style={{ color: themeState.theme.colors.text.primary }}>
+                          OpenAI API Key
+                        </span>
+                        <div className="text-xs" style={{ color: themeState.theme.colors.text.secondary }}>
+                          {aiService.getApiKey() ? "✅ Set" : "⚠️ Not set"}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setShowApiKeyInput(true)}
+                        className="btn-primary text-xs px-2 py-1"
+                      >
+                        {aiService.getApiKey() ? "Change" : "Set Key"}
+                      </button>
+                    </div>
+                    
+                    {/* Web Search API Key */}
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-xs font-medium" style={{ color: themeState.theme.colors.text.primary }}>
+                          Brave Search API Key
+                        </span>
+                        <div className="text-xs" style={{ color: themeState.theme.colors.text.secondary }}>
+                          {aiService.getSearchApiKey() ? "✅ Set" : "⚠️ Not set (needed for web search)"}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setShowSearchApiKeyInput(true)}
+                        className="btn-primary text-xs px-2 py-1"
+                      >
+                        {aiService.getSearchApiKey() ? "Change" : "Set Key"}
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {/* Image Settings Section */}
+                  <div className="space-y-2 pt-2">
+                    <h5 className="text-xs font-semibold" style={{ color: themeState.theme.colors.text.primary }}>
+                      🎨 Image Settings
+                    </h5>
+                    
                     <div>
                       <label className="text-xs font-medium" style={{ color: themeState.theme.colors.text.primary }}>
                         Model
@@ -2839,6 +2948,70 @@ All panels have now been updated with the environmental effects you requested!`,
               </div>
             </div>
           )}
+          
+          {/* Search API Key Input */}
+          {showSearchApiKeyInput && (
+            <div 
+              className="p-2 border-b flex-shrink-0"
+              style={{
+                backgroundColor: themeState.theme.colors.background.secondary,
+                borderColor: themeState.theme.colors.border.primary
+              }}
+            >
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-semibold text-xs" style={{ color: themeState.theme.colors.text.primary }}>
+                      Brave Search API Key
+                    </h4>
+                    <p className="text-xs" style={{ color: themeState.theme.colors.text.secondary }}>
+                      Required for web search capability
+                    </p>
+                  </div>
+                  <button 
+                    onClick={() => setShowSearchApiKeyInput(false)}
+                    className="p-0.5 hover:bg-white/10 rounded transition-colors"
+                    style={{ color: themeState.theme.colors.text.secondary }}
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+                <input
+                  type="password"
+                  value={searchApiKeyInput}
+                  onChange={(e) => setSearchApiKeyInput(e.target.value)}
+                  placeholder="Enter search API key..."
+                  className="input-modern w-full text-xs"
+                  onKeyPress={(e) => e.key === 'Enter' && handleSearchApiKeySubmit()}
+                />
+                <div className="flex items-center justify-between">
+                  <a 
+                    href="https://api.search.brave.com/register" 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="text-xs underline transition-colors"
+                    style={{ color: themeState.theme.colors.primary[500] }}
+                  >
+                    Get API key from Brave →
+                  </a>
+                  <div className="flex space-x-1">
+                    <button
+                      onClick={() => setShowSearchApiKeyInput(false)}
+                      className="btn-secondary text-xs px-1.5 py-0.5"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleSearchApiKeySubmit}
+                      className="btn-primary text-xs px-1.5 py-0.5"
+                    >
+                      Save Key
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
 
 
@@ -2895,8 +3068,18 @@ All panels have now been updated with the environmental effects you requested!`,
               </div>
             ))}
             
-            {/* Typing Indicator */}
-            {isTyping && (
+            {/* AI Thinking Process Display */}
+            {hasThinkingCapability && (
+              <AIThinking 
+                isActive={thinkingState.active} 
+                thinking={thinkingState.content}
+                agentId={currentAgent.id}
+                loadingStages={thinkingState.stages}
+              />
+            )}
+            
+            {/* Typing Indicator (for non-thinking agents) */}
+            {isTyping && !hasThinkingCapability && (
               <div className="flex justify-start animate-fade-in">
                 <div 
                   className="p-2 rounded-lg border mr-6"
@@ -2991,9 +3174,26 @@ All panels have now been updated with the environmental effects you requested!`,
               
               {/* Status Row */}
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-0.5 text-xs" style={{ color: themeState.theme.colors.text.secondary }}>
-                  <Lightbulb className="w-3 h-3" style={{ color: themeState.theme.colors.primary[500] }} />
-                  <span>Shift+Enter for new line</span>
+                <div className="flex items-center gap-2 text-xs" style={{ color: themeState.theme.colors.text.secondary }}>
+                  <div className="flex items-center space-x-0.5">
+                    <Lightbulb className="w-3 h-3" style={{ color: themeState.theme.colors.primary[500] }} />
+                    <span>Shift+Enter for new line</span>
+                  </div>
+                  
+                  {/* Agent capabilities badges */}
+                  {hasWebSearchCapability && (
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-blue-100/40 text-blue-600 dark:bg-blue-900/40 dark:text-blue-300">
+                      <Search size={10} className="mr-0.5" />
+                      Search
+                    </span>
+                  )}
+                  
+                  {hasThinkingCapability && (
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-purple-100/40 text-purple-600 dark:bg-purple-900/40 dark:text-purple-300">
+                      <Bot size={10} className="mr-0.5" />
+                      Thinking
+                    </span>
+                  )}
                 </div>
                 
                 {!isTyping && input.trim() && (

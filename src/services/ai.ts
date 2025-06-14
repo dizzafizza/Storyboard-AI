@@ -2,6 +2,9 @@ import OpenAI from 'openai'
 import type { StoryboardPanel, ShotType, CameraAngle } from '../types'
 import { storage } from '../utils/storage'
 
+// Web search API configuration
+const SEARCH_API_URL = 'https://api.search.brave.com/res/v1/web/search'
+
 export interface ImageGenerationOptions {
   style?: 'realistic' | 'cinematic' | 'artistic' | 'storyboard'
   quality?: 'standard' | 'hd'
@@ -13,6 +16,12 @@ export interface AIMessage {
   type: 'user' | 'assistant' | 'system'
   content: string
   timestamp: Date
+}
+
+export interface ThinkingState {
+  active: boolean
+  content: string
+  stages: string[]
 }
 
 export interface ProjectContext {
@@ -34,9 +43,22 @@ export interface ProjectContext {
   agentPersonality?: string
 }
 
+// Web search result interface
+export interface WebSearchResult {
+  title: string
+  url: string
+  description: string
+}
+
 class AIService {
   private openai: OpenAI | null = null
   private isInitialized = false
+  private thinkingStateListeners: ((state: ThinkingState) => void)[] = []
+  public thinkingState: ThinkingState = {
+    active: false,
+    content: '',
+    stages: []
+  }
 
   constructor() {
     this.initializeOpenAI()
@@ -74,9 +96,146 @@ class AIService {
   public getApiKey(): string | undefined {
     return storage.getSettings().openaiApiKey
   }
+  
+  public setSearchApiKey(apiKey: string) {
+    storage.saveSettings({ searchApiKey: apiKey })
+  }
+  
+  public getSearchApiKey(): string | undefined {
+    return storage.getSettings().searchApiKey
+  }
 
   public isReady(): boolean {
     return this.isInitialized && this.openai !== null
+  }
+  
+  // New method to add thinking state change listeners
+  public addThinkingStateListener(callback: (state: ThinkingState) => void) {
+    this.thinkingStateListeners.push(callback)
+  }
+
+  // New method to remove thinking state change listeners
+  public removeThinkingStateListener(callback: (state: ThinkingState) => void) {
+    this.thinkingStateListeners = this.thinkingStateListeners.filter(cb => cb !== callback)
+  }
+
+  // Update thinking state and notify all listeners
+  private updateThinkingState(state: Partial<ThinkingState>) {
+    this.thinkingState = { ...this.thinkingState, ...state }
+    this.thinkingStateListeners.forEach(callback => callback(this.thinkingState))
+  }
+
+  // Start thinking process
+  private startThinking() {
+    this.updateThinkingState({ 
+      active: true, 
+      content: 'Thinking...\n', 
+      stages: ['Analyzing request'] 
+    })
+  }
+
+  // Update thinking content
+  private appendThinking(content: string) {
+    this.updateThinkingState({ 
+      content: this.thinkingState.content + content + '\n' 
+    })
+  }
+
+  // Add a new thinking stage
+  private addThinkingStage(stage: string) {
+    this.updateThinkingState({ 
+      stages: [...this.thinkingState.stages, stage] 
+    })
+  }
+
+  // End thinking process
+  private endThinking() {
+    // Keep the content visible but mark as inactive
+    this.updateThinkingState({ 
+      active: false,
+      stages: [...this.thinkingState.stages, 'Completed']
+    })
+    
+    // Reset after a delay
+    setTimeout(() => {
+      if (!this.thinkingState.active) {
+        this.updateThinkingState({ 
+          content: '',
+          stages: [] 
+        })
+      }
+    }, 5000)
+  }
+
+  // New method to search the web
+  public async searchWeb(query: string, count: number = 5): Promise<WebSearchResult[]> {
+    try {
+      // Add thinking stage for web search
+      this.addThinkingStage(`Searching web for: "${query}"`)
+      this.appendThinking(`Running web search for: "${query}"...`)
+      
+      if (!this.isReady()) {
+        this.appendThinking('❌ OpenAI API not initialized')
+        return []
+      }
+
+      const settings = storage.getSettings()
+      const model = settings.aiModel === 'gpt-o3' ? 'gpt-o3' : (settings.aiModel || 'gpt-4o-mini')
+      
+      // Use OpenAI's Responses API with web_search_preview tool
+      const response = await this.openai!.responses.create({
+        model: model,
+        input: query,
+        tools: [{ type: "web_search_preview" }]
+      })
+      
+      // Process the response to extract search results
+      const results: WebSearchResult[] = []
+      
+      // Check if we have output with content
+      if (response.output && response.output.length > 0) {
+        // Look for message content with annotations (citations)
+        for (const output of response.output) {
+          if (output.type === 'message' && output.content) {
+            for (const content of output.content) {
+              // Type assertion for ResponseOutputText that might have annotations
+              const textContent = content as any;
+              if (textContent.annotations && textContent.annotations.length > 0) {
+                // Extract citations as search results
+                for (const annotation of textContent.annotations) {
+                  if (annotation.type === 'url_citation') {
+                    results.push({
+                      title: annotation.title || 'No title',
+                      url: annotation.url || '#',
+                      description: 'Source from web search'
+                    })
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      
+      this.appendThinking(`✅ Found ${results.length} results`)
+      
+      // Log brief summary of results
+      if (results.length > 0) {
+        this.appendThinking('Search results summary:')
+        results.slice(0, 3).forEach((result: WebSearchResult, index: number) => {
+          this.appendThinking(`${index + 1}. ${result.title}`)
+        })
+        if (results.length > 3) {
+          this.appendThinking(`...and ${results.length - 3} more results`)
+        }
+      }
+      
+      return results
+    } catch (error) {
+      console.error('Error during web search:', error)
+      this.appendThinking(`❌ Web search error: ${error instanceof Error ? error.message : String(error)}`)
+      return []
+    }
   }
 
   private createSystemPrompt(context: ProjectContext): string {
@@ -201,63 +360,244 @@ ${finalReinforcement}`
 
   public async sendMessage(
     messages: Array<{ role: 'user' | 'assistant'; content: string }>,
-    context: ProjectContext
+    context: ProjectContext,
+    agent?: any // Optional agent parameter
   ): Promise<string> {
     if (!this.isReady()) {
       return this.generateFallbackResponse(messages[messages.length - 1]?.content || '')
     }
 
     try {
+      // Start thinking process if this is an agent with thinking capability
+      const hasThinkingCapability = agent?.capabilities?.includes('thinking')
+      const hasWebSearchCapability = agent?.capabilities?.includes('web_search')
+      
+      if (hasThinkingCapability) {
+        this.startThinking()
+        this.appendThinking(`${agent.name} is analyzing your request...`)
+      }
+      
       console.log('📤 Sending message to OpenAI with conversation length:', messages.length)
+      
+      // Define search-enhanced system prompt variable
+      let systemPromptWithSearch: string | undefined = undefined
+      
+      // Web search capability - extract search queries if needed
+      if (hasWebSearchCapability) {
+        const userMessage = messages[messages.length - 1]?.content || ''
+        
+        // Check if the message seems to need search
+        if (this.messageNeedsSearch(userMessage)) {
+          // Extract search queries
+          this.addThinkingStage('Identifying search queries')
+          const searchQueries = await this.extractSearchQueries(userMessage)
+          
+          // Run searches and append context
+          if (searchQueries.length > 0) {
+            this.addThinkingStage('Performing web searches')
+            const searchResults = await Promise.all(
+              searchQueries.map(query => this.searchWeb(query))
+            )
+            
+            // Format search results as context
+            const searchContext = this.formatSearchResultsAsContext(searchQueries, searchResults)
+            
+            // Create search-enhanced system prompt
+            systemPromptWithSearch = `${searchContext}\n\n${this.createSystemPrompt(context)}`
+            
+            this.addThinkingStage('Analyzing search results')
+          }
+        }
+      }
       
       // Get the AI model from settings
       const settings = storage.getSettings()
-      const model = settings.aiModel || 'gpt-4o-mini'
+      const model = settings.aiModel === 'gpt-o3' ? 'gpt-o3' : (settings.aiModel || 'gpt-4o-mini')
+      
+      if (hasThinkingCapability) {
+        this.appendThinking(`Using ${model} to generate response...`)
+      }
+      
       console.log('🤖 Using AI model from settings:', model)
       
-      const response = await this.openai!.chat.completions.create({
-        model: model, // Use the model from settings instead of hardcoded value
-        messages: [
-          { role: 'system', content: this.createSystemPrompt(context) },
-          ...messages
-        ],
-        max_tokens: settings.maxTokens || 2500,
-        temperature: settings.temperature || 0.7,
-        // Additional parameters for more reliable responses
-        presence_penalty: 0.1, // Slight penalty for repeated content
-        frequency_penalty: 0.2, // Slight penalty for repeated tokens
-        // Logging for diagnostics
-        user: 'storyboard-assistant'
-      })
-      
-      const generatedContent = response.choices[0].message.content || 'Sorry, I couldn\'t generate a response.'
-      
-      // Debug info for action detection
-      const actionMatch = generatedContent.match(/\[ACTION:([^:]+):(.*?)\]/g)
-      if (actionMatch) {
-        console.log('✅ Actions detected in response:', actionMatch.length)
-        console.log('🔍 First action:', actionMatch[0])
-      } else {
-        console.log('⚠️ No actions detected in response')
+      // Create system prompt based on agent if provided
+      let systemPrompt = hasWebSearchCapability && typeof systemPromptWithSearch !== 'undefined' 
+        ? systemPromptWithSearch 
+        : this.createSystemPrompt(context)
+        
+      if (agent) {
+        systemPrompt = `${agent.prompt}\n\n${systemPrompt}`
       }
-
-      return generatedContent
+      
+      // Add step-by-step thinking instruction if agent has this capability
+      if (agent?.capabilities?.includes('step_by_step')) {
+        this.addThinkingStage('Generating step-by-step reasoning')
+        systemPrompt = `${systemPrompt}\n\nIMPORTANT: Show your step-by-step reasoning process FIRST, then provide your final response. Think carefully through each part of the problem.`
+      }
+      
+      // For streaming thinking process
+      if (hasThinkingCapability) {
+        const stream = await this.openai!.chat.completions.create({
+          model: model,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            ...messages
+          ],
+          max_tokens: settings.maxTokens || 2500,
+          temperature: settings.temperature || 0.7,
+          stream: true
+        })
+        
+        let fullResponse = ''
+        let partialResponse = ''
+        
+        // Stream the thinking process
+        this.addThinkingStage('Generating response')
+        for await (const chunk of stream) {
+          const content = chunk.choices[0]?.delta?.content || ''
+          if (content) {
+            fullResponse += content
+            partialResponse += content
+            
+            // Update thinking periodically (not on every tiny chunk to avoid flicker)
+            if (partialResponse.length > 20 || content.includes('\n')) {
+              this.appendThinking(partialResponse)
+              partialResponse = ''
+            }
+          }
+        }
+        
+        // Add any remaining partial response
+        if (partialResponse) {
+          this.appendThinking(partialResponse)
+        }
+        
+        this.endThinking()
+        return fullResponse
+      } else {
+        // Non-streaming for agents without thinking capability
+        const response = await this.openai!.chat.completions.create({
+          model: model,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            ...messages
+          ],
+          max_tokens: settings.maxTokens || 2500,
+          temperature: settings.temperature || 0.7,
+          presence_penalty: 0.1,
+          frequency_penalty: 0.2,
+          user: 'storyboard-assistant'
+        })
+        
+        return response.choices[0].message.content || 'Sorry, I couldn\'t generate a response.'
+      }
     } catch (error: any) {
+      // End thinking process if error occurs
+      if (this.thinkingState.active) {
+        this.appendThinking(`❌ Error: ${error.message || 'Unknown error'}`)
+        this.endThinking()
+      }
+      
       console.error('❌ OpenAI API Error:', error)
       
       // Handle specific errors
       if (error.status === 401) {
         return 'It looks like your OpenAI API key is invalid. Please check your API key in the settings.'
-      } else if (error.status === 429) {
-        return 'You\'ve reached the rate limit for the OpenAI API. Please try again in a moment.'
-      } else if (error.status === 402) {
-        return 'Your OpenAI account has insufficient credits. Please add credits to your OpenAI account.'
-      } else if (error.status >= 500) {
-        return 'The OpenAI service is currently experiencing issues. Please try again later.'
       }
       
-      return this.generateFallbackResponse(messages[messages.length - 1]?.content || '')
+      return `I encountered an error: ${error.message || 'Unknown error'}. Please try again or check your settings.`
     }
+  }
+
+  // Helper to extract search queries from a user message
+  private async extractSearchQueries(message: string): Promise<string[]> {
+    if (!this.isReady()) {
+      return []
+    }
+    
+    try {
+      const settings = storage.getSettings()
+      const model = settings.aiModel === 'gpt-o3' ? 'gpt-o3' : 'gpt-3.5-turbo'
+      
+      const response = await this.openai!.chat.completions.create({
+        model: model,
+        messages: [
+          { 
+            role: 'system', 
+            content: 'Extract 1-3 search queries from the user message that would help answer their question. Return ONLY the search queries as a JSON array of strings. If no search is needed, return an empty array.' 
+          },
+          { role: 'user', content: message }
+        ],
+        response_format: { type: 'json_object' }
+      })
+      
+      const content = response.choices[0].message.content
+      if (content) {
+        try {
+          const result = JSON.parse(content)
+          const queries = result.queries || []
+          
+          this.appendThinking(`Extracted search queries: ${queries.map((q: string) => `"${q}"`).join(', ')}`)
+          return queries
+        } catch (e) {
+          console.error('Error parsing search queries JSON:', e)
+          return []
+        }
+      }
+      
+      return []
+    } catch (error) {
+      console.error('Error extracting search queries:', error)
+      return []
+    }
+  }
+
+  // Helper to detect if a message likely needs search
+  private messageNeedsSearch(message: string): boolean {
+    // Keywords suggesting search would be helpful
+    const searchKeywords = [
+      'latest', 'recent', 'news', 'current', 'update', 'today', 'find', 'search',
+      'information about', 'tell me about', 'who is', 'what is', 'where is',
+      'when was', 'how to', 'trends', 'statistics', 'data on'
+    ]
+    
+    const messageLower = message.toLowerCase()
+    const needsSearch = searchKeywords.some(keyword => messageLower.includes(keyword.toLowerCase()))
+    
+    if (needsSearch) {
+      this.appendThinking('Message likely requires web search for up-to-date information')
+    }
+    
+    return needsSearch
+  }
+  
+  // Format search results into context
+  private formatSearchResultsAsContext(queries: string[], searchResults: WebSearchResult[][]): string {
+    let context = '### WEB SEARCH RESULTS\n\n'
+    
+    queries.forEach((query, index) => {
+      const results = searchResults[index] || []
+      context += `SEARCH QUERY: "${query}"\n\n`
+      
+      results.forEach((result, idx) => {
+        context += `[${idx + 1}] ${result.title}\n`
+        context += `URL: ${result.url}\n`
+        context += `${result.description}\n\n`
+      })
+      
+      if (results.length === 0) {
+        context += 'No results found for this query.\n\n'
+      }
+      
+      context += '---\n\n'
+    })
+    
+    context += 'INSTRUCTIONS:\n'
+    context += '- Use these search results when they\'re relevant to the user\'s request\n'
+    context += '- If the search results don\'t contain relevant information, rely on your training\n'
+    context += '- Always cite the source number like [1] when referencing information from the search results\n'
+    
+    return context
   }
 
   public async generateStoryboard(
@@ -272,7 +612,7 @@ ${finalReinforcement}`
     try {
       // Get AI model from settings
       const settings = storage.getSettings()
-      const model = settings.aiModel || 'gpt-4o-mini'
+      const model = settings.aiModel === 'gpt-o3' ? 'gpt-o3' : (settings.aiModel || 'gpt-4o-mini')
       console.log('🤖 Using AI model from settings for storyboard generation:', model)
       
       const prompt = `Create a professional ${panelCount}-panel storyboard for this story idea:
@@ -396,7 +736,7 @@ Create a complete narrative arc with visual variety and professional filmmaking 
     try {
       // Get AI model from settings
       const settings = storage.getSettings()
-      const model = settings.aiModel || 'gpt-4o-mini'
+      const model = settings.aiModel === 'gpt-o3' ? 'gpt-o3' : (settings.aiModel || 'gpt-4o-mini')
       console.log('🤖 Using AI model from settings for scene generation:', model)
       
       const prompt = `Create a professional storyboard panel for this scene:
@@ -606,7 +946,7 @@ The videoPrompt should include camera movements, lighting, atmosphere, and techn
     try {
       // Get AI model from settings
       const settings = storage.getSettings()
-      const model = settings.aiModel || 'gpt-4o-mini'
+      const model = settings.aiModel === 'gpt-o3' ? 'gpt-o3' : (settings.aiModel || 'gpt-4o-mini')
       console.log('🤖 Using AI model from settings for cinematography analysis:', model)
       
       // Enhanced prompt for better JSON formatting and reliability

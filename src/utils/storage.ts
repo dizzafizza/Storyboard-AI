@@ -14,12 +14,13 @@ const IMAGES_STORE = 'images'
 
 interface StorageSettings {
   openaiApiKey?: string
+  searchApiKey?: string
   darkMode: boolean
   autoSave: boolean
   notifications?: boolean
   videoQuality?: 'standard' | 'high' | 'ultra'
   exportFormat?: 'json' | 'pdf' | 'video'
-  aiModel?: 'gpt-4' | 'gpt-4o' | 'gpt-4o-mini'
+  aiModel?: 'gpt-4' | 'gpt-4o' | 'gpt-4o-mini' | 'gpt-o3'
   imageModel?: 'dall-e-2' | 'dall-e-3'
   maxTokens?: number
   temperature?: number

@@ -18,7 +18,7 @@ interface Settings {
   notifications: boolean
   videoQuality: 'standard' | 'high' | 'ultra'
   exportFormat: 'json' | 'pdf' | 'video'
-  aiModel: 'gpt-4' | 'gpt-4o' | 'gpt-4o-mini'
+  aiModel: 'gpt-4' | 'gpt-4o' | 'gpt-4o-mini' | 'gpt-o3'
   imageModel: 'dall-e-2' | 'dall-e-3'
   maxTokens: number
   temperature: number
@@ -560,9 +560,14 @@ export default function SettingsMenu({ isOpen, onClose, onOpenThemeSettings }: S
                         onChange={(e) => setSettings(prev => ({ ...prev, aiModel: e.target.value as any }))}
                         className="select-modern w-full bg-tertiary/50 border border-primary/30 focus:border-primary/60"
                       >
-                        <option value="gpt-4o-mini">GPT-4o Mini (Fast & Economic)</option>
-                        <option value="gpt-4o">GPT-4o (Balanced)</option>
-                        <option value="gpt-4">GPT-4 (Most Capable)</option>
+                        <optgroup label="Standard Models">
+                          <option value="gpt-4o-mini">GPT-4o Mini (Fast & Economic)</option>
+                          <option value="gpt-4o">GPT-4o (Balanced)</option>
+                          <option value="gpt-4">GPT-4 (Most Capable)</option>
+                        </optgroup>
+                        <optgroup label="Advanced Models">
+                          <option value="gpt-o3">GPT-o3 (Most Advanced)</option>
+                        </optgroup>
                       </select>
                     </div>
 
