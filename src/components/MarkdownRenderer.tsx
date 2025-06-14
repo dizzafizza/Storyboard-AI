@@ -1,11 +1,15 @@
-
+import { useState } from 'react'
+import { Copy, Check } from 'lucide-react'
 
 interface MarkdownRendererProps {
   content: string
   className?: string
+  showCopyButton?: boolean
 }
 
-export default function MarkdownRenderer({ content, className = '' }: MarkdownRendererProps) {
+export default function MarkdownRenderer({ content, className = '', showCopyButton = false }: MarkdownRendererProps) {
+  const [copied, setCopied] = useState(false)
+  
   // Simple markdown parser for basic formatting
   const parseMarkdown = (text: string) => {
     let parsed = text
@@ -39,10 +43,34 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
     return parsed
   }
 
+  const handleCopy = () => {
+    // Remove HTML tags to get plain text for copying
+    const tempDiv = document.createElement('div')
+    tempDiv.innerHTML = parseMarkdown(content)
+    const textToCopy = tempDiv.innerText || tempDiv.textContent || content
+    
+    navigator.clipboard.writeText(textToCopy).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    })
+  }
+
   return (
-    <div 
-      className={`prose prose-sm max-w-none ${className}`}
-      dangerouslySetInnerHTML={{ __html: parseMarkdown(content) }}
-    />
+    <div className="relative">
+      <div 
+        className={`prose prose-sm max-w-none user-select-text ${className}`}
+        style={{ userSelect: 'text', WebkitUserSelect: 'text', MozUserSelect: 'text', msUserSelect: 'text' }}
+        dangerouslySetInnerHTML={{ __html: parseMarkdown(content) }}
+      />
+      {showCopyButton && (
+        <button 
+          onClick={handleCopy}
+          className="absolute top-0 right-0 p-1 rounded-md bg-black/20 hover:bg-black/30 transition-colors"
+          title="Copy text"
+        >
+          {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+        </button>
+      )}
+    </div>
   )
 } 

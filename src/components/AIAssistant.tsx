@@ -2875,7 +2875,11 @@ All panels have now been updated with the environmental effects you requested!`,
                     border: message.type !== 'user' ? `1px solid ${themeState.theme.colors.border.primary}` : 'none'
                   }}
                 >
-                  <MarkdownRenderer content={message.content} className="text-xs leading-snug" />
+                  <MarkdownRenderer 
+                    content={message.content} 
+                    className="text-xs leading-snug" 
+                    showCopyButton={message.type === 'assistant'} 
+                  />
                   <div className="flex items-center justify-between mt-1 pt-1 border-t border-white/20">
                     <p className="text-xs opacity-70 font-medium">
                       {message.timestamp.toLocaleTimeString()}
