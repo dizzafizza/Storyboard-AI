@@ -1307,18 +1307,52 @@ Example format:
         // Strategy 3: Remove common prefixes/suffixes
         jsonText = jsonText.replace(/^[^[\{]*/, '').replace(/[^\]\}]*$/, '')
         
+        // Strategy 4: Attempt to repair truncated JSON
+        if (jsonText.startsWith('[') && !jsonText.endsWith(']')) {
+          console.log('📝 Attempting to repair truncated JSON array')
+          // Find the last complete panel object (ending with })
+          const lastObjectEnd = jsonText.lastIndexOf('}')
+          if (lastObjectEnd !== -1) {
+            // Extract up to the last complete object and add closing bracket
+            jsonText = jsonText.substring(0, lastObjectEnd + 1) + ']'
+            console.log('📝 Repaired truncated JSON by adding closing bracket')
+          }
+        }
+        
         console.log('📝 Cleaned JSON text (first 200 chars):', jsonText.substring(0, 200))
         console.log('📝 Cleaned JSON text (last 100 chars):', jsonText.substring(Math.max(0, jsonText.length - 100)))
         
-        const updatedPanels = JSON.parse(jsonText)
-        console.log('✅ Successfully parsed JSON, received:', updatedPanels.length, 'panels')
+        let updatedPanels = []
+        try {
+          updatedPanels = JSON.parse(jsonText)
+          console.log('✅ Successfully parsed JSON, received:', updatedPanels.length, 'panels')
+        } catch (initialParseError) {
+          // One more attempt: Check if we can extract valid panels one by one
+          console.log('⚠️ Initial JSON parse failed, attempting to extract panels individually')
+          
+          const panelMatches = jsonText.match(/\{[^{]*?"title":[^{]*?"description":[^{]*?"notes":[^{]*?\}/g)
+          if (panelMatches && panelMatches.length > 0) {
+            console.log('🔍 Found', panelMatches.length, 'potential panel objects')
+            try {
+              // Reconstruct array from individual panel matches
+              const reconstructedArray = '[' + panelMatches.join(',') + ']'
+              updatedPanels = JSON.parse(reconstructedArray)
+              console.log('✅ Successfully reconstructed and parsed JSON from individual panels')
+            } catch (reconstructError) {
+              console.error('❌ Failed to reconstruct panel array:', reconstructError)
+              throw initialParseError // Re-throw initial error if reconstruction fails
+            }
+          } else {
+            throw initialParseError // Re-throw if we couldn't find panel objects
+          }
+        }
         
-        if (Array.isArray(updatedPanels) && updatedPanels.length === state.panels.length) {
+        if (Array.isArray(updatedPanels) && updatedPanels.length > 0) {
           console.log('✅ Valid panel updates received, applying changes...')
           
-          // Apply updates to each panel with additional validation
+          // Apply updates to available panels
           let updatedCount = 0
-          for (let i = 0; i < state.panels.length; i++) {
+          for (let i = 0; i < Math.min(state.panels.length, updatedPanels.length); i++) {
             const currentPanel = state.panels[i]
             const updatedPanel = updatedPanels[i]
             
@@ -1351,24 +1385,52 @@ Example format:
           }
           
           console.log('✅ Batch edit completed successfully:', updatedCount, 'panels updated')
-          const successMessage: ChatMessage = {
-            id: Date.now().toString(),
-            type: 'assistant',
-            content: `🎬 **Batch Edit Complete!** 
+          
+          // Handle partial updates gracefully
+          if (updatedCount < state.panels.length) {
+            console.log('⚠️ Only partial update received:', updatedCount, 'out of', state.panels.length, 'panels')
+            
+            // If we have fewer than half the panels, fall back to individual processing
+            if (updatedCount < state.panels.length / 2) {
+              console.log('🔄 Not enough panels received, switching to individual processing...')
+              throw new Error('Incomplete JSON response: falling back to individual processing')
+            }
+            
+            const successMessage: ChatMessage = {
+              id: Date.now().toString(),
+              type: 'assistant',
+              content: `🎬 **Batch Edit Partially Complete!** 
+
+✅ Successfully updated **${updatedCount}** out of **${state.panels.length}** panels with: "${instructions}"
+
+The updated panels have been enhanced with the requested environmental effects. I'll now process the remaining panels individually...`,
+              timestamp: new Date(),
+              agentId: currentAgent.id
+            }
+            setMessages(prev => [...prev, successMessage])
+            
+            // Process remaining panels individually
+            await batchEditRemainingPanels(instructions, updatedCount)
+          } else {
+            const successMessage: ChatMessage = {
+              id: Date.now().toString(),
+              type: 'assistant',
+              content: `🎬 **Batch Edit Complete!** 
 
 ✅ Successfully updated **${updatedCount}** panels with: "${instructions}"
 
 All panels have been enhanced while maintaining story flow and continuity. Check your storyboard to see the improvements!
 
 **What was enhanced:**
-• Improved titles and descriptions
-• Enhanced director notes
-• Optimized shot types and camera angles
-• Applied consistent style modifications`,
-            timestamp: new Date(),
-            agentId: currentAgent.id
+• Improved titles and descriptions with environmental effects
+• Enhanced director notes with atmospheric guidance
+• Optimized shot types and camera angles for the new elements
+• Applied consistent environmental modifications across all panels`,
+              timestamp: new Date(),
+              agentId: currentAgent.id
+            }
+            setMessages(prev => [...prev, successMessage])
           }
-          setMessages(prev => [...prev, successMessage])
           
         } else {
           console.error('❌ Invalid response format:', {
@@ -2049,6 +2111,72 @@ Focus on storytelling effectiveness and cinematic quality.`
     } finally {
       setIsTyping(false)
     }
+  }
+
+  // Process only remaining panels that weren't updated in partial batch
+  const batchEditRemainingPanels = async (instructions: string, alreadyProcessedCount: number) => {
+    console.log('🔄 Processing remaining panels individually...')
+    
+    let successCount = 0
+    
+    for (let i = alreadyProcessedCount; i < state.panels.length; i++) {
+      const panel = state.panels[i]
+      console.log(`🔄 Processing panel ${i + 1}/${state.panels.length}: ${panel.title}`)
+      
+      try {
+        // Apply rate limiting to avoid overwhelming the API
+        console.log('⏱️ Rate limiting: waiting 1 second...')
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        
+        const enhancedPanel = await aiService.generateScene(
+          `${instructions}. Current panel: "${panel.title}" - ${panel.description}. Director notes: ${panel.notes}`,
+          panel.shotType,
+          panel.cameraAngle,
+          'enhanced'
+        )
+        
+        if (enhancedPanel && (enhancedPanel.title || enhancedPanel.description)) {
+          console.log(`✅ Enhanced panel ${i + 1}:`, {
+            originalTitle: panel.title,
+            newTitle: enhancedPanel.title,
+            hasNewDescription: !!enhancedPanel.description
+          })
+          
+          dispatch({
+            type: 'UPDATE_PANEL',
+            payload: {
+              id: panel.id,
+              updates: {
+                title: enhancedPanel.title || panel.title,
+                description: enhancedPanel.description || panel.description,
+                notes: enhancedPanel.notes || panel.notes,
+                shotType: (enhancedPanel.shotType || panel.shotType) as ShotType,
+                cameraAngle: (enhancedPanel.cameraAngle || panel.cameraAngle) as CameraAngle,
+                updatedAt: new Date()
+              }
+            }
+          })
+          successCount++
+        }
+      } catch (panelError) {
+        console.error(`❌ Failed to process panel ${i + 1}:`, panelError)
+      }
+    }
+    
+    console.log(`✅ Remaining panels processing complete: ${successCount}/${state.panels.length - alreadyProcessedCount} panels enhanced`)
+    
+    const resultsMessage: ChatMessage = {
+      id: Date.now().toString(),
+      type: 'assistant',
+      content: `🎬 **All Panels Now Complete!** 
+
+✅ Successfully enhanced the remaining **${successCount}** panels with: "${instructions}"
+
+All panels have now been updated with the environmental effects you requested!`,
+      timestamp: new Date(),
+      agentId: currentAgent.id
+    }
+    setMessages(prev => [...prev, resultsMessage])
   }
 
   if (!isOpen) return null

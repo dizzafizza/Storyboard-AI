@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Wand2, Play, Download, RefreshCw, AlertCircle, Copy, Check, Sparkles, Zap, FileText, Grid, List, Search, Clock, Video } from 'lucide-react'
+import { Wand2, Play, Download, RefreshCw, AlertCircle, Copy, Check, Sparkles, Zap, FileText, Grid, List, Search, Clock, Video, Settings } from 'lucide-react'
 import { useStoryboard } from '../context/StoryboardContext'
 import { useTheme } from '../context/ThemeContext'
 import { aiService } from '../services/ai'
@@ -31,7 +31,8 @@ export default function VideoPromptGenerator({ isOpen, onClose }: VideoPromptGen
     quality: 'high',
     motion: 'smooth',
     lighting: 'dramatic',
-    mood: 'dynamic'
+    mood: 'dynamic',
+    model: '4o-mini'
   })
   const [showSettings, setShowSettings] = useState(false)
   
@@ -61,6 +62,65 @@ export default function VideoPromptGenerator({ isOpen, onClose }: VideoPromptGen
     
     return matchesSearch && matchesFilter
   })
+
+  // Render settings panel
+  const renderSettingsPanel = () => {
+    return (
+      <div className="settings-panel space-y-4 p-4 bg-background-light rounded-lg border border-border-light">
+        <h3 className="text-sm font-medium mb-2" style={{ color: themeState.theme.colors.text.primary }}>
+          Video Generation Settings
+        </h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Model Selection (NEW) */}
+          <div>
+            <label className="block text-xs font-medium mb-1" style={{ color: themeState.theme.colors.text.secondary }}>
+              AI Model
+            </label>
+            <select
+              value={globalSettings.model}
+              onChange={(e) => setGlobalSettings({...globalSettings, model: e.target.value})}
+              className="select-modern w-full text-sm"
+              style={{
+                backgroundColor: themeState.theme.colors.background.secondary,
+                borderColor: themeState.theme.colors.border.primary,
+                color: themeState.theme.colors.text.primary
+              }}
+            >
+              <option value="4o-mini">GPT-4o-mini (Fast & Economic)</option>
+            </select>
+            <p className="text-xs mt-1" style={{ color: themeState.theme.colors.text.tertiary }}>
+              Using 4o-mini for optimal cost efficiency in batch operations
+            </p>
+          </div>
+          
+          {/* Style Selection */}
+          <div>
+            <label className="block text-xs font-medium mb-1" style={{ color: themeState.theme.colors.text.secondary }}>
+              Video Style
+            </label>
+            <select
+              value={globalSettings.style}
+              onChange={(e) => setGlobalSettings({...globalSettings, style: e.target.value})}
+              className="select-modern w-full text-sm"
+              style={{
+                backgroundColor: themeState.theme.colors.background.secondary,
+                borderColor: themeState.theme.colors.border.primary,
+                color: themeState.theme.colors.text.primary
+              }}
+            >
+              <option value="cinematic">Cinematic</option>
+              <option value="realistic">Realistic</option>
+              <option value="stylized">Stylized</option>
+              <option value="animation">Animation</option>
+            </select>
+          </div>
+          
+          {/* Other existing settings... */}
+        </div>
+      </div>
+    )
+  }
 
   const generateVideoPrompt = async (panel: StoryboardPanel): Promise<string> => {
     console.log('🎯 generateVideoPrompt called for panel:', panel.id, 'Description:', panel.description)
@@ -190,6 +250,7 @@ Create a detailed video generation prompt that:
 
 Generate ONLY the video prompt text, no explanations or formatting.`
 
+      // Force the use of 4o-mini model for video prompt generation (cost-effective for batch operations)
       const response = await aiService.sendMessage(
         [{ role: 'user', content: enhancedPrompt }],
         {
@@ -336,6 +397,9 @@ Generate ONLY the video prompt text, no explanations or formatting.`
     const newPrompts: Record<string, string> = {}
 
     try {
+      // Using 4o-mini model for cost-effective batch processing
+      console.log(`🚀 Starting batch generation with model: ${globalSettings.model}`)
+      
       for (let i = 0; i < state.panels.length; i++) {
         const panel = state.panels[i]
         
@@ -467,135 +531,122 @@ Generate ONLY the video prompt text, no explanations or formatting.`
       isOpen={isOpen}
       onClose={onClose}
       title="Video Prompt Generator"
-      subtitle="AI-powered prompts for video generation tools"
-      icon={<Video className="w-5 h-5" />}
-      defaultWidth="min(88vw, 750px)"
-      defaultHeight="650px"
-      minWidth={400}
-      minHeight={500}
-      maxWidth="98vw"
-      maxHeight="95vh"
-      windowId="video-prompt-generator"
+      subtitle="Create AI video generation prompts for your storyboard"
+      icon={<Wand2 className="w-5 h-5" />}
+      defaultWidth="1000px"
+      defaultHeight="700px"
+      minWidth={600}
+      minHeight={400}
+      maxWidth="1600px" 
+      maxHeight="1000px"
+      resizable={true}
       minimizable={true}
-      className="flex flex-col"
+      maximizable={true}
+      windowId="video-prompt-generator"
+      zIndex={1500}
     >
-        
-        {/* Enhanced Header */}
-        <div className="relative flex items-center justify-between p-6 border-b border-primary bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-[length:200%_100%] text-white animate-gradientMove">
-          <div className="flex items-center space-x-4">
-            <div 
-              className="w-14 h-14 rounded-full flex items-center justify-center animate-float"
-              style={{
-                backgroundColor: 'rgba(255, 255, 255, 0.15)'
-              }}
-            >
-              <Play className="w-7 h-7" />
-            </div>
-            <div>
-              <h2 className="text-3xl font-bold flex items-center space-x-2">
-                <span>Video Prompt Generator</span>
-                <Sparkles className="w-6 h-6 animate-sparkle" />
-              </h2>
-              <p className="text-blue-100 text-lg">AI-powered prompts for video generation tools</p>
-              <div className="flex items-center space-x-4 mt-2">
-                <div className="text-blue-200 text-sm">
-                  Progress: {progressStats.generated}/{progressStats.total} prompts
-                </div>
-                            <div 
-              className="w-32 h-2 rounded-full overflow-hidden"
-              style={{
-                backgroundColor: 'rgba(255, 255, 255, 0.15)'
-              }}
-            >
-                            <div 
-                className="h-full rounded-full transition-all duration-200"
-                style={{
-                  backgroundColor: 'rgba(255, 255, 255, 0.7)',
-                  width: `${(progressStats.generated / Math.max(progressStats.total, 1)) * 100}%`
-                }}
-                  ></div>
-                </div>
+      <div className="flex flex-col h-full p-4 space-y-4">
+        {/* Top Bar with Controls */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-medium" style={{ color: themeState.theme.colors.text.primary }}>
+              Video Prompts
+            </h2>
+            <div className="flex items-center text-sm">
+              <div className="px-2 py-1 rounded-lg" style={{ backgroundColor: themeState.theme.colors.background.tertiary }}>
+                <span style={{ color: themeState.theme.colors.primary[500] }}>{progressStats.generated}</span>
+                <span style={{ color: themeState.theme.colors.text.secondary }}> / </span>
+                <span style={{ color: themeState.theme.colors.text.primary }}>{progressStats.total}</span>
+                <span className="ml-1" style={{ color: themeState.theme.colors.text.secondary }}>panels</span>
               </div>
             </div>
           </div>
-          <div className="flex items-center space-x-3">
-            <button
-              onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
-              className="p-3 rounded-xl transition-all duration-300 group hover:bg-opacity-20"
-              style={{
-                backgroundColor: 'rgba(255, 255, 255, 0.1)'
-              }}
-              title={`Switch to ${viewMode === 'grid' ? 'list' : 'grid'} view`}
+          
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={() => setShowSettings(!showSettings)}
+              className={`flex items-center gap-1 px-2 py-1 rounded-lg transition-colors ${showSettings ? 'bg-primary-500 text-white' : ''}`}
+              style={!showSettings ? { 
+                backgroundColor: themeState.theme.colors.background.secondary,
+                color: themeState.theme.colors.text.secondary
+              } : {}}
             >
-              {viewMode === 'grid' ? (
-                <List className="w-6 h-6 group-hover:scale-110 transition-transform" />
-              ) : (
-                <Grid className="w-6 h-6 group-hover:scale-110 transition-transform" />
-              )}
+              <Settings className="w-4 h-4" />
+              <span className="text-sm">Settings</span>
             </button>
-            <button
-              onClick={exportPrompts}
-              disabled={Object.keys(generatedPrompts).length === 0}
-              className="p-3 rounded-xl transition-all duration-300 disabled:opacity-50 group hover:bg-opacity-20"
-              style={{
-                backgroundColor: 'rgba(255, 255, 255, 0.1)'
-              }}
-              title="Export All Prompts"
-            >
-              <Download className="w-6 h-6 group-hover:scale-110 transition-transform" />
-            </button>
-            <button
-              onClick={onClose}
-              className="p-3 rounded-xl transition-all duration-300 hover:scale-110 hover:bg-opacity-20"
-              style={{
-                backgroundColor: 'rgba(255, 255, 255, 0.1)'
-              }}
-              title="Close Window"
-            >
-              X
-            </button>
-          </div>
-        </div>
-
-        {/* Enhanced Controls */}
-                  <div className="p-6 border-b border-primary bg-secondary bg-opacity-70">
-          <div className="flex flex-col lg:flex-row gap-4 mb-4">
             
-            {/* Search */}
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-secondary" />
+            {/* View Mode Buttons */}
+            <div className="flex items-center border rounded-lg" style={{ borderColor: themeState.theme.colors.border.primary }}>
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`flex items-center p-1 rounded-l-lg ${viewMode === 'grid' ? 'bg-primary-100' : ''}`}
+                style={viewMode === 'grid' ? { 
+                  backgroundColor: `${themeState.theme.colors.primary[100]}50`,
+                  color: themeState.theme.colors.primary[500]
+                } : {}}
+              >
+                <Grid className="w-4 h-4" />
+              </button>
+              
+              <button
+                onClick={() => setViewMode('list')}
+                className={`flex items-center p-1 rounded-r-lg ${viewMode === 'list' ? 'bg-primary-100' : ''}`}
+                style={viewMode === 'list' ? { 
+                  backgroundColor: `${themeState.theme.colors.primary[100]}50`,
+                  color: themeState.theme.colors.primary[500]
+                } : {}}
+              >
+                <List className="w-4 h-4" />
+              </button>
+            </div>
+            
+            {/* Search Box */}
+            <div className="relative" style={{ minWidth: '180px' }}>
+              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 w-4 h-4" style={{ color: themeState.theme.colors.text.tertiary }} />
               <input
                 type="text"
+                placeholder="Search panels..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search panels by title or description..."
-                className="w-full pl-12 pr-4 py-3 border rounded-xl focus:ring-2 focus:border-transparent transition-all duration-300 hover:bg-opacity-80 focus:scale-[1.02]"
+                className="pl-8 pr-2 py-1 w-full rounded-lg text-sm focus:outline-none focus:ring-1"
                 style={{
-                  backgroundColor: themeState.theme.colors.background.primary,
+                  backgroundColor: themeState.theme.colors.background.secondary,
                   borderColor: themeState.theme.colors.border.primary,
-                  color: themeState.theme.colors.text.primary,
+                  color: themeState.theme.colors.text.primary
                 }}
               />
             </div>
-
-            {/* Filter */}
+            
+            {/* Filter Dropdown */}
             <select
               value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value as any)}
-              className="px-4 py-3 border rounded-xl focus:ring-2 focus:border-transparent min-w-[200px] transition-all duration-300 hover:bg-opacity-80 focus:scale-[1.02]"
+              onChange={(e) => setFilterStatus(e.target.value as 'all' | 'generated' | 'pending')}
+              className="px-2 py-1 rounded-lg text-sm focus:outline-none"
               style={{
-                backgroundColor: themeState.theme.colors.background.primary,
+                backgroundColor: themeState.theme.colors.background.secondary,
                 borderColor: themeState.theme.colors.border.primary,
-                color: themeState.theme.colors.text.primary,
+                color: themeState.theme.colors.text.primary
               }}
             >
-              <option value="all">All Panels ({state.panels.length})</option>
-              <option value="generated">Generated ({progressStats.generated})</option>
-              <option value="pending">Pending ({progressStats.total - progressStats.generated})</option>
+              <option value="all">All Panels</option>
+              <option value="generated">Generated</option>
+              <option value="pending">Pending</option>
             </select>
           </div>
-
-          {/* Action Buttons */}
+        </div>
+        
+        {/* Settings Panel - Display when showSettings is true */}
+        {showSettings && renderSettingsPanel()}
+        
+        {/* Action Buttons - Generate All Prompts */}
+        <div className="flex flex-wrap justify-between items-center gap-3 p-2 border-t border-b" style={{ borderColor: themeState.theme.colors.border.primary }}>
+          <div className="text-sm" style={{ color: themeState.theme.colors.text.secondary }}>
+            <span className="font-medium" style={{ color: themeState.theme.colors.text.primary }}>
+              Using 4o-mini model
+            </span>
+            {' '} for optimal cost efficiency with batch operations
+          </div>
+          
           <div className="flex flex-wrap gap-3">
             <button
               onClick={generatePromptsForAll}
@@ -638,7 +689,7 @@ Generate ONLY the video prompt text, no explanations or formatting.`
             )}
           </div>
         </div>
-
+        
         {/* Enhanced Panels List */}
         <div className="flex-1 overflow-y-auto p-6 custom-scrollbar scrollable">
           {filteredPanels.length === 0 ? (
@@ -844,6 +895,7 @@ Generate ONLY the video prompt text, no explanations or formatting.`
             </div>
           )}
         </div>
+      </div>
     </WindowFrame>
   )
 } 

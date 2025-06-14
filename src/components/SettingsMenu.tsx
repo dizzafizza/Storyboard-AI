@@ -619,8 +619,6 @@ export default function SettingsMenu({ isOpen, onClose, onOpenThemeSettings }: S
             </div>
           )}
 
-          
-
           {activeTab === 'advanced' && (
             <div className="space-y-6 animate-fade-in">
               <div>
@@ -630,79 +628,42 @@ export default function SettingsMenu({ isOpen, onClose, onOpenThemeSettings }: S
                 </h3>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 md:gap-4">
-                  {/* Max Tokens */}
+                  {/* Import/Export Settings */}
                   <div className="bg-secondary/40 backdrop-blur-sm rounded-lg sm:rounded-xl p-3 sm:p-4 border border-primary/20 hover:border-primary/40 transition-all duration-300">
-                    <h4 className="font-medium text-primary mb-2 sm:mb-3">Max Tokens</h4>
-                    <input
-                      type="range"
-                      min="1000"
-                      max="8000"
-                      step="500"
-                      value={settings.maxTokens}
-                      onChange={(e) => setSettings(prev => ({ ...prev, maxTokens: parseInt(e.target.value) }))}
-                      className="w-full accent-primary"
-                    />
-                    <div className="flex justify-between text-sm text-secondary mt-2">
-                      <span>1000</span>
-                      <span className="font-medium">{settings.maxTokens}</span>
-                      <span>8000</span>
-                    </div>
-                  </div>
-
-                  {/* Temperature */}
-                  <div className="bg-secondary/40 backdrop-blur-sm rounded-lg sm:rounded-xl p-3 sm:p-4 border border-primary/20 hover:border-primary/40 transition-all duration-300">
-                    <h4 className="font-medium text-primary mb-3">Creativity (Temperature)</h4>
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.1"
-                      value={settings.temperature}
-                      onChange={(e) => setSettings(prev => ({ ...prev, temperature: parseFloat(e.target.value) }))}
-                      className="w-full accent-primary"
-                    />
-                    <div className="flex justify-between text-sm text-secondary mt-2">
-                      <span>0 (Focused)</span>
-                      <span className="font-medium">{settings.temperature}</span>
-                      <span>1 (Creative)</span>
-                    </div>
-                  </div>
-
-                  {/* Video Quality */}
-                  <div className="bg-secondary/40 backdrop-blur-sm rounded-lg sm:rounded-xl p-3 sm:p-4 border border-primary/20 hover:border-primary/40 transition-all duration-300">
-                    <h4 className="font-medium text-primary mb-3">Video Export Quality</h4>
-                    <div className="grid grid-cols-3 gap-1 sm:gap-2">
-                      {['standard', 'high', 'ultra'].map((quality) => (
-                        <button
-                          key={quality}
-                          onClick={() => setSettings(prev => ({ ...prev, videoQuality: quality as any }))}
-                          className="p-2 rounded-lg text-sm font-medium transition-all duration-200"
-                          style={{
-                            backgroundColor: settings.videoQuality === quality 
-                              ? themeState.theme.colors.primary[500] 
-                              : `${themeState.theme.colors.background.tertiary}80`,
-                            color: settings.videoQuality === quality 
-                              ? '#ffffff' 
-                              : themeState.theme.colors.text.secondary,
-                            boxShadow: settings.videoQuality === quality ? '0 4px 12px rgba(0,0,0,0.15)' : 'none'
-                          }}
-                          onMouseEnter={(e) => {
-                            if (settings.videoQuality !== quality) {
-                              e.currentTarget.style.backgroundColor = `${themeState.theme.colors.background.tertiary}90`
-                              e.currentTarget.style.color = themeState.theme.colors.text.primary
-                            }
-                          }}
-                          onMouseLeave={(e) => {
-                            if (settings.videoQuality !== quality) {
-                              e.currentTarget.style.backgroundColor = `${themeState.theme.colors.background.tertiary}80`
-                              e.currentTarget.style.color = themeState.theme.colors.text.secondary
-                            }
-                          }}
-                        >
-                          {quality.charAt(0).toUpperCase() + quality.slice(1)}
+                    <h4 className="font-medium text-primary mb-3">Import/Export</h4>
+                    <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 space-x-0 sm:space-x-2">
+                      <button 
+                        onClick={handleExportSettings}
+                        className="btn-secondary px-4 py-2 text-sm flex items-center justify-center space-x-2"
+                      >
+                        <Download className="w-4 h-4" />
+                        <span>Export</span>
+                      </button>
+                      <div className="relative">
+                        <input
+                          type="file"
+                          accept=".json"
+                          onChange={handleImportSettings}
+                          className="absolute inset-0 opacity-0 cursor-pointer"
+                        />
+                        <button className="btn-secondary w-full px-4 py-2 text-sm flex items-center justify-center space-x-2">
+                          <Upload className="w-4 h-4" />
+                          <span>Import</span>
                         </button>
-                      ))}
+                      </div>
                     </div>
+                  </div>
+
+                  {/* Reset Settings */}
+                  <div className="bg-secondary/40 backdrop-blur-sm rounded-lg sm:rounded-xl p-3 sm:p-4 border border-primary/20 hover:border-primary/40 transition-all duration-300">
+                    <h4 className="font-medium text-primary mb-3">Reset</h4>
+                    <button 
+                      onClick={resetToDefaults}
+                      className="btn-danger px-4 py-2 text-sm w-full flex items-center justify-center space-x-2"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                      <span>Reset to Defaults</span>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -711,46 +672,71 @@ export default function SettingsMenu({ isOpen, onClose, onOpenThemeSettings }: S
         </div>
       </div>
 
-              {/* Enhanced Footer */}
-        <div 
-          className="flex justify-between items-center p-4 sm:p-6 border-t backdrop-blur-sm"
-          style={{
-            borderColor: `${themeState.theme.colors.border.primary}80`,
-            backgroundColor: `${themeState.theme.colors.background.secondary}70`
-          }}
-        >
-                        <div className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm"
-               style={{ color: themeState.theme.colors.text.secondary }}>
-            <RefreshCw className="w-3 h-3 sm:w-4 sm:h-4" />
-            <span>Settings are saved automatically</span>
-          </div>
-          
-                        <div className="flex space-x-2 sm:space-x-3">
-            <button
-              onClick={saveSettings}
-              disabled={saveStatus === 'saving'}
-              className="px-4 sm:px-6 py-1.5 sm:py-2 rounded-md sm:rounded-lg text-sm transition-all duration-300 disabled:opacity-50"
-              style={{
-                backgroundColor: themeState.theme.colors.primary[500],
-                color: '#ffffff',
-                boxShadow: semanticColors.shadows.md,
-                transform: 'translateY(0)',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = themeState.theme.colors.primary[600]
-                e.currentTarget.style.boxShadow = semanticColors.shadows.lg
-                e.currentTarget.style.transform = 'translateY(-1px)'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = themeState.theme.colors.primary[500]
-                e.currentTarget.style.boxShadow = semanticColors.shadows.md
-                e.currentTarget.style.transform = 'translateY(0)'
-              }}
-            >
-              {saveStatus === 'saving' ? 'Saving...' : 'Save Changes'}
-            </button>
-          </div>
+      {/* Save Button */}
+      <div 
+        className="flex items-center justify-between p-4 border-t" 
+        style={{
+          borderColor: `${themeState.theme.colors.border.primary}80`,
+          backgroundColor: `${themeState.theme.colors.background.secondary}80`
+        }}
+      >
+        {/* Save Status */}
+        <div className="text-sm" style={{ color: themeState.theme.colors.text.secondary }}>
+          {saveStatus === 'idle' && 'Settings ready'}
+          {saveStatus === 'saving' && 'Saving changes...'}
+          {saveStatus === 'saved' && (
+            <div className="flex items-center space-x-2 text-green-600">
+              <CheckCircle className="w-4 h-4" />
+              <span>Settings saved!</span>
+            </div>
+          )}
+          {saveStatus === 'error' && (
+            <div className="flex items-center space-x-2 text-red-600">
+              <AlertCircle className="w-4 h-4" />
+              <span>Error saving settings</span>
+            </div>
+          )}
         </div>
+
+        {/* Buttons */}
+        <div className="flex items-center space-x-3">
+          <button 
+            onClick={onClose} 
+            className="px-4 py-2 rounded-lg text-sm"
+            style={{ color: themeState.theme.colors.text.secondary }}
+          >
+            Cancel
+          </button>
+          <button 
+            onClick={saveSettings}
+            disabled={saveStatus === 'saving'}
+            className="px-5 py-2 rounded-lg text-sm font-medium shadow-lg hover:shadow-xl transition-all duration-300"
+            style={{
+              backgroundColor: themeState.theme.colors.primary[500],
+              color: '#ffffff'
+            }}
+            onMouseEnter={(e) => {
+              if (saveStatus !== 'saving') {
+                e.currentTarget.style.backgroundColor = themeState.theme.colors.primary[600]
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (saveStatus !== 'saving') {
+                e.currentTarget.style.backgroundColor = themeState.theme.colors.primary[500]
+              }
+            }}
+          >
+            {saveStatus === 'saving' ? (
+              <div className="flex items-center space-x-2">
+                <div className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin" />
+                <span>Saving...</span>
+              </div>
+            ) : (
+              'Save Changes'
+            )}
+          </button>
+        </div>
+      </div>
     </WindowFrame>
   )
 } 

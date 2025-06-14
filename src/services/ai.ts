@@ -210,14 +210,19 @@ ${finalReinforcement}`
     try {
       console.log('📤 Sending message to OpenAI with conversation length:', messages.length)
       
+      // Get the AI model from settings
+      const settings = storage.getSettings()
+      const model = settings.aiModel || 'gpt-4o-mini'
+      console.log('🤖 Using AI model from settings:', model)
+      
       const response = await this.openai!.chat.completions.create({
-        model: 'gpt-4o-mini', // Using mini model for cost/performance balance
+        model: model, // Use the model from settings instead of hardcoded value
         messages: [
           { role: 'system', content: this.createSystemPrompt(context) },
           ...messages
         ],
-        max_tokens: 800, // Increased for better response completeness
-        temperature: 0.7,
+        max_tokens: settings.maxTokens || 2500,
+        temperature: settings.temperature || 0.7,
         // Additional parameters for more reliable responses
         presence_penalty: 0.1, // Slight penalty for repeated content
         frequency_penalty: 0.2, // Slight penalty for repeated tokens
@@ -265,6 +270,11 @@ ${finalReinforcement}`
     }
 
     try {
+      // Get AI model from settings
+      const settings = storage.getSettings()
+      const model = settings.aiModel || 'gpt-4o-mini'
+      console.log('🤖 Using AI model from settings for storyboard generation:', model)
+      
       const prompt = `Create a professional ${panelCount}-panel storyboard for this story idea:
 
 **Story**: ${storyIdea}
@@ -327,13 +337,13 @@ Requirements for each panel:
 Create a complete narrative arc with visual variety and professional filmmaking techniques. Return ONLY the JSON array without any markdown formatting or code blocks.`
 
       const response = await this.openai!.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: model, // Use model from settings
         messages: [
           { role: 'system', content: 'You are an expert storyboard artist and cinematographer with 20+ years experience in film production. Create professional, detailed storyboard content with compelling titles and complete scene descriptions. Always return valid JSON only without any markdown formatting or code blocks.' },
           { role: 'user', content: prompt }
         ],
-        max_tokens: 2500,
-        temperature: 0.7,
+        max_tokens: settings.maxTokens || 2500,
+        temperature: settings.temperature || 0.7,
       })
 
       const content = response.choices[0].message.content || ''
@@ -384,50 +394,42 @@ Create a complete narrative arc with visual variety and professional filmmaking 
     }
 
     try {
+      // Get AI model from settings
+      const settings = storage.getSettings()
+      const model = settings.aiModel || 'gpt-4o-mini'
+      console.log('🤖 Using AI model from settings for scene generation:', model)
+      
       const prompt = `Create a professional storyboard panel for this scene:
 
 **Scene Description**: ${description}
 **Shot Type**: ${shotType}
-**Camera Angle**: ${cameraAngle}  
+**Camera Angle**: ${cameraAngle}
 **Mood**: ${mood}
 
-Generate a comprehensive panel with:
+Create a detailed panel with:
+1. A compelling title that describes the key action
+2. An improved, detailed scene description (2-3 sentences)
+3. Specific director's notes for filming
+4. A comprehensive video generation prompt optimized for AI video tools
 
-1. **TITLE**: Create a compelling, specific title that captures the key moment or action (not generic)
-   - Focus on the main dramatic beat or visual element
-   - Make it engaging and descriptive
+Return ONLY valid JSON that matches this structure exactly:
+{
+  "title": "Compelling title here",
+  "description": "Enhanced description with more detail",
+  "notes": "Director's notes on lighting, composition, etc.",
+  "videoPrompt": "Professional video generation prompt with technical details"
+}
 
-2. **DESCRIPTION**: Enhanced scene description (2-3 sentences) including:
-   - Character actions and emotions
-   - Environmental details and atmosphere
-   - Visual composition elements
-   - Lighting and color mood
-
-3. **DIRECTOR'S NOTES**: Professional guidance covering:
-   - Specific lighting setup and mood
-   - Character performance direction
-   - Camera movement (if any)
-   - Visual composition principles
-   - Sound/music considerations
-
-4. **VIDEO PROMPT**: Detailed AI video generation prompt optimized for RunwayML, Pika Labs, Stable Video Diffusion:
-   - Camera work: specific movement (static/pan/tilt/dolly/orbit), framing, angle
-   - Technical specs: 4K resolution, 24fps cinematic, professional color grading, film grain
-   - Lighting design: type (natural/artificial), direction, intensity, mood, shadows
-   - Motion and pacing: smooth transitions, appropriate duration, character blocking
-   - Visual style: photorealistic rendering, depth of field, atmospheric effects
-   - Environmental context: weather, time of day, location atmosphere, background details
-
-Return as valid JSON only with keys: title, description, notes, videoPrompt. Do not include any markdown formatting or code blocks.`
+The videoPrompt should include camera movements, lighting, atmosphere, and technical specifications (4K, framerate, etc.).`
 
       const response = await this.openai!.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: model, // Use model from settings
         messages: [
           { role: 'system', content: 'You are an expert storyboard artist and cinematographer with extensive film production experience. Create detailed, professional panel content with compelling titles and actionable direction. Return only valid JSON without any markdown formatting or code blocks.' },
           { role: 'user', content: prompt }
         ],
-        max_tokens: 800,
-        temperature: 0.7,
+        max_tokens: settings.maxTokens || 800,
+        temperature: settings.temperature || 0.7,
       })
 
       const content = response.choices[0].message.content || ''
@@ -489,7 +491,7 @@ Return as valid JSON only with keys: title, description, notes, videoPrompt. Do 
   public async generateImage(
     prompt: string,
     options: ImageGenerationOptions = {},
-    model: string = 'dall-e-3'
+    model: string | null = null
   ): Promise<string | null> {
     if (!this.isReady()) {
       console.error('🚫 OpenAI service not ready')
@@ -497,6 +499,13 @@ Return as valid JSON only with keys: title, description, notes, videoPrompt. Do 
     }
 
     try {
+      // If no model is explicitly provided, get from settings
+      if (model === null) {
+        const settings = storage.getSettings()
+        model = settings.imageModel || 'dall-e-3'
+        console.log('🤖 Using image model from settings:', model)
+      }
+      
       const {
         style = 'cinematic',
         quality = 'standard',
@@ -595,6 +604,11 @@ Return as valid JSON only with keys: title, description, notes, videoPrompt. Do 
     }
   
     try {
+      // Get AI model from settings
+      const settings = storage.getSettings()
+      const model = settings.aiModel || 'gpt-4o-mini'
+      console.log('🤖 Using AI model from settings for cinematography analysis:', model)
+      
       // Enhanced prompt for better JSON formatting and reliability
       const analysisPrompt = `Analyze the cinematography for the following scene and provide feedback as a valid JSON object. The JSON object must contain these exact keys: "lighting", "performance", "cameraMovement", "composition", and "sound".
 
@@ -603,10 +617,10 @@ Scene: "${prompt}"
 Return ONLY the raw JSON object, without any markdown formatting, comments, or other text.`
   
       const response = await this.openai!.chat.completions.create({
-        model: 'gpt-4o-mini', // Using a more cost-effective and faster model for this task
+        model: model, // Use model from settings
         messages: [{ role: 'user', content: analysisPrompt }],
-        temperature: 0.6,
-        max_tokens: 250,
+        temperature: settings.temperature || 0.6,
+        max_tokens: settings.maxTokens || 250,
         response_format: { type: 'json_object' }, // Enforce JSON output
       })
   
@@ -683,30 +697,24 @@ Return ONLY the raw JSON object, without any markdown formatting, comments, or o
     console.log('🎛️ Enhanced generation options:', enhancedOptions)
     
     // Apply model setting and generate image (fallback dall-e-2 to dall-e-3 since dall-e-2 is discontinued)
-    let selectedModel = imageSettings?.model || 'dall-e-3'
+    let selectedModel = imageSettings?.model || null
+    
+    // If no model in image settings, use the global settings
+    if (!selectedModel) {
+      const settings = storage.getSettings()
+      selectedModel = settings.imageModel || 'dall-e-3'
+      console.log('🤖 Using image model from global settings:', selectedModel)
+    }
+    
     if (selectedModel === 'dall-e-2') {
       console.log('⚠️ DALL-E 2 is discontinued, falling back to DALL-E 3')
       selectedModel = 'dall-e-3'
     }
+    
     console.log('🤖 Using AI model:', selectedModel)
     
-    // Log all applied settings for transparency
-    if (imageSettings) {
-      console.log('📊 Settings Applied Summary:', {
-        '✅ Model': selectedModel,
-        '✅ Style': imageSettings.style + ' → ' + enhancedOptions.style,
-        '✅ Quality': enhancedOptions.quality,
-        '✅ Size': enhancedOptions.size,
-        '✅ Art Style': imageSettings.artStyle,
-        '✅ Lighting': imageSettings.lighting,
-        '✅ Mood': imageSettings.mood,
-        '✅ Color Scheme': imageSettings.colorScheme,
-        '✅ Creativity': imageSettings.creativity + '/10',
-        '⚠️ Aspect Ratio': imageSettings.aspectRatio + ' (not used - size controls this)'
-      })
-    }
-    
-    return this.generateImage(prompt, enhancedOptions, selectedModel)
+    // Call generateImage with the selected model
+    return await this.generateImage(prompt, enhancedOptions, selectedModel)
   }
 
   private createImagePromptFromPanel(panel: StoryboardPanel, imageSettings: any = null): string {
