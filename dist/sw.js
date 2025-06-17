@@ -9,7 +9,11 @@ const STATIC_ASSETS = [
   `${BASE_PATH}`,
   `${BASE_PATH}index.html`,
   `${BASE_PATH}site.webmanifest`,
+  `${BASE_PATH}proxy.js`,
 ];
+
+// Import the proxy handler
+self.importScripts(`${BASE_PATH}proxy.js`);
 
 // Install event - cache essential assets
 self.addEventListener('install', (event) => {
@@ -59,8 +63,17 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch event - serve cached content when offline
+// Fetch event - serve cached content when offline and handle proxy requests
 self.addEventListener('fetch', (event) => {
+  const url = new URL(event.request.url);
+  
+  // Handle proxy requests
+  if (url.pathname.startsWith('/openai-proxy/') || url.pathname.startsWith('/image-proxy/')) {
+    console.log('🔄 Service Worker: Handling proxy request', url.pathname);
+    event.respondWith(self.handleProxyRequest(event.request));
+    return;
+  }
+  
   // Only handle requests from our domain
   if (!event.request.url.startsWith(self.location.origin)) {
     return;

@@ -18,7 +18,6 @@
     
     <!-- Security Headers -->
     <meta http-equiv="X-Content-Type-Options" content="nosniff" />
-    <meta http-equiv="X-Frame-Options" content="DENY" />
     <meta http-equiv="X-XSS-Protection" content="1; mode=block" />
     <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
     <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=(), payment=()" />
@@ -30,12 +29,12 @@
       style-src 'self' 'unsafe-inline';
       img-src 'self' data: blob: https:;
       font-src 'self' data:;
-      connect-src 'self' https://api.openai.com;
+      media-src 'self' data: blob: https:;
+      connect-src 'self' https://api.openai.com https://oaidalleapiprodscus.blob.core.windows.net;
       worker-src 'self' blob:;
       object-src 'none';
       base-uri 'self';
       form-action 'self';
-      frame-ancestors 'none';
     " />
     
     <!-- Privacy and Data -->
@@ -212,19 +211,6 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-    
-    <!-- Service Worker Registration for Safari -->
-    <script>
-      if ('serviceWorker' in navigator && window.location.protocol === 'https:') {
-        window.addEventListener('load', function() {
-          navigator.serviceWorker.register('/sw.js').then(function(registration) {
-            console.log('🔧 ServiceWorker registered: ', registration.scope);
-          }).catch(function(error) {
-            console.log('🚨 ServiceWorker registration failed: ', error);
-          });
-        });
-      }
-    </script>
     
     <!-- Enhanced Safari Error Fallback -->
     <noscript>

@@ -9,10 +9,12 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "start": "vite",
-    "deploy": "npm run build && gh-pages -d dist"
+    "deploy": "npm run build && gh-pages -d dist",
+    "serve": "node server.js"
   },
   "dependencies": {
     "clsx": "^2.0.0",
+    "express": "^4.21.2",
     "framer-motion": "^10.16.4",
     "jspdf": "^3.0.1",
     "jszip": "^3.10.1",

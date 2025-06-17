@@ -64,7 +64,40 @@ class AIService {
     this.initializeOpenAI()
   }
 
+  // Monkey-patch the URL constructor to handle relative URLs
+  private patchURLConstructor() {
+    try {
+      // Store the original URL constructor
+      const originalURL = window.URL;
+      
+      // Replace with our patched version
+      window.URL = class extends originalURL {
+        constructor(url: string | URL, base?: string | URL) {
+          try {
+            super(url, base);
+          } catch (e) {
+            // If parsing fails and it's an OpenAI proxy URL, prepend the origin
+            if (typeof url === 'string' && 
+                (url.startsWith('/openai-proxy') || url.startsWith('/image-proxy'))) {
+              console.log('🔧 Fixing relative URL:', url);
+              super(url, window.location.origin);
+            } else {
+              throw e;
+            }
+          }
+        }
+      } as any;
+      
+      console.log('✅ URL constructor patched for OpenAI SDK compatibility');
+    } catch (error) {
+      console.error('❌ Failed to patch URL constructor:', error);
+    }
+  }
+
   private initializeOpenAI() {
+    // Apply URL constructor patch
+    this.patchURLConstructor();
+    
     try {
       const settings = storage.getSettings()
       if (settings.openaiApiKey) {
@@ -74,7 +107,33 @@ class AIService {
           dangerouslyAllowBrowser: true,
           // Add timeout and retry configuration
           timeout: 60000, // 60 seconds timeout
-          maxRetries: 2
+          maxRetries: 2,
+          // Use direct API URL format to avoid path issues
+          baseURL: 'https://api.openai.com',
+          defaultHeaders: {
+            'X-Custom-Header': 'Using direct API with proxy'
+          },
+          fetch: async (url: RequestInfo | URL, init?: RequestInit) => {
+            // Replace the OpenAI API URL with our proxy URL
+            const urlStr = url.toString();
+            
+            // Ensure the URL has /v1 in the path
+            let proxyUrl;
+            if (urlStr.includes('/v1/')) {
+              // URL already has /v1 in the path
+              proxyUrl = urlStr.replace('https://api.openai.com', window.location.origin + '/openai-proxy');
+            } else if (urlStr === 'https://api.openai.com' || urlStr === 'https://api.openai.com/') {
+              // Base URL with no path
+              proxyUrl = window.location.origin + '/openai-proxy/v1';
+            } else {
+              // URL without /v1 in the path
+              const path = urlStr.replace('https://api.openai.com', '');
+              proxyUrl = window.location.origin + '/openai-proxy/v1' + path;
+            }
+            
+            console.log('🔄 Proxying OpenAI request to:', proxyUrl);
+            return fetch(proxyUrl, init);
+          }
         })
         this.isInitialized = true
         console.log('✅ OpenAI service initialized successfully')
@@ -167,7 +226,7 @@ class AIService {
     }, 5000)
   }
 
-  // New method to search the web
+  // Method to search the web using OpenAI's built-in web search tool
   public async searchWeb(query: string, count: number = 5): Promise<WebSearchResult[]> {
     try {
       // Add thinking stage for web search
@@ -180,40 +239,70 @@ class AIService {
       }
 
       const settings = storage.getSettings()
-      const model = settings.aiModel === 'gpt-o3' ? 'gpt-o3' : (settings.aiModel || 'gpt-4o-mini')
+      // Use gpt-4o for web search as it's compatible with the web search tool
+      // gpt-o4-mini doesn't support web search
+      const model = 'gpt-4o'
       
-      // Use OpenAI's Responses API with web_search_preview tool
-      const response = await this.openai!.responses.create({
+      // Use OpenAI's built-in web search tool
+      const response = await this.openai!.chat.completions.create({
         model: model,
-        input: query,
-        tools: [{ type: "web_search_preview" }]
-      })
-      
-      // Process the response to extract search results
-      const results: WebSearchResult[] = []
-      
-      // Check if we have output with content
-      if (response.output && response.output.length > 0) {
-        // Look for message content with annotations (citations)
-        for (const output of response.output) {
-          if (output.type === 'message' && output.content) {
-            for (const content of output.content) {
-              // Type assertion for ResponseOutputText that might have annotations
-              const textContent = content as any;
-              if (textContent.annotations && textContent.annotations.length > 0) {
-                // Extract citations as search results
-                for (const annotation of textContent.annotations) {
-                  if (annotation.type === 'url_citation') {
-                    results.push({
-                      title: annotation.title || 'No title',
-                      url: annotation.url || '#',
-                      description: 'Source from web search'
-                    })
+        messages: [
+          { 
+            role: 'system', 
+            content: `Search the web for: "${query}". Return the most relevant information as a JSON object with an array of results. Each result should have title, url, and description fields.` 
+          },
+          { 
+            role: 'user', 
+            content: `Please search for: "${query}" and return ${count} relevant results.` 
+          }
+        ],
+        response_format: { type: "json_object" },
+        tools: [
+          {
+            type: "function",
+            function: {
+              name: "web_search",
+              description: "Search the web for real-time information",
+              parameters: {
+                type: "object",
+                properties: {
+                  search_query: {
+                    type: "string",
+                    description: "The search query to look up on the web"
                   }
-                }
+                },
+                required: ["search_query"]
               }
             }
           }
+        ],
+        tool_choice: {
+          type: "function",
+          function: {
+            name: "web_search"
+          }
+        }
+      });
+      
+      // Process the response
+      const results: WebSearchResult[] = []
+      
+      if (response.choices && response.choices[0]?.message?.content) {
+        try {
+          const content = response.choices[0].message.content;
+          const parsedResults = JSON.parse(content);
+          
+          if (parsedResults && Array.isArray(parsedResults.results)) {
+            parsedResults.results.forEach((result: any) => {
+              results.push({
+                title: result.title || 'No title',
+                url: result.url || '#',
+                description: result.description || 'No description'
+              });
+            });
+          }
+        } catch (error) {
+          console.error('Error parsing web search results:', error);
         }
       }
       
@@ -363,6 +452,8 @@ ${finalReinforcement}`
     context: ProjectContext,
     agent?: any // Optional agent parameter
   ): Promise<string> {
+    // Note: For web search capability, use gpt-4o model
+    // gpt-o4-mini should only be used for advanced reasoning tasks without web search
     if (!this.isReady()) {
       return this.generateFallbackResponse(messages[messages.length - 1]?.content || '')
     }
@@ -412,7 +503,11 @@ ${finalReinforcement}`
       
       // Get the AI model from settings
       const settings = storage.getSettings()
-      const model = settings.aiModel === 'gpt-o3' ? 'gpt-o3' : (settings.aiModel || 'gpt-4o-mini')
+      // Use gpt-4o for web search capability, otherwise use agent's preferredModel or settings model
+      // Note: The correct model name is 'gpt-4o-mini', not 'gpt-o4-mini'
+      const model = hasWebSearchCapability && typeof systemPromptWithSearch !== 'undefined' 
+        ? 'gpt-4o' 
+        : (agent?.preferredModel || (settings.aiModel || 'gpt-4o-mini'))
       
       if (hasThinkingCapability) {
         this.appendThinking(`Using ${model} to generate response...`)
@@ -435,45 +530,86 @@ ${finalReinforcement}`
         systemPrompt = `${systemPrompt}\n\nIMPORTANT: Show your step-by-step reasoning process FIRST, then provide your final response. Think carefully through each part of the problem.`
       }
       
-      // For streaming thinking process
+      // For thinking process
       if (hasThinkingCapability) {
-        const stream = await this.openai!.chat.completions.create({
-          model: model,
-          messages: [
-            { role: 'system', content: systemPrompt },
-            ...messages
-          ],
-          max_tokens: settings.maxTokens || 2500,
-          temperature: settings.temperature || 0.7,
-          stream: true
-        })
+        // Check if we should use streaming or non-streaming mode
+        // gpt-4o-mini doesn't support streaming, so we'll use non-streaming for it
+        const useStreaming = model !== 'gpt-4o-mini';
         
-        let fullResponse = ''
-        let partialResponse = ''
-        
-        // Stream the thinking process
-        this.addThinkingStage('Generating response')
-        for await (const chunk of stream) {
-          const content = chunk.choices[0]?.delta?.content || ''
-          if (content) {
-            fullResponse += content
-            partialResponse += content
-            
-            // Update thinking periodically (not on every tiny chunk to avoid flicker)
-            if (partialResponse.length > 20 || content.includes('\n')) {
-              this.appendThinking(partialResponse)
-              partialResponse = ''
+        if (useStreaming) {
+          // Use streaming for models that support it
+          this.addThinkingStage('Generating response (streaming)')
+          
+          const stream = await this.openai!.chat.completions.create({
+            model: model,
+            messages: [
+              { role: 'system', content: systemPrompt },
+              ...messages
+            ],
+            max_tokens: settings.maxTokens || 2500,
+            temperature: settings.temperature || 0.7,
+            stream: true
+          })
+          
+          let fullResponse = ''
+          let partialResponse = ''
+          
+          // Stream the thinking process
+          for await (const chunk of stream) {
+            const content = chunk.choices[0]?.delta?.content || ''
+            if (content) {
+              fullResponse += content
+              partialResponse += content
+              
+              // Update thinking periodically (not on every tiny chunk to avoid flicker)
+              if (partialResponse.length > 20 || content.includes('\n')) {
+                this.appendThinking(partialResponse)
+                partialResponse = ''
+              }
             }
           }
+          
+          // Add any remaining partial response
+          if (partialResponse) {
+            this.appendThinking(partialResponse)
+          }
+          
+          this.endThinking()
+          return fullResponse
+        } else {
+          // Use non-streaming mode for gpt-4o-mini
+          this.addThinkingStage('Generating response (non-streaming)')
+          this.appendThinking('Using non-streaming mode for gpt-4o-mini...')
+          
+          // Show a "thinking" indicator
+          const thinkingInterval = setInterval(() => {
+            this.appendThinking('.')
+          }, 1000);
+          
+          try {
+            const response = await this.openai!.chat.completions.create({
+              model: model,
+              messages: [
+                { role: 'system', content: systemPrompt },
+                ...messages
+              ],
+              max_tokens: settings.maxTokens || 2500,
+              temperature: settings.temperature || 0.7,
+              presence_penalty: 0.1,
+              frequency_penalty: 0.2,
+              user: 'storyboard-assistant'
+            })
+            
+            clearInterval(thinkingInterval)
+            const content = response.choices[0].message.content || 'Sorry, I couldn\'t generate a response.'
+            this.appendThinking('\nResponse generated successfully!')
+            this.endThinking()
+            return content
+          } catch (error) {
+            clearInterval(thinkingInterval)
+            throw error
+          }
         }
-        
-        // Add any remaining partial response
-        if (partialResponse) {
-          this.appendThinking(partialResponse)
-        }
-        
-        this.endThinking()
-        return fullResponse
       } else {
         // Non-streaming for agents without thinking capability
         const response = await this.openai!.chat.completions.create({
@@ -517,7 +653,9 @@ ${finalReinforcement}`
     
     try {
       const settings = storage.getSettings()
-      const model = settings.aiModel === 'gpt-o3' ? 'gpt-o3' : 'gpt-3.5-turbo'
+      // Use gpt-4o for web search related operations as it's compatible with the web search tool
+      // gpt-o4-mini doesn't support web search
+      const model = 'gpt-4o'
       
       const response = await this.openai!.chat.completions.create({
         model: model,
@@ -612,7 +750,7 @@ ${finalReinforcement}`
     try {
       // Get AI model from settings
       const settings = storage.getSettings()
-      const model = settings.aiModel === 'gpt-o3' ? 'gpt-o3' : (settings.aiModel || 'gpt-4o-mini')
+      const model = settings.aiModel || 'gpt-4o-mini'
       console.log('🤖 Using AI model from settings for storyboard generation:', model)
       
       const prompt = `Create a professional ${panelCount}-panel storyboard for this story idea:
@@ -736,7 +874,7 @@ Create a complete narrative arc with visual variety and professional filmmaking 
     try {
       // Get AI model from settings
       const settings = storage.getSettings()
-      const model = settings.aiModel === 'gpt-o3' ? 'gpt-o3' : (settings.aiModel || 'gpt-4o-mini')
+      const model = settings.aiModel || 'gpt-4o-mini'
       console.log('🤖 Using AI model from settings for scene generation:', model)
       
       const prompt = `Create a professional storyboard panel for this scene:
@@ -933,20 +1071,19 @@ The videoPrompt should include camera movements, lighting, atmosphere, and techn
 
   public async analyzeCinematography(prompt: string): Promise<any> {
     if (!this.isReady()) {
-      // Return a structured, empty-state object if AI is not available
       return {
-        lighting: 'AI not configured',
-        performance: 'AI not configured',
-        cameraMovement: 'AI not configured',
-        composition: 'AI not configured',
-        sound: 'AI not configured'
+        lighting: 'Unable to access OpenAI API',
+        performance: 'Unable to access OpenAI API',
+        cameraMovement: 'Unable to access OpenAI API',
+        composition: 'Unable to access OpenAI API',
+        sound: 'Unable to access OpenAI API'
       }
     }
   
     try {
       // Get AI model from settings
       const settings = storage.getSettings()
-      const model = settings.aiModel === 'gpt-o3' ? 'gpt-o3' : (settings.aiModel || 'gpt-4o-mini')
+      const model = settings.aiModel || 'gpt-4o-mini'
       console.log('🤖 Using AI model from settings for cinematography analysis:', model)
       
       // Enhanced prompt for better JSON formatting and reliability
@@ -1217,22 +1354,27 @@ Return ONLY the raw JSON object, without any markdown formatting, comments, or o
 
   private createProxyImageUrl(originalUrl: string): string {
     // Create a CORS proxy URL to handle potential cross-origin issues
-    // Using a public CORS proxy service as fallback
-    const proxyServices = [
-      'https://cors-anywhere.herokuapp.com/',
-      'https://api.allorigins.win/raw?url=',
-      // Direct URL as final fallback
-      ''
-    ]
     
-    // For now, just return the original URL since OpenAI images should work directly
-    // But we keep this method for future enhancement if needed
-    return originalUrl
+    // Check if the URL is from OpenAI's image storage
+    if (originalUrl.includes('oaidalleapiprodscus.blob.core.windows.net')) {
+      // Extract the path from the original URL
+      const urlPath = originalUrl.replace('https://oaidalleapiprodscus.blob.core.windows.net', '');
+      // Use our Vite proxy with full URL and ensure path starts with /
+      const formattedPath = urlPath.startsWith('/') ? urlPath : `/${urlPath}`;
+      return `${window.location.origin}/image-proxy${formattedPath}`;
+    }
+    
+    // For other URLs, return as is
+    return originalUrl;
   }
 
   public async downloadAndConvertImageWithAuth(imageUrl: string): Promise<string | null> {
     try {
       console.log('📥 Attempting authenticated download from:', imageUrl)
+      
+      // Use our proxy URL
+      const proxyUrl = this.createProxyImageUrl(imageUrl);
+      console.log('🔄 Using proxy URL for authenticated download:', proxyUrl);
       
       if (!this.isReady()) {
         console.warn('⚠️ OpenAI not initialized, trying without auth')
@@ -1248,7 +1390,7 @@ Return ONLY the raw JSON object, without any markdown formatting, comments, or o
 
       try {
         console.log('🔐 Trying authenticated fetch with API key...')
-        const response = await fetch(imageUrl, {
+        const response = await fetch(proxyUrl, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${apiKey}`,
@@ -1296,11 +1438,15 @@ Return ONLY the raw JSON object, without any markdown formatting, comments, or o
     try {
       console.log('📥 Attempting to download image from:', imageUrl)
       
+      // Use our proxy URL
+      const proxyUrl = this.createProxyImageUrl(imageUrl);
+      console.log('🔄 Using proxy URL:', proxyUrl);
+      
       // Try multiple approaches for better reliability
       
       // First try: Direct fetch with CORS
       try {
-        const response = await fetch(imageUrl, {
+        const response = await fetch(proxyUrl, {
           mode: 'cors',
           headers: {
             'Accept': 'image/*',
@@ -1332,7 +1478,7 @@ Return ONLY the raw JSON object, without any markdown formatting, comments, or o
 
       // Second try: no-cors mode (will return opaque response but might work for display)
       try {
-        const response = await fetch(imageUrl, {
+        const response = await fetch(proxyUrl, {
           mode: 'no-cors',
         })
         console.log('🔄 Attempted no-cors fetch, returning original URL')

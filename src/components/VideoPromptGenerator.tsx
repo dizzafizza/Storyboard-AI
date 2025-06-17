@@ -87,10 +87,10 @@ export default function VideoPromptGenerator({ isOpen, onClose }: VideoPromptGen
                 color: themeState.theme.colors.text.primary
               }}
             >
-              <option value="4o-mini">GPT-4o-mini (Fast & Economic)</option>
+              <option value="o4-mini">GPT-o4-mini (Fast & Economic)</option>
             </select>
             <p className="text-xs mt-1" style={{ color: themeState.theme.colors.text.tertiary }}>
-              Using 4o-mini for optimal cost efficiency in batch operations
+              Using o4-mini for optimal cost efficiency in batch operations
             </p>
           </div>
           

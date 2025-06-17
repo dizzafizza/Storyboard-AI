@@ -6,10 +6,29 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 3000,
-    open: true
+    open: true,
+    proxy: {
+      // Proxy OpenAI API requests
+      '/openai-proxy': {
+        target: 'https://api.openai.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/openai-proxy/, ''),
+        secure: true,
+        headers: {
+          'Connection': 'keep-alive'
+        }
+      },
+      // Proxy for image downloads
+      '/image-proxy': {
+        target: 'https://oaidalleapiprodscus.blob.core.windows.net',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/image-proxy/, ''),
+        secure: true
+      }
+    }
   },
   // GitHub Pages deployment configuration
-  base: process.env.NODE_ENV === 'production' ? '/Storyboard-AI/' : '/',
+  base: '/',
   build: {
     outDir: 'dist',
     sourcemap: false,

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Edit3, Trash2, Camera, Loader, Download, Upload, RotateCcw, Heart, ArrowUp, ArrowDown, Zap, Sparkles, Star, Award, Timer, ChevronDown, ChevronUp, MoreVertical } from 'lucide-react'
+import { Edit3, Trash2, Camera, Loader, Download, Upload, RotateCcw, Heart, ArrowUp, ArrowDown, Zap, Sparkles, Star, Award, Timer, ChevronDown, ChevronUp, MoreVertical, Play, Video, Pause } from 'lucide-react'
 import type { StoryboardPanel as StoryboardPanelType } from '../types'
 import { useStoryboard } from '../context/StoryboardContext'
 import { useTheme } from '../context/ThemeContext'
@@ -53,6 +53,8 @@ export default function StoryboardPanel({
   const [isHovered, setIsHovered] = useState(false)
   const [isGeneratingImage, setIsGeneratingImage] = useState(false)
   const [imageLoaded, setImageLoaded] = useState(false)
+  const [videoLoaded, setVideoLoaded] = useState(false)
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false)
   const [downloadStatus, setDownloadStatus] = useState<string | null>(null)
   const [isLiked, setIsLiked] = useState(false)
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false)
@@ -61,6 +63,7 @@ export default function StoryboardPanel({
   const fileInputRef = useRef<HTMLInputElement>(null)
   const descriptionRef = useRef<HTMLParagraphElement>(null)
   const mobileMenuRef = useRef<HTMLDivElement>(null)
+  const videoRef = useRef<HTMLVideoElement>(null)
 
   const isActive = isSelected || isHovered
 
@@ -72,6 +75,12 @@ export default function StoryboardPanel({
       img.src = panel.imageUrl
     }
   }, [panel.imageUrl])
+
+  useEffect(() => {
+    if (panel.videoUrl) {
+      setVideoLoaded(false)
+    }
+  }, [panel.videoUrl])
   
   // Check if description is overflowing
   useEffect(() => {
@@ -80,6 +89,15 @@ export default function StoryboardPanel({
       setIsContentOverflowing(isOverflowing)
     }
   }, [panel.description, isDescriptionExpanded])
+
+  // Clean up video playing state when unmounting
+  useEffect(() => {
+    return () => {
+      if (videoRef.current) {
+        videoRef.current.pause();
+      }
+    }
+  }, [])
 
   useEffect(() => {
     // Close mobile popup when clicking outside
@@ -175,6 +193,28 @@ export default function StoryboardPanel({
     onMoveDown?.()
   }
 
+  const toggleVideoPlayback = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    
+    if (!videoRef.current) return;
+    
+    if (isVideoPlaying) {
+      videoRef.current.pause();
+    } else {
+      videoRef.current.play().catch(err => {
+        console.error("Error playing video:", err);
+      });
+    }
+    
+    setIsVideoPlaying(!isVideoPlaying);
+  }
+
+  const handleVideoError = () => {
+    console.error('Error loading video for panel:', panel.id);
+    setVideoLoaded(false);
+  }
+
   return (
     <div
       className={`storyboard-panel group relative rounded-2xl transition-all duration-200 cursor-pointer overflow-hidden ${
@@ -246,6 +286,22 @@ export default function StoryboardPanel({
           {panel.order + 1}
         </div>
       </div>
+
+      {/* Video Indicator Badge - Show when panel has video */}
+      {panel.videoUrl && (
+        <div className="absolute top-3 right-12 z-30">
+          <div 
+            className="px-2 py-1 rounded-full flex items-center gap-1 text-xs shadow-md"
+            style={{
+              backgroundColor: themeColors.status.info.background,
+              color: themeColors.status.info.text
+            }}
+          >
+            <Video className="w-3 h-3" />
+            <span>Video</span>
+          </div>
+        </div>
+      )}
 
       {/* Mobile Options Button */}
       {isMobile && (
@@ -523,7 +579,7 @@ export default function StoryboardPanel({
         </div>
       </div>
 
-      {/* Main Content - Image Area / Upload Placeholder */}
+      {/* Main Content - Image/Video Area / Upload Placeholder */}
       <div className="relative" style={{ minHeight: '160px' }}>
         <div className="relative">
           {/* Description area - Appears below image */}
@@ -571,15 +627,53 @@ export default function StoryboardPanel({
             </div>
           </div>
 
-          {/* Image area */}
+          {/* Image/Video area */}
           <div className="relative w-full overflow-hidden" style={{ 
             minHeight: '180px', 
-            maxHeight: '280px',  /* Increased max height to allow more image space */
+            maxHeight: '280px',
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center'
           }}>
-            {panel.imageUrl ? (
+            {panel.videoUrl ? (
+              <div className="relative w-full h-full">
+                <video
+                  ref={videoRef}
+                  src={panel.videoUrl}
+                  className="w-full h-full max-h-[280px] object-contain"
+                  onLoadedData={() => setVideoLoaded(true)}
+                  onError={handleVideoError}
+                  onClick={(e) => e.stopPropagation()}
+                  onPlay={() => setIsVideoPlaying(true)}
+                  onPause={() => setIsVideoPlaying(false)}
+                  muted={!isActive}
+                  loop
+                  playsInline
+                />
+                
+                {/* Video controls overlay */}
+                <div className="absolute inset-0 flex items-center justify-center" onClick={toggleVideoPlayback}>
+                  <button 
+                    className="w-12 h-12 rounded-full flex items-center justify-center bg-black/40 backdrop-blur-sm text-white hover:bg-black/60 transition-all duration-200"
+                    onClick={toggleVideoPlayback}
+                  >
+                    {isVideoPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-1" />}
+                  </button>
+                  
+                  {/* Video indicator */}
+                  <div className="absolute top-3 right-3 bg-black/60 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                    <Video className="w-3 h-3" />
+                    <span>Video</span>
+                  </div>
+                </div>
+                
+                {!videoLoaded && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-gray-200 dark:bg-gray-800">
+                    <Loader className="w-8 h-8 animate-spin" style={{ color: themeState.theme.colors.primary[500] }} />
+                  </div>
+                )}
+              </div>
+            ) : panel.imageUrl ? (
               <>
                 <img 
                   src={panel.imageUrl} 
@@ -587,8 +681,8 @@ export default function StoryboardPanel({
                   className={`w-full transition-opacity duration-500 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
                   onLoad={() => setImageLoaded(true)}
                   style={{ 
-                    maxHeight: '280px', /* Match container max height */
-                    objectFit: 'contain', /* Changed from object-cover to object-contain */
+                    maxHeight: '280px',
+                    objectFit: 'contain',
                     maxWidth: '100%'
                   }}
                 />
@@ -621,12 +715,12 @@ export default function StoryboardPanel({
                 <p 
                   className="text-xl font-bold mb-3"
                   style={{ color: themeState.theme.colors.text.primary }}
-                >No Image Yet</p>
+                >No Media Yet</p>
                 <p 
                   className="text-sm max-w-xs text-center"
                   style={{ color: themeState.theme.colors.text.tertiary }}
                 >
-                  Add a detailed description and use the image generation tool to visualize your scene.
+                  Add a detailed description and use the image generation tool or upload media.
                 </p>
               </div>
             )}

@@ -34,6 +34,8 @@ const cameraAngles: Array<{ value: CameraAngle; label: string; description: stri
 export default function PanelEditor({ panel, isOpen, onClose }: PanelEditorProps) {
   const { dispatch } = useStoryboard()
   const { state: themeState } = useTheme()
+  const [copiedPrompt, setCopiedPrompt] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -42,8 +44,6 @@ export default function PanelEditor({ panel, isOpen, onClose }: PanelEditorProps
     notes: '',
     duration: 3,
   })
-  const [copiedPrompt, setCopiedPrompt] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
     if (panel && isOpen) {
@@ -143,17 +143,45 @@ export default function PanelEditor({ panel, isOpen, onClose }: PanelEditorProps
   const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file && panel) {
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        const videoUrl = e.target?.result as string
-        dispatch({
-          type: 'UPDATE_PANEL',
-          payload: {
-            id: panel.id,
-            updates: { videoUrl },
-          },
-        })
+      // Check file size - show warning for large files
+      if (file.size > 50 * 1024 * 1024) { // 50MB
+        if (!confirm(`This video is large (${(file.size / (1024 * 1024)).toFixed(1)}MB) and may cause performance issues. Continue?`)) {
+          return;
+        }
       }
+      
+      const reader = new FileReader()
+      
+      // Add loading state
+      setIsLoading(true)
+      
+      reader.onload = (e) => {
+        try {
+          const videoUrl = e.target?.result as string
+          console.log(`📹 Video loaded, size: ${(videoUrl.length / (1024 * 1024)).toFixed(2)}MB`)
+          
+          dispatch({
+            type: 'UPDATE_PANEL',
+            payload: {
+              id: panel.id,
+              updates: { videoUrl },
+            },
+          })
+          
+          setIsLoading(false)
+        } catch (error) {
+          console.error('Failed to process video:', error)
+          alert('Failed to process the video. It may be too large or in an unsupported format.')
+          setIsLoading(false)
+        }
+      }
+      
+      reader.onerror = () => {
+        console.error('File reading error:', reader.error)
+        alert('Error reading the video file. Please try a different file or format.')
+        setIsLoading(false)
+      }
+      
       reader.readAsDataURL(file)
     }
   }
@@ -283,6 +311,10 @@ export default function PanelEditor({ panel, isOpen, onClose }: PanelEditorProps
                       controls
                       className="w-full rounded-lg"
                       style={{ maxHeight: '200px' }}
+                      onError={(e) => {
+                        console.error('Video loading error:', e);
+                        alert('There was an error loading the video. The file might be corrupt or too large.');
+                      }}
                     />
                     <label className="btn-secondary text-xs cursor-pointer inline-flex items-center">
                       <Upload className="w-3 h-3 mr-1" />
@@ -296,16 +328,21 @@ export default function PanelEditor({ panel, isOpen, onClose }: PanelEditorProps
                     </label>
                   </div>
                 ) : (
-                  <label className="btn-secondary text-xs cursor-pointer inline-flex items-center w-full justify-center">
-                    <Upload className="w-3 h-3 mr-1" />
-                    Upload Video
-                    <input
-                      type="file"
-                      accept="video/*"
-                      onChange={handleVideoUpload}
-                      className="hidden"
-                    />
-                  </label>
+                  <div className="space-y-2">
+                    <label className="btn-secondary text-xs cursor-pointer inline-flex items-center w-full justify-center">
+                      <Upload className="w-3 h-3 mr-1" />
+                      Upload Video
+                      <input
+                        type="file"
+                        accept="video/*"
+                        onChange={handleVideoUpload}
+                        className="hidden"
+                      />
+                    </label>
+                    <p className="text-xs text-secondary mt-2">
+                      Recommended formats: MP4, WebM (smaller files work best)
+                    </p>
+                  </div>
                 )}
               </div>
 
@@ -350,8 +387,7 @@ export default function PanelEditor({ panel, isOpen, onClose }: PanelEditorProps
             <div className="space-y-4 panel-editor-content">
               <div className="flex items-center justify-between">
                 <h3 
-                  className="font-medium flex items-center space-x-2"
-                  style={{ color: themeState.theme.colors.text.primary }}
+                  className="font-medium flex items-center space-x-2 text-primary"
                 >
                   <Film className="w-4 h-4" />
                   <span>Panel Details</span>
@@ -450,8 +486,7 @@ export default function PanelEditor({ panel, isOpen, onClose }: PanelEditorProps
 
         {/* Footer */}
         <div 
-          className="flex justify-end space-x-3 p-6 border-t"
-          style={{ borderColor: themeState.theme.colors.border.primary }}
+          className="flex justify-end space-x-3 p-6 border-t border-primary"
         >
           <button
             onClick={onClose}

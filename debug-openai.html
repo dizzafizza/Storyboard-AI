@@ -1,0 +1,125 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>OpenAI API Path Debug</title>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+    pre { background: #f5f5f5; padding: 10px; border-radius: 5px; overflow: auto; }
+    button { padding: 8px 16px; margin: 5px; background: #0066ff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    .result { margin-top: 10px; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
+    .error { color: red; }
+    .success { color: green; }
+  </style>
+</head>
+<body>
+  <h1>OpenAI API Path Debug</h1>
+  
+  <div>
+    <h2>Test Direct API Connection</h2>
+    <button id="testDirectBtn">Test Direct OpenAI API</button>
+    <div id="directResult" class="result">Results will appear here</div>
+  </div>
+
+  <div>
+    <h2>Test Proxy API Connection</h2>
+    <button id="testProxyBtn">Test Proxy OpenAI API</button>
+    <div id="proxyResult" class="result">Results will appear here</div>
+  </div>
+
+  <div>
+    <h2>Test URL Construction</h2>
+    <button id="testUrlBtn">Test URL Construction</button>
+    <div id="urlResult" class="result">Results will appear here</div>
+  </div>
+
+  <script>
+    // Test direct OpenAI API
+    document.getElementById('testDirectBtn').addEventListener('click', async function() {
+      const resultDiv = document.getElementById('directResult');
+      resultDiv.innerHTML = 'Testing direct OpenAI API...';
+      resultDiv.className = 'result';
+      
+      try {
+        // This will fail due to CORS, but we can see the request
+        const response = await fetch('https://api.openai.com/v1/models', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer YOUR_API_KEY_PLACEHOLDER'
+          }
+        });
+        
+        const data = await response.json();
+        resultDiv.innerHTML = '<span class="success">Success!</span><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+      } catch (e) {
+        resultDiv.innerHTML = '<span class="error">Error:</span> ' + e.message + '<br><br>This is expected due to CORS, but the request was made.';
+      }
+    });
+
+    // Test proxy OpenAI API
+    document.getElementById('testProxyBtn').addEventListener('click', async function() {
+      const resultDiv = document.getElementById('proxyResult');
+      resultDiv.innerHTML = 'Testing proxy OpenAI API...';
+      resultDiv.className = 'result';
+      
+      try {
+        // Test with our proxy
+        const response = await fetch('/openai-proxy/v1/models', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer YOUR_API_KEY_PLACEHOLDER'
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          resultDiv.innerHTML = '<span class="success">Success!</span><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+        } else {
+          const text = await response.text();
+          resultDiv.innerHTML = '<span class="error">Error ' + response.status + ':</span><pre>' + text + '</pre>';
+        }
+      } catch (e) {
+        resultDiv.innerHTML = '<span class="error">Error:</span> ' + e.message;
+      }
+    });
+
+    // Test URL construction
+    document.getElementById('testUrlBtn').addEventListener('click', function() {
+      const resultDiv = document.getElementById('urlResult');
+      resultDiv.innerHTML = 'Testing URL construction...';
+      resultDiv.className = 'result';
+      
+      try {
+        const tests = [
+          { input: '/openai-proxy/v1/chat/completions', base: null },
+          { input: '/openai-proxy/v1/chat/completions', base: window.location.origin },
+          { input: 'v1/chat/completions', base: 'https://api.openai.com/' },
+          { input: 'v1/chat/completions', base: 'https://api.openai.com' },
+          { input: '/v1/chat/completions', base: 'https://api.openai.com' },
+          { input: 'chat/completions', base: 'https://api.openai.com/v1/' }
+        ];
+        
+        let results = '';
+        tests.forEach(test => {
+          try {
+            const url = test.base ? new URL(test.input, test.base) : new URL(test.input);
+            results += '<div><strong>Input:</strong> ' + test.input + 
+                      (test.base ? ' <strong>Base:</strong> ' + test.base : '') + 
+                      ' <strong>Result:</strong> <span class="success">' + url.toString() + '</span></div>';
+          } catch (e) {
+            results += '<div><strong>Input:</strong> ' + test.input + 
+                      (test.base ? ' <strong>Base:</strong> ' + test.base : '') + 
+                      ' <strong>Result:</strong> <span class="error">' + e.message + '</span></div>';
+          }
+        });
+        
+        resultDiv.innerHTML = results;
+      } catch (e) {
+        resultDiv.innerHTML = '<span class="error">Error:</span> ' + e.message;
+      }
+    });
+  </script>
+</body>
+</html>

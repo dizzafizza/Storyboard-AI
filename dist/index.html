@@ -18,7 +18,6 @@
     
     <!-- Security Headers -->
     <meta http-equiv="X-Content-Type-Options" content="nosniff" />
-    <meta http-equiv="X-Frame-Options" content="DENY" />
     <meta http-equiv="X-XSS-Protection" content="1; mode=block" />
     <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
     <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=(), payment=()" />
@@ -30,12 +29,12 @@
       style-src 'self' 'unsafe-inline';
       img-src 'self' data: blob: https:;
       font-src 'self' data:;
-      connect-src 'self' https://api.openai.com;
+      media-src 'self' data: blob: https:;
+      connect-src 'self' https://api.openai.com https://oaidalleapiprodscus.blob.core.windows.net;
       worker-src 'self' blob:;
       object-src 'none';
       base-uri 'self';
       form-action 'self';
-      frame-ancestors 'none';
     " />
     
     <!-- Privacy and Data -->
@@ -64,7 +63,7 @@
     <meta name="color-scheme" content="light dark" />
     
     <!-- Web App Manifest -->
-    <link rel="manifest" href="/Storyboard-AI/site.webmanifest" />
+    <link rel="manifest" href="/site.webmanifest" />
     
     <!-- Enhanced Safari Compatibility Script -->
     <script>
@@ -208,29 +207,16 @@
         
       })();
     </script>
-    <script type="module" crossorigin src="/Storyboard-AI/assets/index-Xm_L-Pww.js"></script>
-    <link rel="modulepreload" crossorigin href="/Storyboard-AI/assets/vendor-Rh7fhQc2.js">
-    <link rel="modulepreload" crossorigin href="/Storyboard-AI/assets/dnd-7mlNwzRc.js">
-    <link rel="modulepreload" crossorigin href="/Storyboard-AI/assets/ui-DOFvAlw5.js">
-    <link rel="modulepreload" crossorigin href="/Storyboard-AI/assets/ai-Bh8ckaFx.js">
-    <link rel="modulepreload" crossorigin href="/Storyboard-AI/assets/pdf-Dpb-j42P.js">
-    <link rel="stylesheet" crossorigin href="/Storyboard-AI/assets/index-CSpYupib.css">
+    <script type="module" crossorigin src="/assets/index-xljcucjp.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/vendor-Rh7fhQc2.js">
+    <link rel="modulepreload" crossorigin href="/assets/dnd-7mlNwzRc.js">
+    <link rel="modulepreload" crossorigin href="/assets/ui-C_MPAbMB.js">
+    <link rel="modulepreload" crossorigin href="/assets/ai-Bh8ckaFx.js">
+    <link rel="modulepreload" crossorigin href="/assets/pdf-BTwRV4U-.js">
+    <link rel="stylesheet" crossorigin href="/assets/index-DJ2jz78I.css">
   </head>
   <body>
     <div id="root"></div>
-    
-    <!-- Service Worker Registration for Safari -->
-    <script>
-      if ('serviceWorker' in navigator && window.location.protocol === 'https:') {
-        window.addEventListener('load', function() {
-          navigator.serviceWorker.register('/sw.js').then(function(registration) {
-            console.log('🔧 ServiceWorker registered: ', registration.scope);
-          }).catch(function(error) {
-            console.log('🚨 ServiceWorker registration failed: ', error);
-          });
-        });
-      }
-    </script>
     
     <!-- Enhanced Safari Error Fallback -->
     <noscript>

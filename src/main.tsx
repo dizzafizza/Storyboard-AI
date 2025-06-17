@@ -1,6 +1,7 @@
 import ReactDOM from 'react-dom/client'
 import App from './App'
 import './index.css'
+import { registerServiceWorker } from './utils/serviceWorker'
 
 console.log('🚀 main.tsx loaded!')
 
@@ -11,6 +12,11 @@ const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
 if (isSafari || isIOS) {
   console.log('🍎 Safari/iOS detected - using compatibility mode')
 }
+
+// Register service worker for CORS proxy
+registerServiceWorker()
+  .then(() => console.log('✅ Service worker registered successfully'))
+  .catch(error => console.error('❌ Service worker registration failed:', error))
 
 // Ensure CSS variables are set before rendering
 function ensureCSSVariables() {

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
-import { X, Key, Download, Upload, Zap, Eye, Monitor, Save, AlertCircle, CheckCircle, Settings as SettingsIcon, Palette, Globe, Cpu, Moon, Sun, Smartphone, Lock, BellRing, RefreshCw, HelpCircle } from 'lucide-react'
+import { X, Key, Download, Upload, Zap, Eye, Monitor, Save, AlertCircle, CheckCircle, Settings as SettingsIcon, Palette, Globe, Cpu, Moon, Sun, Smartphone, Lock, BellRing, RefreshCw, HelpCircle, Database } from 'lucide-react'
 import { useTheme } from '../context/ThemeContext'
 import { aiService } from '../services/ai'
-import { storage } from '../utils/storage'
+import { storage, resetStoryboardDatabase } from '../utils/storage'
 import { useSemanticColors } from '../utils/themeColors'
 import WindowFrame from './WindowFrame'
 
@@ -18,7 +18,7 @@ interface Settings {
   notifications: boolean
   videoQuality: 'standard' | 'high' | 'ultra'
   exportFormat: 'json' | 'pdf' | 'video'
-  aiModel: 'gpt-4' | 'gpt-4o' | 'gpt-4o-mini' | 'gpt-o3'
+  aiModel: 'gpt-4' | 'gpt-4o' | 'gpt-o4-mini'
   imageModel: 'dall-e-2' | 'dall-e-3'
   maxTokens: number
   temperature: number
@@ -39,7 +39,7 @@ export default function SettingsMenu({ isOpen, onClose, onOpenThemeSettings }: S
     notifications: true,
     videoQuality: 'high',
     exportFormat: 'json',
-    aiModel: 'gpt-4o-mini',
+    aiModel: 'gpt-o4-mini',
     imageModel: 'dall-e-3',
     maxTokens: 4096,
     temperature: 0.7,
@@ -163,7 +163,7 @@ export default function SettingsMenu({ isOpen, onClose, onOpenThemeSettings }: S
         notifications: true,
         videoQuality: 'high',
         exportFormat: 'json',
-        aiModel: 'gpt-4o-mini',
+        aiModel: 'gpt-o4-mini',
         imageModel: 'dall-e-3',
         maxTokens: 4096,
         temperature: 0.7,
@@ -173,6 +173,19 @@ export default function SettingsMenu({ isOpen, onClose, onOpenThemeSettings }: S
           reduceAnimations: false
         }
       })
+    }
+  }
+
+  const handleResetDatabase = async () => {
+    if (confirm('WARNING: This will reset your database and clear all saved projects.\n\nThis action is recommended if you have issues with video uploads or storage quota errors.\n\nDo you want to proceed?')) {
+      try {
+        await resetStoryboardDatabase();
+        alert('Database has been reset successfully. The page will now reload.');
+        window.location.reload();
+      } catch (error) {
+        console.error('Error resetting database:', error);
+        alert('Failed to reset database. Please try closing all tabs and trying again.');
+      }
     }
   }
 
@@ -561,12 +574,9 @@ export default function SettingsMenu({ isOpen, onClose, onOpenThemeSettings }: S
                         className="select-modern w-full bg-tertiary/50 border border-primary/30 focus:border-primary/60"
                       >
                         <optgroup label="Standard Models">
-                          <option value="gpt-4o-mini">GPT-4o Mini (Fast & Economic)</option>
+                          <option value="gpt-o4-mini">GPT-o4 Mini (Fast & Economic)</option>
                           <option value="gpt-4o">GPT-4o (Balanced)</option>
                           <option value="gpt-4">GPT-4 (Most Capable)</option>
-                        </optgroup>
-                        <optgroup label="Advanced Models">
-                          <option value="gpt-o3">GPT-o3 (Most Advanced)</option>
                         </optgroup>
                       </select>
                     </div>
@@ -668,6 +678,18 @@ export default function SettingsMenu({ isOpen, onClose, onOpenThemeSettings }: S
                     >
                       <RefreshCw className="w-4 h-4" />
                       <span>Reset to Defaults</span>
+                    </button>
+                  </div>
+
+                  {/* Reset Database */}
+                  <div className="bg-secondary/40 backdrop-blur-sm rounded-lg sm:rounded-xl p-3 sm:p-4 border border-primary/20 hover:border-primary/40 transition-all duration-300">
+                    <h4 className="font-medium text-primary mb-3">Reset Database</h4>
+                    <button 
+                      onClick={handleResetDatabase}
+                      className="btn-danger px-4 py-2 text-sm w-full flex items-center justify-center space-x-2"
+                    >
+                      <Database className="w-4 h-4" />
+                      <span>Reset Database</span>
                     </button>
                   </div>
                 </div>

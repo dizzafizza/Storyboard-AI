@@ -17,12 +17,14 @@ A powerful, privacy-first AI-powered storyboard generator built with React and T
 - **Cinematic Shot Types**: Close-up, wide shot, over-the-shoulder, and more
 - **Camera Angles**: High-angle, low-angle, bird's eye view, etc.
 - **Director's Notes**: Add creative vision and style guidance
+- **Video Support**: Add videos to panels for dynamic storyboards
 
 ### 🔒 **Privacy-First Design**
 - **100% Client-Side**: All data stored locally in your browser
 - **No Tracking**: Zero analytics, cookies, or data collection
 - **Your API Keys**: Direct integration with OpenAI (your keys, your control)
 - **Offline Capable**: Works without internet after initial load
+- **Smart Storage**: Efficient media handling to maximize browser storage
 
 ### 🚀 **Modern Interface**
 - **Responsive Design**: Works on desktop, tablet, and mobile
@@ -89,13 +91,26 @@ To use AI features, you'll need an OpenAI API key:
 - AI will generate a cinematic image based on your panel description
 - Images are automatically saved to your project
 
-### 5. **Timeline Editor**
+### 5. **Video Features**
+- Upload videos to any panel
+- Videos automatically play in timeline mode
+- Recommended formats: MP4, WebM (smaller files work best)
+- Advanced storage management to optimize browser storage usage
+
+### 6. **Timeline Editor**
 - Switch to Timeline view to see your storyboard in sequence
 - Play/pause to preview your story
 - Adjust playback speed and volume
 - Export timeline data for external tools
 
-### 6. **Theme Customization**
+### Storage Management
+- **Efficient Media Storage**: The app automatically separates and optimizes images and videos
+- **IndexedDB**: Larger media files are stored in IndexedDB for better performance
+- **Storage Cleanup**: Automatic cleanup of unused media when approaching storage limits
+- **Quota Management**: Smart handling of storage quota exceeded errors
+- **Manual Control**: Export projects to save disk space
+
+### **Theme Customization**
 - Click the "Themes" button in the header
 - Choose from 6 professionally designed themes:
   - **Light**: Classic & Clean

@@ -1,4 +1,4 @@
-import type { StoryboardProject } from '../types'
+import type { StoryboardProject, StoryboardPanel } from '../types'
 
 const STORAGE_KEYS = {
   PROJECTS: 'storyboard_projects',
@@ -9,8 +9,9 @@ const STORAGE_KEYS = {
 
 // IndexedDB configuration for storing large images
 const DB_NAME = 'StoryboardAI'
-const DB_VERSION = 1
+const DB_VERSION = 2
 const IMAGES_STORE = 'images'
+const VIDEOS_STORE = 'videos'
 
 interface StorageSettings {
   openaiApiKey?: string
@@ -20,7 +21,7 @@ interface StorageSettings {
   notifications?: boolean
   videoQuality?: 'standard' | 'high' | 'ultra'
   exportFormat?: 'json' | 'pdf' | 'video'
-  aiModel?: 'gpt-4' | 'gpt-4o' | 'gpt-4o-mini' | 'gpt-o3'
+  aiModel?: 'gpt-4' | 'gpt-4o' | 'gpt-o4-mini'
   imageModel?: 'dall-e-2' | 'dall-e-3'
   maxTokens?: number
   temperature?: number
@@ -29,6 +30,12 @@ interface StorageSettings {
 }
 
 interface ImageData {
+  id: string
+  data: string
+  createdAt: Date
+}
+
+interface VideoData {
   id: string
   data: string
   createdAt: Date
@@ -69,7 +76,13 @@ export class StoryboardStorage {
         if (!db.objectStoreNames.contains(IMAGES_STORE)) {
           const imageStore = db.createObjectStore(IMAGES_STORE, { keyPath: 'id' })
           imageStore.createIndex('createdAt', 'createdAt', { unique: false })
-          console.log('📦 IndexedDB object store created')
+          console.log('📦 IndexedDB image store created')
+        }
+        
+        if (!db.objectStoreNames.contains(VIDEOS_STORE)) {
+          const videoStore = db.createObjectStore(VIDEOS_STORE, { keyPath: 'id' })
+          videoStore.createIndex('createdAt', 'createdAt', { unique: false })
+          console.log('🎬 IndexedDB video store created')
         }
       }
     } catch (error) {
@@ -156,16 +169,141 @@ export class StoryboardStorage {
     })
   }
 
+  // Video storage methods
+  private async saveVideoToDB(videoId: string, videoData: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      try {
+        if (!this.db) {
+          // Fallback approach if DB isn't initialized yet
+          console.warn('IndexedDB not ready, using localStorage fallback for video')
+          try {
+            // Instead of storing the full video in localStorage,
+            // just store a placeholder and we'll show a message to the user
+            localStorage.setItem(`storyboard_video_${videoId}`, 'video-too-large-for-storage')
+            resolve()
+          } catch (e) {
+            reject(new Error('Could not save video - storage is full'))
+          }
+          return
+        }
+
+        // Check if the videos store exists, if not create it
+        if (!this.db.objectStoreNames.contains(VIDEOS_STORE)) {
+          console.warn('Videos store not found, cannot save video. DB needs upgrade.')
+          reject(new Error('Database schema outdated - please reload the app'))
+          return
+        }
+
+        const transaction = this.db.transaction([VIDEOS_STORE], 'readwrite')
+        const store = transaction.objectStore(VIDEOS_STORE)
+
+        store.put({ 
+          id: videoId, 
+          data: videoData,
+          createdAt: new Date()
+        })
+
+        transaction.oncomplete = () => {
+          console.log(`🎬 Video saved successfully: ${videoId}`)
+          resolve()
+        }
+
+        transaction.onerror = (event) => {
+          console.error('Failed to save video to IndexedDB:', transaction.error)
+          reject(transaction.error)
+        }
+      } catch (error) {
+        console.error('Error in saveVideoToDB:', error)
+        reject(error)
+      }
+    })
+  }
+
+  // Public method to retrieve videos
+  async getVideoFromDB(videoId: string): Promise<string | null> {
+    return new Promise((resolve) => {
+      try {
+        // Check localStorage fallback first
+        const fallbackVideo = localStorage.getItem(`storyboard_video_${videoId}`)
+        if (fallbackVideo === 'video-too-large-for-storage') {
+          console.warn(`⚠️ Video ${videoId} was too large to store and only has a placeholder`)
+          resolve(null)
+          return
+        }
+
+        if (!this.db) {
+          console.warn('IndexedDB not initialized, cannot retrieve video')
+          resolve(null)
+          return
+        }
+
+        // Check if videos store exists
+        if (!this.db.objectStoreNames.contains(VIDEOS_STORE)) {
+          console.warn('Videos store not found, cannot retrieve video')
+          resolve(null)
+          return
+        }
+
+        const transaction = this.db.transaction([VIDEOS_STORE], 'readonly')
+        const store = transaction.objectStore(VIDEOS_STORE)
+        const request = store.get(videoId)
+
+        request.onsuccess = () => {
+          const result = request.result
+          resolve(result ? result.data : null)
+        }
+
+        request.onerror = () => {
+          console.error('Failed to retrieve video from IndexedDB:', request.error)
+          resolve(null)
+        }
+      } catch (error) {
+        console.error('Error in getVideoFromDB:', error)
+        resolve(null)
+      }
+    })
+  }
+
+  private async deleteVideoFromDB(videoId: string): Promise<void> {
+    return new Promise((resolve) => {
+      if (!this.db) {
+        resolve()
+        return
+      }
+
+      const transaction = this.db.transaction([VIDEOS_STORE], 'readwrite')
+      const store = transaction.objectStore(VIDEOS_STORE)
+      const request = store.delete(videoId)
+      
+      request.onsuccess = () => resolve()
+      request.onerror = () => {
+        console.warn('Failed to delete video from IndexedDB:', request.error)
+        resolve()
+      }
+    })
+  }
+
   // Enhanced project management with image separation
   async saveProject(project: StoryboardProject): Promise<void> {
     try {
       console.log('💾 Saving project with enhanced storage...')
       
+      // Check storage usage and cleanup if needed
+      try {
+        const storageUsage = await this.getStorageUsage()
+        if (storageUsage.percentage > 75) {
+          console.warn(`⚠️ Storage usage high (${Math.round(storageUsage.percentage)}%), attempting cleanup...`)
+          await this.cleanupStorage()
+        }
+      } catch (err) {
+        console.warn("Could not check storage usage before saving", err)
+      }
+      
       // Separate images from project data
       const projectCopy = JSON.parse(JSON.stringify(project))
-      const imagePromises: Promise<void>[] = []
+      const mediaPromises: Promise<void>[] = []
       
-      // Process panels and extract images
+      // Process panels and extract images and videos
       projectCopy.panels = await Promise.all(
         project.panels.map(async (panel) => {
           const panelCopy = { ...panel }
@@ -173,17 +311,25 @@ export class StoryboardStorage {
           // If panel has base64 image, store it separately
           if (panel.imageUrl && panel.imageUrl.startsWith('data:image/')) {
             const imageId = `panel_${panel.id}_${Date.now()}`
-            imagePromises.push(this.saveImageToDB(imageId, panel.imageUrl))
+            mediaPromises.push(this.saveImageToDB(imageId, panel.imageUrl))
             panelCopy.imageUrl = `stored:${imageId}` // Reference to stored image
             console.log(`📸 Storing large image separately: ${imageId}`)
+          }
+          
+          // If panel has base64 video, store it separately
+          if (panel.videoUrl && panel.videoUrl.startsWith('data:video/')) {
+            const videoId = `video_${panel.id}_${Date.now()}`
+            mediaPromises.push(this.saveVideoToDB(videoId, panel.videoUrl))
+            panelCopy.videoUrl = `stored:${videoId}` // Reference to stored video
+            console.log(`🎬 Storing large video separately: ${videoId}`)
           }
           
           return panelCopy
         })
       )
       
-      // Wait for all images to be stored
-      await Promise.all(imagePromises)
+      // Wait for all media to be stored
+      await Promise.all(mediaPromises)
       
       // Now save the lightweight project data to localStorage
       const projects = await this.getAllProjects()
@@ -203,11 +349,75 @@ export class StoryboardStorage {
       localStorage.setItem(STORAGE_KEYS.PROJECTS, JSON.stringify(projects))
       localStorage.setItem(STORAGE_KEYS.CURRENT_PROJECT, JSON.stringify(updatedProject))
       
-      console.log('✅ Project saved successfully with separated image storage')
+      console.log('✅ Project saved successfully with separated media storage')
     } catch (error) {
       console.error('Failed to save project:', error)
-      throw new Error('Failed to save project to browser storage')
+      
+      // If we hit quota exceeded error, try emergency cleanup and retry once
+      if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+        console.warn('🚨 Storage quota exceeded, attempting emergency cleanup...')
+        try {
+          await this.cleanupStorage(true)
+          // Try saving again with just essential data
+          const essentialProject = this.createLightweightProjectCopy(project)
+          await this.saveEssentialProjectData(essentialProject)
+          alert('Storage space is limited. Some media files were removed to save your project. Consider exporting your project.')
+        } catch (retryError) {
+          console.error('Failed to save even after cleanup:', retryError)
+          throw new Error('Storage quota exceeded. Please delete some projects or export your work.')
+        }
+      } else {
+        throw new Error('Failed to save project to browser storage')
+      }
     }
+  }
+
+  // Create a lightweight copy of a project by removing large media data
+  private createLightweightProjectCopy(project: StoryboardProject): StoryboardProject {
+    const lightProject = JSON.parse(JSON.stringify(project))
+    
+    // Remove large data from panels
+    lightProject.panels = lightProject.panels.map((panel: StoryboardPanel) => {
+      // Keep panel metadata but remove large binary data
+      const lightPanel = { ...panel }
+      
+      // If image is data URL (not already stored reference), mark for removal
+      if (lightPanel.imageUrl && lightPanel.imageUrl.startsWith('data:')) {
+        lightPanel.imageUrl = undefined
+      }
+      
+      // If video is data URL (not already stored reference), mark for removal
+      if (lightPanel.videoUrl && lightPanel.videoUrl.startsWith('data:')) {
+        lightPanel.videoUrl = undefined
+      }
+      
+      return lightPanel
+    })
+    
+    return lightProject
+  }
+  
+  // Save just the essential project data without media
+  private async saveEssentialProjectData(project: StoryboardProject): Promise<void> {
+    // Get existing projects
+    const projects = await this.getAllProjects()
+    const existingIndex = projects.findIndex(p => p.id === project.id)
+    
+    const updatedProject = {
+      ...project,
+      updatedAt: new Date()
+    }
+    
+    if (existingIndex >= 0) {
+      projects[existingIndex] = updatedProject
+    } else {
+      projects.push(updatedProject)
+    }
+    
+    localStorage.setItem(STORAGE_KEYS.PROJECTS, JSON.stringify(projects))
+    localStorage.setItem(STORAGE_KEYS.CURRENT_PROJECT, JSON.stringify(updatedProject))
+    
+    console.log('✅ Essential project data saved after cleanup')
   }
 
   async getCurrentProject(): Promise<StoryboardProject | null> {
@@ -248,7 +458,18 @@ export class StoryboardStorage {
                 console.log(`📸 Restored image: ${imageId}`)
               } else {
                 console.warn(`⚠️ Could not restore image: ${imageId}`)
-                restoredPanel.imageUrl = null
+              }
+            }
+            
+            // Restore video if it was stored separately
+            if (panel.videoUrl && panel.videoUrl.startsWith('stored:')) {
+              const videoId = panel.videoUrl.replace('stored:', '')
+              const videoData = await this.getVideoFromDB(videoId)
+              if (videoData) {
+                restoredPanel.videoUrl = videoData
+                console.log(`🎬 Restored video: ${videoId}`)
+              } else {
+                console.warn(`⚠️ Could not restore video: ${videoId}`)
               }
             }
             
@@ -259,7 +480,7 @@ export class StoryboardStorage {
       
       return restoredProject
     } catch (error) {
-      console.error('Failed to load current project:', error)
+      console.error('Failed to get current project:', error)
       return null
     }
   }
@@ -644,7 +865,145 @@ export class StoryboardStorage {
       }
     })
   }
+
+  // Cleanup storage when approaching quota limits
+  async cleanupStorage(emergency: boolean = false): Promise<void> {
+    console.log(`🧹 ${emergency ? 'Emergency' : 'Routine'} storage cleanup started...`)
+    
+    try {
+      if (!this.db) {
+        console.warn('IndexedDB not initialized, skipping cleanup')
+        return
+      }
+      
+      // Get all projects to find which media is still needed
+      const allProjects = await this.getAllProjects()
+      const activeMediaIds = new Set<string>()
+      
+      // Collect all active media IDs from all projects
+      allProjects.forEach(project => {
+        project.panels.forEach((panel: any) => {
+          // Check for stored image references
+          if (panel.imageUrl && typeof panel.imageUrl === 'string' && panel.imageUrl.startsWith('stored:')) {
+            activeMediaIds.add(panel.imageUrl.replace('stored:', ''))
+          }
+          
+          // Check for stored video references
+          if (panel.videoUrl && typeof panel.videoUrl === 'string' && panel.videoUrl.startsWith('stored:')) {
+            activeMediaIds.add(panel.videoUrl.replace('stored:', ''))
+          }
+        })
+      })
+      
+      // Clean up images store
+      await this.cleanupStore(IMAGES_STORE, activeMediaIds, emergency)
+      
+      // Clean up videos store - check if it exists first
+      if (this.db.objectStoreNames.contains(VIDEOS_STORE)) {
+        await this.cleanupStore(VIDEOS_STORE, activeMediaIds, emergency)
+      } else {
+        console.log('📝 Videos store not yet created, skipping video cleanup')
+      }
+      
+      console.log('🧹 Storage cleanup completed')
+    } catch (error) {
+      console.error('Error during storage cleanup:', error)
+    }
+  }
+  
+  // Helper to clean up a specific object store
+  private async cleanupStore(storeName: string, activeIds: Set<string>, emergency: boolean): Promise<void> {
+    return new Promise((resolve) => {
+      if (!this.db) {
+        resolve()
+        return
+      }
+      
+      try {
+        // Verify the object store exists before trying to access it
+        if (!this.db.objectStoreNames.contains(storeName)) {
+          console.log(`⚠️ Object store ${storeName} not found, skipping cleanup`)
+          resolve()
+          return
+        }
+        
+        const transaction = this.db.transaction([storeName], 'readwrite')
+        const store = transaction.objectStore(storeName)
+        const createdAtIndex = store.index('createdAt')
+        
+        // Get all items
+        const request = emergency ? store.openCursor() : createdAtIndex.openCursor()
+        
+        request.onsuccess = (event) => {
+          const cursor = (event.target as IDBRequest).result
+          
+          if (cursor) {
+            const item = cursor.value
+            
+            // If this media is not referenced by any project, or if this is an emergency cleanup
+            // and we're deleting older items first
+            if (!activeIds.has(item.id) || (emergency && activeIds.size > 10)) {
+              console.log(`🗑️ Removing unused ${storeName} item: ${item.id}`)
+              cursor.delete()
+            }
+            
+            cursor.continue()
+          } else {
+            resolve()
+          }
+        }
+        
+        request.onerror = () => {
+          console.warn(`Failed to clean up ${storeName}:`, request.error)
+          resolve()
+        }
+      } catch (error) {
+        console.error(`Error cleaning up ${storeName}:`, error)
+        resolve()
+      }
+    })
+  }
+
+  // Database reset utility
+  async resetDatabase(): Promise<boolean> {
+    return new Promise((resolve, reject) => {
+      // Close the current connection
+      if (this.db) {
+        this.db.close();
+        this.db = null;
+      }
+      
+      const req = indexedDB.deleteDatabase(DB_NAME);
+      
+      req.onsuccess = () => {
+        console.log('🗑️ Database deleted successfully');
+        localStorage.removeItem(STORAGE_KEYS.CURRENT_PROJECT);
+        localStorage.removeItem(STORAGE_KEYS.PROJECTS);
+        console.log('🧹 Local storage keys cleared');
+        
+        // Reinitialize the database
+        this.initDB();
+        
+        resolve(true);
+      };
+      
+      req.onerror = () => {
+        console.error('❌ Could not delete database:', req.error);
+        reject(new Error('Could not delete database'));
+      };
+      
+      req.onblocked = () => {
+        console.warn('⚠️ Database deletion was blocked - close other tabs that might be using it');
+        reject(new Error('Database deletion was blocked'));
+      };
+    });
+  }
 }
 
 // Export singleton instance
-export const storage = StoryboardStorage.getInstance() 
+export const storage = StoryboardStorage.getInstance()
+
+// Export a reset function for easy access
+export async function resetStoryboardDatabase() {
+  return storage.resetDatabase();
+} 

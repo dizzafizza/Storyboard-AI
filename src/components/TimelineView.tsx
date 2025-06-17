@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Play, Pause, SkipBack, SkipForward, Clock, Eye, Volume2, Maximize, Download } from 'lucide-react'
+import { Play, Pause, SkipBack, SkipForward, Clock, Eye, Volume2, Maximize, Download, AlertTriangle } from 'lucide-react'
 import { useStoryboard } from '../context/StoryboardContext'
 import { useTheme } from '../context/ThemeContext'
 
@@ -12,6 +12,7 @@ export default function TimelineView() {
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [playbackSpeed, setPlaybackSpeed] = useState(1)
   const [currentTime, setCurrentTime] = useState(0)
+  const [hasVideoError, setHasVideoError] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
   const timelineRef = useRef<HTMLDivElement>(null)
   const playbackIntervalRef = useRef<NodeJS.Timeout | null>(null)
@@ -55,13 +56,37 @@ export default function TimelineView() {
     setCurrentTime(0)
   }, [currentPanel])
 
+  useEffect(() => {
+    setHasVideoError(false);
+  }, [currentPanel])
+  
+  useEffect(() => {
+    const preloadNextVideo = () => {
+      if (currentPanel < state.panels.length - 1) {
+        const nextPanel = state.panels[currentPanel + 1];
+        if (nextPanel.videoUrl) {
+          const preloadVideo = document.createElement('video');
+          preloadVideo.src = nextPanel.videoUrl;
+          preloadVideo.preload = 'auto';
+          preloadVideo.load();
+        }
+      }
+    };
+    
+    preloadNextVideo();
+  }, [currentPanel, state.panels]);
+
   const handlePlayPause = () => {
     setIsPlaying(!isPlaying)
     
-    // Handle video playback if current panel has video
+    if (hasVideoError) return;
+    
     if (videoRef.current) {
       if (!isPlaying) {
-        videoRef.current.play()
+        videoRef.current.play().catch(err => {
+          console.error("Failed to play video:", err);
+          setHasVideoError(true);
+        });
       } else {
         videoRef.current.pause()
       }
@@ -129,6 +154,18 @@ export default function TimelineView() {
     a.click()
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
+  }
+
+  const handleVideoError = () => {
+    console.error("Video error occurred on panel:", state.panels[currentPanel]?.id);
+    setHasVideoError(true);
+    
+    if (isPlaying && currentPanel < state.panels.length - 1) {
+      setCurrentPanel(prev => prev + 1);
+      setCurrentTime(0);
+    } else {
+      setIsPlaying(false);
+    }
   }
 
   if (state.panels.length === 0) {
@@ -207,24 +244,42 @@ export default function TimelineView() {
         {state.panels[currentPanel] && (
           <>
             {state.panels[currentPanel].videoUrl ? (
-              <video
-                ref={videoRef}
-                src={state.panels[currentPanel].videoUrl}
-                className="max-w-[60%] max-h-[60%] object-contain"
-                controls={false}
-                muted={volume === 0}
-                loop={false}
-                onEnded={() => {
-                  if (currentPanel < state.panels.length - 1) {
-                    setCurrentPanel(prev => prev + 1)
-                    setCurrentTime(0)
-                  } else {
-                    setIsPlaying(false)
-                    setCurrentPanel(0)
-                    setCurrentTime(0)
-                  }
-                }}
-              />
+              <>
+                <video
+                  ref={videoRef}
+                  src={state.panels[currentPanel].videoUrl}
+                  className="max-w-[60%] max-h-[60%] object-contain"
+                  controls={false}
+                  muted={volume === 0}
+                  loop={false}
+                  onError={handleVideoError}
+                  onEnded={() => {
+                    if (currentPanel < state.panels.length - 1) {
+                      setCurrentPanel(prev => prev + 1)
+                      setCurrentTime(0)
+                    } else {
+                      setIsPlaying(false)
+                      setCurrentPanel(0)
+                      setCurrentTime(0)
+                    }
+                  }}
+                />
+                {hasVideoError && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="bg-red-600 bg-opacity-80 text-white p-4 rounded-lg text-center max-w-xs">
+                      <AlertTriangle className="w-10 h-10 mx-auto mb-2" />
+                      <p className="font-medium">Video playback error</p>
+                      <p className="text-sm mt-1">There was a problem playing this video</p>
+                      <button 
+                        className="mt-3 bg-white text-red-600 px-3 py-1 rounded text-sm font-medium"
+                        onClick={() => setCurrentPanel(prev => Math.min(state.panels.length - 1, prev + 1))}
+                      >
+                        Skip to next panel
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
             ) : state.panels[currentPanel].imageUrl ? (
               <img
                 src={state.panels[currentPanel].imageUrl}

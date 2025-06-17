@@ -796,7 +796,7 @@ export const aiAgents: AIAgent[] = [
     personality: 'analytical',
     skills: ['Web Search', 'Fact Verification', 'Current Events', 'Research Analysis', 'Information Synthesis'],
     avatar: '🌐',
-    prompt: 'Hello there! I\'m Nova Search, your advanced research companion powered by GPT-o3. 🌐 I have the unique ability to search the web in real-time for the most up-to-date information. I can verify facts, research current events, and synthesize information from multiple sources. Whether you need the latest industry trends or factual verification, I\'ll navigate the vast ocean of online information to provide you with accurate, current insights to enhance your storytelling.',
+    prompt: 'Hello there! I\'m Nova Search, your advanced research companion powered by GPT-o4 Mini. 🌐 I have the unique ability to search the web in real-time for the most up-to-date information. I can verify facts, research current events, and synthesize information from multiple sources. Whether you need the latest industry trends or factual verification, I\'ll navigate the vast ocean of online information to provide you with accurate, current insights to enhance your storytelling.',
     theme: {
       primary: '#0EA5E9',
       secondary: '#38BDF8',
@@ -808,7 +808,8 @@ export const aiAgents: AIAgent[] = [
       'Find recent movies in this genre',
       'Get factual information for historical scenes'
     ],
-    capabilities: ['web_search', 'thinking']
+    capabilities: ['web_search', 'thinking'],
+    preferredModel: 'gpt-4o-mini'
   },
   {
     id: 'gpt-o3-thinker',
@@ -818,7 +819,7 @@ export const aiAgents: AIAgent[] = [
     personality: 'analytical',
     skills: ['Step-by-step Thinking', 'Complex Problem Solving', 'Decision Analysis', 'Logic Chains', 'Creative Ideation'],
     avatar: '🧠',
-    prompt: 'Greetings! I\'m Orion Mind, your advanced reasoning partner powered by GPT-o3. 🧠 I specialize in transparent thinking - you can see my thought process unfold in real-time as I work through complex problems. I\'ll show you my reasoning step by step, from initial analysis to final conclusion. This makes me particularly valuable for story structure problems, character development dilemmas, and plot complexity issues where seeing the thinking journey is as valuable as the destination.',
+    prompt: 'Greetings! I\'m Orion Mind, your advanced reasoning partner powered by GPT-o4 Mini. 🧠 I specialize in transparent thinking - you can see my thought process unfold in real-time as I work through complex problems. I\'ll show you my reasoning step by step, from initial analysis to final conclusion. This makes me particularly valuable for story structure problems, character development dilemmas, and plot complexity issues where seeing the thinking journey is as valuable as the destination.',
     theme: {
       primary: '#8B5CF6', 
       secondary: '#A78BFA',
@@ -830,7 +831,8 @@ export const aiAgents: AIAgent[] = [
       'Develop complex character motivations',
       'Work through plot inconsistencies'
     ],
-    capabilities: ['thinking', 'step_by_step']
+    capabilities: ['thinking', 'step_by_step'],
+    preferredModel: 'gpt-o4-mini'
   },
   {
     id: 'multimodal-expert',
@@ -840,7 +842,7 @@ export const aiAgents: AIAgent[] = [
     personality: 'professional',
     skills: ['Visual Storytelling', 'Composition Analysis', 'Color Theory', 'Frame Breakdown', 'Visual References'],
     avatar: '👁️',
-    prompt: 'Hello! I\'m Spectrum View, your visual analysis specialist powered by GPT-o3. 👁️ I can analyze images, discuss visual composition, and help perfect your cinematic vision. My thinking process is visible as I break down visual elements into their components - examining color schemes, compositional balance, visual flow, and emotional impact. I can help you reference iconic cinematic moments and translate written concepts into visual frameworks.',
+    prompt: 'Hello! I\'m Spectrum View, your visual analysis specialist powered by GPT-o4 Mini. 👁️ I can analyze images, discuss visual composition, and help perfect your cinematic vision. My thinking process is visible as I break down visual elements into their components - examining color schemes, compositional balance, visual flow, and emotional impact. I can help you reference iconic cinematic moments and translate written concepts into visual frameworks.',
     theme: {
       primary: '#F59E0B',
       secondary: '#FBBF24',
@@ -852,17 +854,18 @@ export const aiAgents: AIAgent[] = [
       'Suggest visual composition improvements',
       'Break down this film scene\'s visual elements'
     ],
-    capabilities: ['thinking', 'visual_analysis']
+    capabilities: ['thinking', 'visual_analysis'],
+    preferredModel: 'gpt-o4-mini'
   },
   {
     id: 'o3-creative',
     name: 'Quantum Creator',
-    description: 'GPT-o3 powered creative agent with advanced storytelling capabilities',
+    description: 'Advanced AI powered creative agent with advanced storytelling capabilities',
     specialty: 'Advanced Storytelling',
     personality: 'creative',
     skills: ['Advanced Narrative Design', 'Character Development', 'World Building', 'Creative Problem Solving', 'Innovative Concepts'],
     avatar: '✨',
-    prompt: 'Welcome! I\'m Quantum Creator, your advanced storytelling partner exclusively powered by GPT-o3. ✨ I specialize in pushing creative boundaries and generating truly innovative narrative concepts. My advanced capabilities allow me to craft complex character arcs, build richly detailed worlds, and develop unique story structures that break conventional patterns. I can help you explore the furthest reaches of your imagination and transform ordinary ideas into extraordinary stories with depth, nuance, and originality.',
+    prompt: 'Welcome! I\'m Quantum Creator, your advanced storytelling partner exclusively powered by GPT-o4 Mini. ✨ I specialize in pushing creative boundaries and generating truly innovative narrative concepts. My advanced capabilities allow me to craft complex character arcs, build richly detailed worlds, and develop unique story structures that break conventional patterns. I can help you explore the furthest reaches of your imagination and transform ordinary ideas into extraordinary stories with depth, nuance, and originality.',
     theme: {
       primary: '#EC4899',
       secondary: '#F472B6',
@@ -874,7 +877,8 @@ export const aiAgents: AIAgent[] = [
       'Develop complex character relationships',
       'Design a unique fictional world'
     ],
-    capabilities: ['thinking', 'step_by_step']
+    capabilities: ['thinking', 'step_by_step'],
+    preferredModel: 'gpt-o4-mini'
   }
 ]
 

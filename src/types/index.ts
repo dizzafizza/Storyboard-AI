@@ -95,6 +95,7 @@ export interface AIAgent {
   }
   examples: string[] // Example prompts they're good at handling
   capabilities?: string[] // Special capabilities like web_search, thinking, step_by_step, visual_analysis
+  preferredModel?: string // Preferred AI model to use for this agent
 }
 
 export interface AgentCategory {

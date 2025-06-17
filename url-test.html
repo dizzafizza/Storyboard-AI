@@ -1,0 +1,32 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>OpenAI URL Fix Test</title>
+</head>
+<body>
+  <h1>OpenAI URL Fix Test</h1>
+  <p>This page tests if the URL parsing issue is fixed.</p>
+  <button id="testBtn">Test OpenAI URL Parsing</button>
+  <div id="result" style="margin-top: 20px; padding: 10px; border: 1px solid #ccc;"></div>
+
+  <script>
+    document.getElementById('testBtn').addEventListener('click', function() {
+      const resultDiv = document.getElementById('result');
+      resultDiv.innerHTML = 'Testing...';
+      
+      try {
+        // Test URL parsing
+        const url1 = new URL('/openai-proxy/chat/completions', window.location.origin);
+        const url2 = new URL('/image-proxy/123456', window.location.origin);
+        
+        resultDiv.innerHTML = '<p style="color: green;">✅ URL parsing works correctly!</p>' +
+          '<p>Test URL 1: ' + url1.toString() + '</p>' +
+          '<p>Test URL 2: ' + url2.toString() + '</p>';
+      } catch (e) {
+        resultDiv.innerHTML = '<p style="color: red;">❌ URL parsing failed: ' + e.message + '</p>';
+      }
+    });
+  </script>
+</body>
+</html>
